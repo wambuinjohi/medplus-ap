@@ -15,8 +15,9 @@ export function Layout({ children }: LayoutProps) {
   const [loadingStartTime] = useState(Date.now());
 
   // Routes that don't require authentication
-  const publicRoutes = ['/auth-test', '/manual-setup', '/database-fix-page', '/auto-fix', '/audit', '/auto-payment-sync', '/payment-sync'];
+  const publicRoutes = ['/', '/about-us', '/products', '/contact', '/media', '/offers', '/auth-test', '/manual-setup', '/database-fix-page', '/auto-fix', '/audit', '/auto-payment-sync', '/payment-sync'];
   const isPublicRoute = publicRoutes.includes(location.pathname);
+  const isLandingPage = location.pathname === '/';
 
   // Show login after initial auth completes to avoid redirect bounce
   if (!loading && !isAuthenticated && !isPublicRoute) {
@@ -55,6 +56,16 @@ export function Layout({ children }: LayoutProps) {
 
   // Show simple layout for public routes
   if (isPublicRoute) {
+    // Landing page takes full width without header/sidebar
+    if (isLandingPage) {
+      return (
+        <div className="w-full">
+          {children}
+        </div>
+      );
+    }
+
+    // Other public routes show with header
     return (
       <div className="min-h-screen bg-background">
         <main className="w-full">

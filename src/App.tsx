@@ -6,6 +6,12 @@ import { enableResizeObserverErrorSuppression } from "@/utils/resizeObserverErro
 import { useEffect } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import Landing from "./pages/Landing";
+import AboutUs from "./pages/AboutUs";
+import OurProducts from "./pages/OurProducts";
+import Contact from "./pages/Contact";
+import Media from "./pages/Media";
+import Offers from "./pages/Offers";
 import Index from "./pages/Index";
 import Quotations from "./pages/Quotations";
 import Invoices from "./pages/Invoices";
@@ -46,101 +52,110 @@ const App = () => {
       <Sonner />
       <Layout>
         <Routes>
+          {/* Public Website Pages */}
+          <Route path="/" element={<Landing />} />
+          <Route path="/about-us" element={<AboutUs />} />
+          <Route path="/products" element={<OurProducts />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/media" element={<Media />} />
+          <Route path="/offers" element={<Offers />} />
+
+          {/* App Routes - Protected */}
           {/* Dashboard */}
-          <Route 
-            path="/" 
+          <Route
+            path="/app"
             element={
               <ProtectedRoute>
                 <Index />
               </ProtectedRoute>
-            } 
+            }
           />
 
           {/* Sales & Customer Management */}
-          <Route 
-            path="/quotations" 
+          <Route
+            path="/app/quotations"
             element={
               <ProtectedRoute>
                 <Quotations />
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="/quotations/new" 
+          <Route
+            path="/app/quotations/new"
             element={
               <ProtectedRoute>
                 <Quotations />
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="/customers" 
+          <Route
+            path="/app/customers"
             element={
               <ProtectedRoute>
                 <Customers />
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="/customers/new" 
+          <Route
+            path="/app/customers/new"
             element={
               <ProtectedRoute>
                 <Customers />
               </ProtectedRoute>
-            } 
+            }
           />
 
           {/* Financial Management */}
-          <Route 
-            path="/invoices" 
+          <Route
+            path="/app/invoices"
             element={
               <ProtectedRoute>
                 <Invoices />
               </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/invoices/new" 
-            element={
-              <ProtectedRoute>
-                <Invoices />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/payments" 
-            element={
-              <ProtectedRoute>
-                <Payments />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/payments/new" 
-            element={
-              <ProtectedRoute>
-                <Payments />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/credit-notes" 
-            element={
-              <ProtectedRoute>
-                <CreditNotes />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/credit-notes/new" 
-            element={
-              <ProtectedRoute>
-                <CreditNotes />
-              </ProtectedRoute>
-            } 
+            }
           />
           <Route
-            path="/proforma"
+            path="/app/invoices/new"
+            element={
+              <ProtectedRoute>
+                <Invoices />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/app/payments"
+            element={
+              <ProtectedRoute>
+                <Payments />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/app/payments/new"
+            element={
+              <ProtectedRoute>
+                <Payments />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/app/credit-notes"
+            element={
+              <ProtectedRoute>
+                <CreditNotes />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/app/credit-notes/new"
+            element={
+              <ProtectedRoute>
+                <CreditNotes />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/app/proforma"
             element={
               <ProtectedRoute>
                 <Proforma />
@@ -149,7 +164,7 @@ const App = () => {
           />
 
           <Route
-            path="/admin/audit-logs"
+            path="/app/admin/audit-logs"
             element={
               <ProtectedRoute>
                 <AuditLogs />
@@ -158,86 +173,86 @@ const App = () => {
           />
 
           {/* Procurement & Inventory */}
-          <Route 
-            path="/lpos" 
+          <Route
+            path="/app/lpos"
             element={
               <ProtectedRoute>
                 <LPOs />
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="/lpos/new" 
+          <Route
+            path="/app/lpos/new"
             element={
               <ProtectedRoute>
                 <LPOs />
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="/inventory" 
+          <Route
+            path="/app/inventory"
             element={
               <ProtectedRoute>
                 <Inventory />
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="/inventory/new" 
+          <Route
+            path="/app/inventory/new"
             element={
               <ProtectedRoute>
                 <Inventory />
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="/delivery-notes" 
+          <Route
+            path="/app/delivery-notes"
             element={
               <ProtectedRoute>
                 <DeliveryNotes />
               </ProtectedRoute>
-            } 
+            }
           />
 
           {/* Additional Features */}
-          <Route 
-            path="/remittance" 
+          <Route
+            path="/app/remittance"
             element={
               <ProtectedRoute>
                 <RemittanceAdvice />
               </ProtectedRoute>
-            } 
+            }
           />
 
           {/* Reports */}
-          <Route 
-            path="/reports/sales" 
+          <Route
+            path="/app/reports/sales"
             element={
               <ProtectedRoute>
                 <SalesReports />
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="/reports/inventory" 
+          <Route
+            path="/app/reports/inventory"
             element={
               <ProtectedRoute>
                 <InventoryReports />
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="/reports/statements" 
+          <Route
+            path="/app/reports/statements"
             element={
               <ProtectedRoute>
                 <StatementOfAccounts />
               </ProtectedRoute>
-            } 
+            }
           />
 
           {/* Settings */}
           <Route
-            path="/settings/company"
+            path="/app/settings/company"
             element={
               <ProtectedRoute>
                 <CompanySettings />
@@ -245,7 +260,7 @@ const App = () => {
             }
           />
           <Route
-            path="/settings/users"
+            path="/app/settings/users"
             element={
               <ProtectedRoute>
                 <UserManagement />
@@ -254,7 +269,7 @@ const App = () => {
           />
 
           <Route
-            path="/setup-test"
+            path="/app/setup-test"
             element={
               <ProtectedRoute>
                 <SetupAndTest />
@@ -272,7 +287,7 @@ const App = () => {
 
           {/* Optimized Inventory - Performance-optimized inventory page */}
           <Route
-            path="/optimized-inventory"
+            path="/app/optimized-inventory"
             element={
               <ProtectedRoute>
                 <OptimizedInventory />
@@ -281,12 +296,12 @@ const App = () => {
           />
 
           {/* Performance Optimizer - Database and inventory performance optimization */}
-          <Route path="/performance-optimizer" element={<PerformanceOptimizerPage />} />
+          <Route path="/app/performance-optimizer" element={<PerformanceOptimizerPage />} />
 
 
           {/* Optimized Customers - Performance-optimized customers page */}
           <Route
-            path="/optimized-customers"
+            path="/app/optimized-customers"
             element={
               <ProtectedRoute>
                 <OptimizedCustomers />
@@ -295,7 +310,7 @@ const App = () => {
           />
 
           {/* Customer Performance Optimizer - Database and customer performance optimization */}
-          <Route path="/customer-performance-optimizer" element={<CustomerPerformanceOptimizerPage />} />
+          <Route path="/app/customer-performance-optimizer" element={<CustomerPerformanceOptimizerPage />} />
 
 
 
