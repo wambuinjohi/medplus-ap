@@ -125,7 +125,7 @@ ${formData.subject}
 *Message:*
 ${formData.message}
 
-━━━━━━━━━━━━━���━━━━━━━━`;
+━━━━━━━━━━━━━━━━━━━━━━`;
 
       const whatsappPhone = '+254734785363';
       const encodedMessage = encodeURIComponent(message);
@@ -179,6 +179,33 @@ ${formData.message}
             {/* Form */}
             <div>
               <h2 className="text-3xl font-bold text-gray-900 mb-6">Send us a Message</h2>
+
+              {/* Contact Method Toggle */}
+              <div className="flex gap-3 mb-6">
+                <button
+                  onClick={() => setContactMethod('email')}
+                  className={`flex-1 py-3 px-4 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors ${
+                    contactMethod === 'email'
+                      ? 'bg-primary text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  <Mail size={18} />
+                  Email
+                </button>
+                <button
+                  onClick={() => setContactMethod('whatsapp')}
+                  className={`flex-1 py-3 px-4 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors ${
+                    contactMethod === 'whatsapp'
+                      ? 'bg-green-600 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  <MessageCircle size={18} />
+                  WhatsApp
+                </button>
+              </div>
+
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <Label htmlFor="name" className="text-gray-700 mb-2">Full Name *</Label>
