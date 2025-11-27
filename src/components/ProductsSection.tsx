@@ -137,9 +137,9 @@ export default function ProductsSection() {
           </p>
         </div>
 
-        {/* Products Grid */}
+        {/* Products Grid - Show limited number */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {products.map((product) => (
+          {products.slice(0, 6).map((product) => (
             <div
               key={product.id}
               className="group relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100 overflow-hidden hover:-translate-y-1 hover:border-blue-300"
@@ -181,6 +181,16 @@ export default function ProductsSection() {
               </div>
             </div>
           ))}
+        </div>
+
+        {/* View All Button */}
+        <div className="flex justify-center mt-12">
+          <Link to="/products">
+            <button className="bg-gradient-to-r from-blue-500 to-green-500 text-white font-bold py-4 px-10 rounded-lg hover:shadow-xl transition-all duration-300 hover:scale-105 flex items-center gap-2 text-lg">
+              View All Products
+              <ArrowRight size={20} />
+            </button>
+          </Link>
         </div>
       </div>
     </section>
