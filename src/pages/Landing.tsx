@@ -156,39 +156,68 @@ export default function Landing() {
 
           {/* Mobile Navigation */}
           {mobileMenuOpen && (
-            <nav className="md:hidden pb-4 space-y-2">
+            <nav className="md:hidden pb-4 space-y-1 border-t border-gray-200">
               {navigationItems.map((item) => (
                 <div key={item.label}>
-                  <button
-                    onClick={() =>
-                      item.submenu && setProductsDropdownOpen(!productsDropdownOpen)
-                    }
-                    className="w-full text-left px-4 py-2 text-gray-700 hover:bg-primary/10 rounded flex justify-between items-center font-medium"
-                  >
-                    {item.label}
-                    {item.submenu && (
-                      <ChevronDown
-                        size={16}
-                        className={`transition-transform ${productsDropdownOpen ? 'rotate-180' : ''}`}
-                      />
-                    )}
-                  </button>
-                  {item.submenu && productsDropdownOpen && (
-                    <div className="bg-gray-50 pl-4">
-              {item.submenu.map((sub) => {
-                const product = getProductBySlug(sub.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''));
-                const productSlug = product?.slug || sub.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-                return (
-                  <Link
-                    key={sub}
-                    to={`/products/${productSlug}`}
-                    className="block px-4 py-2 text-sm text-gray-700 hover:text-primary transition-colors"
-                  >
-                    {sub}
-                  </Link>
-                );
-              })}
-            </div>
+                  {item.label === 'Talk to us' ? (
+                    <Link
+                      to="/contact"
+                      className="block w-full text-left px-4 py-3 text-gray-700 hover:bg-primary/10 rounded font-medium text-sm"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      {item.label}
+                    </Link>
+                  ) : item.label === 'About Us' ? (
+                    <Link
+                      to="/about-us"
+                      className="block w-full text-left px-4 py-3 text-gray-700 hover:bg-primary/10 rounded font-medium text-sm"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      {item.label}
+                    </Link>
+                  ) : item.label === 'Home' ? (
+                    <Link
+                      to="/"
+                      className="block w-full text-left px-4 py-3 text-gray-700 hover:bg-primary/10 rounded font-medium text-sm"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      {item.label}
+                    </Link>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() =>
+                          item.submenu && setProductsDropdownOpen(!productsDropdownOpen)
+                        }
+                        className="w-full text-left px-4 py-3 text-gray-700 hover:bg-primary/10 rounded flex justify-between items-center font-medium text-sm"
+                      >
+                        {item.label}
+                        {item.submenu && (
+                          <ChevronDown
+                            size={16}
+                            className={`transition-transform ${productsDropdownOpen ? 'rotate-180' : ''}`}
+                          />
+                        )}
+                      </button>
+                      {item.submenu && productsDropdownOpen && (
+                        <div className="bg-gray-50 pl-4 py-1">
+                          {item.submenu.map((sub) => {
+                            const product = getProductBySlug(sub.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''));
+                            const productSlug = product?.slug || sub.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+                            return (
+                              <Link
+                                key={sub}
+                                to={`/products/${productSlug}`}
+                                className="block px-4 py-2 text-xs text-gray-700 hover:text-primary transition-colors"
+                                onClick={() => setMobileMenuOpen(false)}
+                              >
+                                {sub}
+                              </Link>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               ))}
