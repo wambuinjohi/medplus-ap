@@ -163,12 +163,12 @@ export default function ProductGridDropdown() {
             <button
               key={category.name}
               onClick={() => setSelectedCategory(category)}
-              className="group/item flex flex-col items-center justify-center p-4 rounded-xl hover:bg-gradient-to-br hover:from-blue-50 hover:to-green-50 transition-all duration-300 cursor-pointer hover:-translate-y-1"
+              className="group/item flex flex-col items-center justify-center p-2 sm:p-4 rounded-lg sm:rounded-xl hover:bg-gradient-to-br hover:from-blue-50 hover:to-green-50 transition-all duration-300 cursor-pointer hover:-translate-y-1"
             >
-              <div className="text-5xl mb-3 group-hover/item:scale-125 transition-transform duration-300">
+              <div className="text-3xl sm:text-5xl mb-2 sm:mb-3 group-hover/item:scale-125 transition-transform duration-300">
                 {category.icon}
               </div>
-              <p className="text-center text-xs font-semibold text-gray-700 leading-tight line-clamp-2 group-hover/item:text-blue-600 transition-colors">
+              <p className="text-center text-xs sm:text-xs font-semibold text-gray-700 leading-tight line-clamp-2 group-hover/item:text-blue-600 transition-colors">
                 {category.name}
               </p>
             </button>
