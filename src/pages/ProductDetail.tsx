@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { BiolegendLogo } from '@/components/ui/biolegend-logo';
+import ProductCategorySidebar from '@/components/ProductCategorySidebar';
 import { useToast } from '@/hooks/use-toast';
 import { getProductBySlug } from '@/data/products';
 import { MessageCircle, ArrowLeft, Check } from 'lucide-react';
