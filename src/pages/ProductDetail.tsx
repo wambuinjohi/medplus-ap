@@ -349,7 +349,7 @@ Please provide a quotation for the above product and delivery terms.`;
               Have questions about this product or need more information?
             </p>
             <p className="text-gray-600 mb-6">
-              Sales Email: <a href="mailto:sales@alphamedicalafrica.com" className="text-primary hover:underline font-semibold">sales@alphamedicalafrica.com</a><br />
+              Sales Email: <a href="mailto:sales@medplusafrica.com" className="text-primary hover:underline font-semibold">sales@medplusafrica.com</a><br />
               Phone: <a href="tel:+254734785363" className="text-primary hover:underline font-semibold">+254 734 785 363</a>
             </p>
             <Link to="/contact">

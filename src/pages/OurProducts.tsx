@@ -49,7 +49,7 @@ export default function OurProducts() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl">
             <p className="text-lg text-gray-700 leading-relaxed">
-              Alpha Medical offers a comprehensive range of hospital consumables, medical equipment, and furniture to meet all your healthcare facility needs. Our products are sourced from trusted manufacturers and meet international quality standards.
+              Medplus Africa offers a comprehensive range of hospital consumables, medical equipment, and furniture to meet all your healthcare facility needs. Our products are sourced from trusted manufacturers and meet international quality standards.
             </p>
           </div>
         </div>
@@ -164,7 +164,7 @@ export default function OurProducts() {
               </a>
             </div>
             <p className="text-gray-400 text-sm mt-6 text-center">
-              © 2025 Medplus Africa. All rights reserved.
+              �� 2025 Medplus Africa. All rights reserved.
             </p>
           </div>
         </div>
