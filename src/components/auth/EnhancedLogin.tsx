@@ -61,7 +61,7 @@ export function EnhancedLogin() {
       }
     } else {
       toast.success('Welcome to Medplus Africa!');
-      navigate('/');
+      navigate('/app');
     }
     setSubmitting(false);
   };

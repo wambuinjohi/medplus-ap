@@ -276,7 +276,7 @@ export default function Payments() {
               <DollarSign className="h-5 w-5 text-success" />
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Total Received Today</p>
-                <p className="text-2xl font-bold text-success">{formatCurrency(totalReceivedToday)}</p>
+                <p className="text-lg font-bold text-success">{formatCurrency(totalReceivedToday)}</p>
               </div>
             </div>
           </CardContent>
@@ -288,7 +288,7 @@ export default function Payments() {
               <Badge className="bg-success-light text-success">{completedThisMonth}</Badge>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Completed This Month</p>
-                <p className="text-2xl font-bold text-success">{formatCurrency(totalThisMonth)}</p>
+                <p className="text-lg font-bold text-success">{formatCurrency(totalThisMonth)}</p>
               </div>
             </div>
           </CardContent>
@@ -300,7 +300,7 @@ export default function Payments() {
               <Badge className="bg-warning-light text-warning">0</Badge>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Pending</p>
-                <p className="text-2xl font-bold text-warning">{formatCurrency(pendingAmount)}</p>
+                <p className="text-lg font-bold text-warning">{formatCurrency(pendingAmount)}</p>
               </div>
             </div>
           </CardContent>

@@ -218,7 +218,7 @@ export default function Proforma() {
             <div className="flex items-center space-x-2">
               <FileText className="h-8 w-8 text-primary" />
               <div>
-                <p className="text-2xl font-bold">{proformas.length}</p>
+                <p className="text-lg font-bold">{proformas.length}</p>
                 <p className="text-xs text-muted-foreground">Total Proformas</p>
               </div>
             </div>
@@ -230,7 +230,7 @@ export default function Proforma() {
             <div className="flex items-center space-x-2">
               <Send className="h-8 w-8 text-blue-500" />
               <div>
-                <p className="text-2xl font-bold">
+                <p className="text-lg font-bold">
                   {proformas.filter(p => p.status === 'sent').length}
                 </p>
                 <p className="text-xs text-muted-foreground">Sent</p>
@@ -244,7 +244,7 @@ export default function Proforma() {
             <div className="flex items-center space-x-2">
               <CheckCircle className="h-8 w-8 text-success" />
               <div>
-                <p className="text-2xl font-bold">
+                <p className="text-lg font-bold">
                   {proformas.filter(p => p.status === 'accepted').length}
                 </p>
                 <p className="text-xs text-muted-foreground">Accepted</p>
@@ -258,7 +258,7 @@ export default function Proforma() {
             <div className="flex items-center space-x-2">
               <DollarSign className="h-8 w-8 text-success" />
               <div>
-                <p className="text-2xl font-bold">
+                <p className="text-lg font-bold">
                   {formatCurrency(proformas.reduce((sum, p) => sum + (p.total_amount || 0), 0))}
                 </p>
                 <p className="text-xs text-muted-foreground">Total Value</p>

@@ -177,6 +177,15 @@ export default function InventoryReports() {
 
   const stats = calculateStats();
 
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-KE', {
+      style: 'currency',
+      currency: 'KES',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(amount);
+  };
+
   const getStockStatusBadge = (product: any) => {
     if ((product.stock_quantity || 0) === 0) {
       return <Badge variant="destructive">Out of Stock</Badge>;
@@ -337,7 +346,7 @@ export default function InventoryReports() {
               <Package className="h-8 w-8 text-primary" />
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Items In Stock</p>
-                <p className="text-2xl font-bold text-primary">{stats.totalItems}</p>
+                <p className="text-lg font-bold text-primary">{stats.totalItems}</p>
                 <p className="text-xs text-muted-foreground">Total quantity</p>
               </div>
             </div>
@@ -350,7 +359,7 @@ export default function InventoryReports() {
               <TrendingUp className="h-8 w-8 text-success" />
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Stock Value</p>
-                <p className="text-2xl font-bold text-success">${stats.stockValue.toFixed(2)}</p>
+                <p className="text-lg font-bold text-success">{formatCurrency(stats.stockValue)}</p>
                 <p className="text-xs text-success">At cost price</p>
               </div>
             </div>
@@ -363,7 +372,7 @@ export default function InventoryReports() {
               <TrendingDown className="h-8 w-8 text-warning" />
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Low Stock Items</p>
-                <p className="text-2xl font-bold text-warning">{stats.lowStock}</p>
+                <p className="text-lg font-bold text-warning">{stats.lowStock}</p>
                 <p className="text-xs text-warning">Need attention</p>
               </div>
             </div>
@@ -376,7 +385,7 @@ export default function InventoryReports() {
               <AlertTriangle className="h-8 w-8 text-destructive" />
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Out of Stock</p>
-                <p className="text-2xl font-bold text-destructive">{stats.outOfStock}</p>
+                <p className="text-lg font-bold text-destructive">{stats.outOfStock}</p>
                 <p className="text-xs text-destructive">Urgent reorder</p>
               </div>
             </div>
@@ -547,19 +556,19 @@ export default function InventoryReports() {
               <div className="space-y-4">
                 <div className="flex justify-between">
                   <span className="text-sm font-medium">Total Stock Value (Cost)</span>
-                  <span className="font-bold">${stats.stockValue.toFixed(2)}</span>
+                  <span className="font-bold">{formatCurrency(stats.stockValue)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm font-medium">Total Stock Value (Retail)</span>
-                  <span className="font-bold">${(stats.stockValue * 1.4).toFixed(2)}</span>
+                  <span className="font-bold">{formatCurrency(stats.stockValue * 1.4)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm font-medium">Potential Profit</span>
-                  <span className="font-bold text-success">${(stats.stockValue * 0.4).toFixed(2)}</span>
+                  <span className="font-bold text-success">{formatCurrency(stats.stockValue * 0.4)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm font-medium">Average Cost per Item</span>
-                  <span className="font-bold">${products?.length ? (stats.stockValue / products.length).toFixed(2) : '0.00'}</span>
+                  <span className="font-bold">{formatCurrency(products?.length ? stats.stockValue / products.length : 0)}</span>
                 </div>
               </div>
             </CardContent>

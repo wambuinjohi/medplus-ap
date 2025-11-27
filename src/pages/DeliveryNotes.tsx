@@ -213,7 +213,7 @@ export default function DeliveryNotes() {
             <div className="flex items-center space-x-2">
               <Package className="h-8 w-8 text-primary" />
               <div>
-                <p className="text-2xl font-bold">{totalDeliveryNotes}</p>
+                <p className="text-lg font-bold">{totalDeliveryNotes}</p>
                 <p className="text-xs text-muted-foreground">Total Notes</p>
               </div>
             </div>
@@ -225,7 +225,7 @@ export default function DeliveryNotes() {
             <div className="flex items-center space-x-2">
               <Clock className="h-8 w-8 text-secondary" />
               <div>
-                <p className="text-2xl font-bold">{prepared}</p>
+                <p className="text-lg font-bold">{prepared}</p>
                 <p className="text-xs text-muted-foreground">Prepared</p>
               </div>
             </div>
@@ -237,7 +237,7 @@ export default function DeliveryNotes() {
             <div className="flex items-center space-x-2">
               <Truck className="h-8 w-8 text-blue-500" />
               <div>
-                <p className="text-2xl font-bold">{inTransit}</p>
+                <p className="text-lg font-bold">{inTransit}</p>
                 <p className="text-xs text-muted-foreground">In Transit</p>
               </div>
             </div>
@@ -249,7 +249,7 @@ export default function DeliveryNotes() {
             <div className="flex items-center space-x-2">
               <CheckCircle className="h-8 w-8 text-success" />
               <div>
-                <p className="text-2xl font-bold">{delivered}</p>
+                <p className="text-lg font-bold">{delivered}</p>
                 <p className="text-xs text-muted-foreground">Delivered</p>
               </div>
             </div>

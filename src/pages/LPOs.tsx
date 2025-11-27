@@ -274,7 +274,7 @@ export default function LPOs() {
             <div className="flex items-center space-x-2">
               <ShoppingCart className="h-8 w-8 text-primary" />
               <div>
-                <p className="text-2xl font-bold">{totalLPOs}</p>
+                <p className="text-lg font-bold">{totalLPOs}</p>
                 <p className="text-xs text-muted-foreground">Total LPOs</p>
               </div>
             </div>
@@ -286,7 +286,7 @@ export default function LPOs() {
             <div className="flex items-center space-x-2">
               <FileText className="h-8 w-8 text-secondary" />
               <div>
-                <p className="text-2xl font-bold">{draftLPOs}</p>
+                <p className="text-lg font-bold">{draftLPOs}</p>
                 <p className="text-xs text-muted-foreground">Draft</p>
               </div>
             </div>
@@ -298,7 +298,7 @@ export default function LPOs() {
             <div className="flex items-center space-x-2">
               <Send className="h-8 w-8 text-blue-500" />
               <div>
-                <p className="text-2xl font-bold">{sentLPOs}</p>
+                <p className="text-lg font-bold">{sentLPOs}</p>
                 <p className="text-xs text-muted-foreground">Sent</p>
               </div>
             </div>
@@ -310,7 +310,7 @@ export default function LPOs() {
             <div className="flex items-center space-x-2">
               <CheckCircle className="h-8 w-8 text-success" />
               <div>
-                <p className="text-2xl font-bold">{approvedLPOs}</p>
+                <p className="text-lg font-bold">{approvedLPOs}</p>
                 <p className="text-xs text-muted-foreground">Approved</p>
               </div>
             </div>
@@ -322,7 +322,7 @@ export default function LPOs() {
             <div className="flex items-center space-x-2">
               <Package className="h-8 w-8 text-green-600" />
               <div>
-                <p className="text-2xl font-bold">{receivedLPOs}</p>
+                <p className="text-lg font-bold">{receivedLPOs}</p>
                 <p className="text-xs text-muted-foreground">Received</p>
               </div>
             </div>

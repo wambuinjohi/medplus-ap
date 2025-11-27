@@ -28,7 +28,7 @@ function StatCard({ title, value, change, changeType, icon: Icon, alert }: StatC
         )} />
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
+        <div className="text-lg font-bold">{value}</div>
         {change && (
           <div className="flex items-center text-xs text-muted-foreground mt-1">
             {changeType === 'increase' && (
