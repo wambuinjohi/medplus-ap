@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface Slide {
@@ -99,9 +100,11 @@ export default function HeroSlider() {
                   </div>
 
                   <div className="pt-6">
-                    <button className="bg-gradient-to-r from-blue-500 to-green-500 text-white px-8 py-3 rounded-lg font-semibold hover:shadow-lg transform hover:scale-105 transition-all duration-200">
-                      Learn More
-                    </button>
+                    <Link to="/about-us">
+                      <button className="bg-gradient-to-r from-blue-500 to-green-500 text-white px-8 py-3 rounded-lg font-semibold hover:shadow-lg transform hover:scale-105 transition-all duration-200">
+                        Learn More
+                      </button>
+                    </Link>
                   </div>
                 </div>
               </div>
