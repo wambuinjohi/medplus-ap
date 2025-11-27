@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { ChevronDown } from 'lucide-react';
 
 interface ProductCategory {
@@ -9,6 +10,14 @@ interface ProductCategorySidebarProps {
   categories: ProductCategory[];
   activeCategory?: string;
 }
+
+// Helper function to convert category name to slug
+const getCategorySlug = (name: string): string => {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+};
 
 export default function ProductCategorySidebar({
   categories,
@@ -46,10 +55,12 @@ export default function ProductCategorySidebar({
           <nav className="divide-y divide-gray-100 md:max-h-96 md:overflow-y-auto">
             {categories.map((category) => {
               const isActive = activeCategory === category.name;
+              const slug = getCategorySlug(category.name);
               return (
-                <a
+                <Link
                   key={category.name}
-                  href="#"
+                  to={`/products/${slug}`}
+                  onClick={() => setIsOpen(false)}
                   className={`block px-6 py-4 transition-all duration-200 relative group ${
                     isActive
                       ? 'bg-blue-50 text-primary font-semibold border-l-4 border-primary'
@@ -58,12 +69,12 @@ export default function ProductCategorySidebar({
                 >
                   {/* Left colored bar */}
                   <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-primary to-primary/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
-                  
+
                   {/* Category Text */}
                   <span className={isActive ? 'text-primary' : 'text-gray-700 group-hover:text-primary'}>
                     {category.name}
                   </span>
-                </a>
+                </Link>
               );
             })}
           </nav>
@@ -72,12 +83,12 @@ export default function ProductCategorySidebar({
         {/* Contact CTA */}
         <div className="mt-6 p-4 bg-gradient-to-r from-blue-500 to-green-500 text-white rounded-lg shadow-md text-center hidden md:block">
           <p className="text-sm font-semibold mb-3">Need Help?</p>
-          <a
-            href="/contact"
+          <Link
+            to="/contact"
             className="inline-block w-full bg-white text-primary font-bold py-2 px-4 rounded hover:bg-gray-100 transition-colors text-sm"
           >
             Contact Us
-          </a>
+          </Link>
         </div>
       </aside>
     </>
