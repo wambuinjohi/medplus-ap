@@ -277,7 +277,7 @@ const App = () => {
 
           {/* Optimized Inventory - Performance-optimized inventory page */}
           <Route
-            path="/optimized-inventory"
+            path="/app/optimized-inventory"
             element={
               <ProtectedRoute>
                 <OptimizedInventory />
@@ -286,12 +286,12 @@ const App = () => {
           />
 
           {/* Performance Optimizer - Database and inventory performance optimization */}
-          <Route path="/performance-optimizer" element={<PerformanceOptimizerPage />} />
+          <Route path="/app/performance-optimizer" element={<PerformanceOptimizerPage />} />
 
 
           {/* Optimized Customers - Performance-optimized customers page */}
           <Route
-            path="/optimized-customers"
+            path="/app/optimized-customers"
             element={
               <ProtectedRoute>
                 <OptimizedCustomers />
@@ -300,7 +300,7 @@ const App = () => {
           />
 
           {/* Customer Performance Optimizer - Database and customer performance optimization */}
-          <Route path="/customer-performance-optimizer" element={<CustomerPerformanceOptimizerPage />} />
+          <Route path="/app/customer-performance-optimizer" element={<CustomerPerformanceOptimizerPage />} />
 
 
 
