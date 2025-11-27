@@ -157,7 +157,7 @@ export default function ProductGridDropdown() {
   return (
     <>
       {/* Grid Dropdown */}
-      <div className="absolute left-0 mt-2 w-screen max-w-4xl lg:max-w-5xl bg-white shadow-2xl rounded-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 py-6 px-4 sm:py-8 sm:px-8 z-50 border border-gray-100 -translate-x-1/2 left-1/2">
+      <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 w-[calc(100vw-2rem)] sm:w-auto max-w-4xl lg:max-w-5xl bg-white shadow-2xl rounded-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 py-6 px-4 sm:py-8 sm:px-8 z-50 border border-gray-100">
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-6">
           {productCategories.map((category) => (
             <button
