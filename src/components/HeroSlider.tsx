@@ -53,18 +53,21 @@ export default function HeroSlider() {
     <section className="relative h-screen bg-white overflow-hidden">
       {/* Slider Background */}
       <div className="absolute inset-0 overflow-hidden">
-        <div
-          className="absolute inset-0 transition-transform duration-1200 ease-out"
-          style={{
-            backgroundImage: `url(${slides[currentSlide].image})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            transform: 'translateX(0)'
-          }}
-        >
-          {/* Gradient overlay - blue to green */}
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-green-500 opacity-40"></div>
-        </div>
+        {slides.map((slide, index) => (
+          <div
+            key={slide.id}
+            className="absolute inset-0 transition-transform duration-1200 ease-out"
+            style={{
+              backgroundImage: `url(${slide.image})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              transform: `translateX(${(index - currentSlide) * 100}%)`
+            }}
+          >
+            {/* Gradient overlay - blue to green */}
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-green-500 opacity-40"></div>
+          </div>
+        ))}
       </div>
 
       {/* Content Container */}
