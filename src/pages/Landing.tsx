@@ -134,15 +134,20 @@ export default function Landing() {
                     {item.submenu && <ChevronDown size={16} className="group-hover:rotate-180 transition-transform duration-200" />}
                   </a>
                   {item.submenu && (
-                    <div className="absolute left-1/2 -translate-x-1/2 mt-2 bg-white shadow-lg rounded-md opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10 border border-gray-100 before:absolute before:bottom-full before:left-1/2 before:-translate-x-1/2 before:w-3 before:h-3 before:bg-white before:border-t before:border-l before:border-gray-100 before:rotate-45" style={{ minWidth: '600px' }}>
-                      <div className="grid grid-cols-5 gap-x-8 gap-y-3 p-4">
+                    <div className="absolute left-1/2 -translate-x-1/2 mt-2 bg-white shadow-lg rounded-md opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10 border border-gray-100 before:absolute before:bottom-full before:left-1/2 before:-translate-x-1/2 before:w-6 before:h-4 before:bg-white before:border-t-2 before:border-l-2 before:border-gray-100 before:rotate-45" style={{ minWidth: '750px' }}>
+                      <div className="grid grid-cols-5 gap-x-8 gap-y-4 p-6">
                         {item.submenu.map((sub) => (
                           <a
                             key={sub}
                             href="#"
-                            className="text-sm text-gray-700 hover:text-primary hover:font-semibold transition-colors whitespace-normal leading-tight"
+                            className="flex flex-col items-center text-center group/item transition-all duration-200"
                           >
-                            {sub}
+                            <div className="text-gray-600 group-hover/item:text-primary mb-2 transition-colors">
+                              {productIconMap[sub]}
+                            </div>
+                            <span className="text-xs text-gray-700 group-hover/item:text-primary group-hover/item:font-semibold transition-colors leading-tight">
+                              {sub}
+                            </span>
                           </a>
                         ))}
                       </div>
