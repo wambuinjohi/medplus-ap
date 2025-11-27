@@ -185,7 +185,7 @@ export function Sidebar() {
   };
 
   return (
-    <div className="flex h-full w-64 flex-col bg-sidebar border-r border-sidebar-border">
+    <div className="hidden md:flex h-full w-64 flex-col bg-sidebar border-r border-sidebar-border">
       {/* Company Logo/Header */}
       <div className="flex h-16 items-center border-b border-sidebar-border px-6">
         <BiolegendLogo size="md" showText={true} className="text-sidebar-foreground" />
@@ -202,7 +202,7 @@ export function Sidebar() {
           <div className="flex items-center space-x-3 px-3 py-2 text-sm text-sidebar-foreground">
             <Building2 className="h-4 w-4 text-sidebar-primary" />
             <div>
-              <div className="font-medium">Medplus Africa</div>
+              <div className="font-medium text-sm">Medplus Africa</div>
               <div className="text-xs text-sidebar-foreground/60">Healthcare & Pharmaceuticals</div>
             </div>
           </div>
