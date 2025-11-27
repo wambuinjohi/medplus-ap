@@ -50,7 +50,7 @@ export default function HeroSlider() {
   };
 
   return (
-    <section className="relative h-screen bg-white overflow-hidden">
+    <section className="relative min-h-screen sm:h-screen bg-white overflow-hidden">
       {/* Slider Background */}
       <div className="absolute inset-0 overflow-hidden">
         {slides.map((slide, index) => (
@@ -71,35 +71,35 @@ export default function HeroSlider() {
       </div>
 
       {/* Content Container */}
-      <div className="relative z-10 h-full flex items-center">
+      <div className="relative z-10 min-h-screen sm:h-full flex items-center">
         <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-2 gap-12 items-center h-full">
-            
+          <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center py-20 md:py-0">
+
             {/* Left: Information Section (Floating, Transparent) */}
-            <div className="space-y-8 py-20 md:py-0">
-              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 md:p-12 border border-white/20">
-                <div className="space-y-6">
+            <div className="space-y-6 sm:space-y-8">
+              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 sm:p-8 md:p-12 border border-white/20">
+                <div className="space-y-4 sm:space-y-6">
                   <div>
-                    <span className="inline-block bg-gradient-to-r from-blue-500 to-green-500 text-white px-4 py-2 rounded-full text-sm font-semibold mb-4">
+                    <span className="inline-block bg-gradient-to-r from-blue-500 to-green-500 text-white px-3 sm:px-4 py-1 sm:py-2 rounded-full text-xs sm:text-sm font-semibold mb-3 sm:mb-4">
                       OVER 10 YEARS
                     </span>
-                    <h1 className="text-5xl md:text-6xl font-bold text-white mb-4 leading-tight">
+                    <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-3 sm:mb-4 leading-tight">
                       OF TRUSTED SERVICE
                     </h1>
                   </div>
 
-                  <div className="space-y-4">
-                    <p className="text-xl md:text-2xl text-white font-semibold leading-relaxed">
+                  <div className="space-y-3 sm:space-y-4">
+                    <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-white font-semibold leading-relaxed">
                       World Class Critical Care, Hospital Consumables and Furniture Distributors.
                     </p>
-                    <p className="text-lg text-white/90 leading-relaxed">
+                    <p className="text-sm sm:text-base md:text-lg text-white/90 leading-relaxed">
                       Bettering lives together.
                     </p>
                   </div>
 
-                  <div className="pt-6">
+                  <div className="pt-4 sm:pt-6">
                     <Link to="/about-us">
-                      <button className="bg-gradient-to-r from-blue-500 to-green-500 text-white px-8 py-3 rounded-lg font-semibold hover:shadow-lg transform hover:scale-105 transition-all duration-200">
+                      <button className="w-full sm:w-auto bg-gradient-to-r from-blue-500 to-green-500 text-white px-6 sm:px-8 py-2 sm:py-3 rounded-lg font-semibold hover:shadow-lg transform hover:scale-105 transition-all duration-200 text-sm sm:text-base">
                         Learn More
                       </button>
                     </Link>
@@ -108,14 +108,14 @@ export default function HeroSlider() {
               </div>
 
               {/* Slide Indicators */}
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 sm:gap-3">
                 {slides.map((_, index) => (
                   <button
                     key={index}
                     onClick={() => goToSlide(index)}
                     className={`h-2 rounded-full transition-all duration-300 ${
                       index === currentSlide
-                        ? 'bg-white w-8'
+                        ? 'bg-white w-6 sm:w-8'
                         : 'bg-white/50 w-2 hover:bg-white/75'
                     }`}
                     aria-label={`Go to slide ${index + 1}`}
@@ -170,8 +170,8 @@ export default function HeroSlider() {
       </div>
 
       {/* Slide Counter */}
-      <div className="absolute bottom-8 right-8 z-20 bg-white/10 backdrop-blur-md px-4 py-2 rounded-full">
-        <p className="text-white text-sm font-semibold">
+      <div className="absolute bottom-4 sm:bottom-8 right-4 sm:right-8 z-20 bg-white/10 backdrop-blur-md px-3 sm:px-4 py-2 rounded-full">
+        <p className="text-white text-xs sm:text-sm font-semibold">
           {currentSlide + 1} / {slides.length}
         </p>
       </div>

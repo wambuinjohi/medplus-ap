@@ -95,13 +95,13 @@ export const PublicFooter = ({ productCategories = [] }: PublicFooterProps) => {
               <h3 className="text-lg font-bold mb-6 bg-gradient-to-r from-blue-400 to-green-400 bg-clip-text text-transparent">
                 Company
               </h3>
-              <ul className="text-gray-300 space-y-2 text-sm">
+              <ul className="text-gray-300 space-y-3 text-sm">
                 <li>
                   <Link
                     to="/app"
-                    className="hover:text-white hover:translate-x-1 transition-all duration-200 inline-block"
+                    className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-500 to-green-500 text-white font-semibold rounded-lg hover:from-blue-600 hover:to-green-600 hover:shadow-lg transition-all duration-300 transform hover:scale-105 active:scale-95 cursor-pointer"
                   >
-                    Login to App
+                    🚀 Login to App
                   </Link>
                 </li>
                 <li>

@@ -65,25 +65,25 @@ export function Header() {
 
   return (
     <>
-      <header className="flex h-16 items-center justify-between border-b border-border bg-card px-6 shadow-card">
-        {/* Search */}
-        <div className="flex items-center space-x-4 flex-1 max-w-lg">
+      <header className="flex h-14 sm:h-16 items-center justify-between border-b border-border bg-card px-4 sm:px-6 shadow-card gap-4">
+        {/* Search - Hidden on mobile, shown on sm and up */}
+        <div className="hidden sm:flex items-center space-x-4 flex-1 max-w-lg">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Search customers, invoices, products..."
-              className="pl-10 bg-muted/50 border-muted focus:bg-background transition-smooth"
+              className="pl-10 bg-muted/50 border-muted focus:bg-background transition-smooth text-sm"
             />
           </div>
         </div>
 
         {/* Right side */}
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2 sm:space-x-4 ml-auto sm:ml-0">
           {isAuthenticated && (
             <>
-              {/* Notifications */}
-              <Button variant="ghost" size="icon" className="relative">
-                <Bell className="h-5 w-5" />
+              {/* Notifications - Hidden on very small screens */}
+              <Button variant="ghost" size="icon" className="relative hidden sm:flex h-9 w-9 sm:h-10 sm:w-10">
+                <Bell className="h-4 w-4 sm:h-5 sm:w-5" />
                 <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-destructive text-xs text-destructive-foreground flex items-center justify-center">
                   3
                 </span>
@@ -92,14 +92,14 @@ export function Header() {
               {/* User Menu */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="flex items-center space-x-3 px-3">
-                    <Avatar className="h-8 w-8">
-                      <AvatarFallback className="bg-primary text-primary-foreground font-medium">
+                  <Button variant="ghost" className="flex items-center space-x-2 sm:space-x-3 px-2 sm:px-3 h-auto">
+                    <Avatar className="h-7 w-7 sm:h-8 sm:w-8">
+                      <AvatarFallback className="bg-primary text-primary-foreground font-medium text-xs sm:text-sm">
                         {profile?.full_name ? getInitials(profile.full_name) : 'U'}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="flex flex-col items-start">
-                      <span className="text-sm font-medium">
+                    <div className="hidden sm:flex flex-col items-start">
+                      <span className="text-xs sm:text-sm font-medium">
                         {profile?.full_name || user?.email || 'User'}
                       </span>
                       <div className="flex items-center space-x-2">
@@ -107,11 +107,11 @@ export function Header() {
                           {profile?.role ? getRoleDisplay(profile.role) : 'User'}
                         </span>
                         {profile?.role && (
-                          <Badge 
-                            variant="outline" 
+                          <Badge
+                            variant="outline"
                             className={`text-xs px-1 py-0 h-4 ${getRoleColor(profile.role)}`}
                           >
-                            {profile.role.toUpperCase()}
+                            {profile.role.substring(0, 1).toUpperCase()}
                           </Badge>
                         )}
                       </div>

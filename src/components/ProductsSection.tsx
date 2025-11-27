@@ -125,29 +125,29 @@ export default function ProductsSection() {
   };
 
   return (
-    <section className="py-24 bg-gradient-to-b from-white via-blue-50/20 to-white">
+    <section className="py-12 sm:py-24 bg-gradient-to-b from-white via-blue-50/20 to-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
-        <div className="text-center mb-16">
-          <h2 className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent mb-4">
+        <div className="text-center mb-8 sm:mb-16">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent mb-3 sm:mb-4">
             Our Products
           </h2>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+          <p className="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto px-2">
             Comprehensive range of medical supplies and healthcare products for hospitals, clinics, and healthcare facilities
           </p>
         </div>
 
         {/* Products Grid - Show limited number */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {products.slice(0, 6).map((product) => (
             <div
               key={product.id}
-              className="group relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100 overflow-hidden hover:-translate-y-1 hover:border-blue-300"
+              className="group relative bg-white rounded-xl sm:rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100 overflow-hidden hover:-translate-y-1 hover:border-blue-300"
             >
               <div className="absolute inset-0 bg-gradient-to-br from-blue-500/0 to-green-500/0 group-hover:from-blue-500/5 group-hover:to-green-500/5 transition-all duration-300 pointer-events-none"></div>
 
               {/* Product Image */}
-              <div className="relative h-48 overflow-hidden bg-gray-200">
+              <div className="relative h-40 sm:h-48 overflow-hidden bg-gray-200">
                 <img
                   src={product.image}
                   alt={product.name}
@@ -157,14 +157,14 @@ export default function ProductsSection() {
               </div>
 
               {/* Content */}
-              <div className="p-6 relative z-10">
+              <div className="p-4 sm:p-6 relative z-10">
                 {/* Title */}
-                <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-blue-600 transition-colors line-clamp-2">
+                <h3 className="text-base sm:text-xl font-bold text-gray-900 mb-2 sm:mb-3 group-hover:text-blue-600 transition-colors line-clamp-2">
                   {product.name}
                 </h3>
 
                 {/* Description */}
-                <p className="text-gray-600 text-sm mb-6 line-clamp-2">
+                <p className="text-gray-600 text-xs sm:text-sm mb-4 sm:mb-6 line-clamp-2">
                   {product.description}
                 </p>
 
@@ -173,9 +173,9 @@ export default function ProductsSection() {
                   href={generateWhatsAppLink(product)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 w-full bg-gradient-to-r from-blue-500 to-green-500 text-white font-bold py-3 px-4 rounded-lg hover:shadow-lg transition-all duration-300 hover:scale-105"
+                  className="flex items-center justify-center gap-2 w-full bg-gradient-to-r from-blue-500 to-green-500 text-white font-bold py-2 sm:py-3 px-4 rounded-lg hover:shadow-lg transition-all duration-300 hover:scale-105 text-sm sm:text-base"
                 >
-                  <MessageCircle size={18} />
+                  <MessageCircle size={16} className="sm:w-[18px] sm:h-[18px]" />
                   Request Quote
                 </a>
               </div>
@@ -184,11 +184,11 @@ export default function ProductsSection() {
         </div>
 
         {/* View All Button */}
-        <div className="flex justify-center mt-12">
+        <div className="flex justify-center mt-8 sm:mt-12">
           <Link to="/products">
-            <button className="bg-gradient-to-r from-blue-500 to-green-500 text-white font-bold py-4 px-10 rounded-lg hover:shadow-xl transition-all duration-300 hover:scale-105 flex items-center gap-2 text-lg">
+            <button className="bg-gradient-to-r from-blue-500 to-green-500 text-white font-bold py-3 sm:py-4 px-6 sm:px-10 rounded-lg hover:shadow-xl transition-all duration-300 hover:scale-105 flex items-center gap-2 text-base sm:text-lg w-full sm:w-auto">
               View All Products
-              <ArrowRight size={20} />
+              <ArrowRight size={18} className="sm:w-5 sm:h-5" />
             </button>
           </Link>
         </div>
