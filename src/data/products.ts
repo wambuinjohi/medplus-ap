@@ -75,7 +75,7 @@ export const products: Product[] = [
   },
   {
     id: 'catheters-tubes',
-    slug: 'catheters-tubes',
+    slug: 'catheters-and-tubes',
     name: 'Catheters and Tubes',
     image: 'https://images.unsplash.com/photo-1579154204601-01d82b8c1cd7?w=500&h=400&fit=crop',
     description: 'Medical-grade catheters and tubing systems',
@@ -129,7 +129,7 @@ export const products: Product[] = [
   },
   {
     id: 'diapers-sanitary',
-    slug: 'diapers-sanitary',
+    slug: 'diapers-and-sanitary',
     name: 'Diapers and Sanitary',
     image: 'https://images.unsplash.com/photo-1599599810694-b5ac4dd5fcd6?w=500&h=400&fit=crop',
     description: 'Adult and pediatric incontinence products',
@@ -345,7 +345,7 @@ export const products: Product[] = [
   },
   {
     id: 'spirits-detergents',
-    slug: 'spirits-detergents',
+    slug: 'spirits-detergents-and-disinfectants',
     name: 'Spirits, Detergents and Disinfectants',
     image: 'https://images.unsplash.com/photo-1587854692512-df5c9b1df0b5?w=500&h=400&fit=crop',
     description: 'Cleaning and sterilization products',
