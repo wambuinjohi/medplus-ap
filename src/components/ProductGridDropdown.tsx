@@ -90,7 +90,7 @@ const productCategories: ProductCategory[] = [
     name: 'Hospital Instruments',
     icon: '⚕️',
     products: [
-      { name: 'Surgical Scissors', icon: '✂️' },
+      { name: 'Surgical Scissors', icon: '�����️' },
       { name: 'Specula', icon: '⚕️' },
       { name: 'Forceps', icon: '🔧' },
     ]
@@ -157,8 +157,8 @@ export default function ProductGridDropdown() {
   return (
     <>
       {/* Grid Dropdown */}
-      <div className="absolute left-0 mt-2 w-screen max-w-4xl lg:max-w-5xl bg-white shadow-2xl rounded-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 py-6 px-4 sm:py-8 sm:px-8 z-50 border border-gray-100 -translate-x-1/2 left-1/2">
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-6">
+      <div className="absolute top-full mt-2 bg-white shadow-2xl rounded-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 py-6 px-4 sm:py-8 sm:px-8 z-50 border border-gray-100" style={{ left: '0.5rem', right: 'auto', width: 'calc(100vw - 1rem)' }}>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6 w-full">
           {productCategories.map((category) => (
             <button
               key={category.name}
