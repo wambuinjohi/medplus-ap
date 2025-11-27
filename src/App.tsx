@@ -6,6 +6,7 @@ import { enableResizeObserverErrorSuppression } from "@/utils/resizeObserverErro
 import { useEffect } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import Landing from "./pages/Landing";
 import Index from "./pages/Index";
 import Quotations from "./pages/Quotations";
 import Invoices from "./pages/Invoices";
