@@ -137,7 +137,7 @@ const productCategories: ProductCategory[] = [
     products: [
       { name: 'Sterile Syringes', icon: '💉' },
       { name: 'Hypodermic Needles', icon: '💉' },
-      { name: 'Syringe Filters', icon: '🔬' },
+      { name: 'Syringe Filters', icon: '����' },
     ]
   },
   {
@@ -181,12 +181,12 @@ export default function ProductGridDropdown() {
         <>
           {/* Overlay */}
           <div
-            className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40"
+            className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 animate-fadeIn"
             onClick={() => setSelectedCategory(null)}
           />
 
-          {/* Drawer */}
-          <div className="fixed right-0 top-0 h-screen w-full max-w-md bg-white shadow-2xl z-50 overflow-y-auto">
+          {/* Drawer - Positioned relative to viewport but constrained */}
+          <div className="fixed right-0 top-0 h-screen bg-white shadow-2xl z-50 overflow-y-auto w-full md:w-96 animate-slideInRight">
             {/* Header */}
             <div className="sticky top-0 bg-gradient-to-r from-blue-500 to-green-500 text-white p-6 flex items-center justify-between gap-4">
               <div>
