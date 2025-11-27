@@ -1,9 +1,10 @@
 import { useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { BiolegendLogo } from '@/components/ui/biolegend-logo';
+import { PublicHeader } from '@/components/PublicHeader';
 import { useToast } from '@/hooks/use-toast';
 
 export default function Contact() {
