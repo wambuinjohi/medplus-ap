@@ -409,7 +409,7 @@ export default function Landing() {
           <div className="border-t border-gray-700 pt-8">
             <div className="flex flex-col md:flex-row justify-between items-center gap-4">
               <p className="text-gray-400 text-sm">
-                © 2025 Alpha Medical Manufacturers Limited. All rights reserved.
+                © 2025 Medplus Africa. All rights reserved.
               </p>
               <div className="flex gap-6">
                 <a href="#" className="text-gray-400 hover:text-blue-400 transition-colors duration-200">

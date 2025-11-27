@@ -380,7 +380,7 @@ Please provide a quotation for the above product and delivery terms.`;
               </a>
             </div>
             <p className="text-gray-400 text-sm text-center">
-              © 2025 Alpha Medical Manufacturers Limited. All rights reserved.
+              © 2025 Medplus Africa. All rights reserved.
             </p>
           </div>
         </div>

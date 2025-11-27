@@ -259,7 +259,7 @@ export default function Media() {
               </a>
             </div>
             <p className="text-gray-400 text-sm mt-6 text-center">
-              © 2025 Alpha Medical Manufacturers Limited. All rights reserved.
+              © 2025 Medplus Africa. All rights reserved.
             </p>
           </div>
         </div>
