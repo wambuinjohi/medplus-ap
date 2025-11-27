@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { BiolegendLogo } from '@/components/ui/biolegend-logo';
 import HeroSlider from '@/components/HeroSlider';
 import ProductsSection from '@/components/ProductsSection';
+import { PublicFooter } from '@/components/PublicFooter';
 import { getProductBySlug } from '@/data/products';
 import { useSEO } from '@/hooks/useSEO';
 import { generateOrganizationSchema } from '@/utils/seoHelpers';
