@@ -15,15 +15,12 @@ export default function Contact() {
   useSEO(
     {
       title: 'Contact Us',
-      description: 'Get in touch with Medplus Africa for inquiries and support. We provide quality medical supplies and hospital equipment to healthcare facilities across Africa.',
-      keywords: 'contact medplus, medical supplies contact, customer support',
+      description: 'Get in touch with Medplus Africa for inquiries and support. We provide quality medical supplies and hospital equipment to healthcare facilities across Africa. Call +254 741 207 690 or email us directly.',
+      keywords: 'contact medplus, medical supplies contact, customer support, healthcare inquiries, hospital equipment support',
       url: 'https://medplusafrica.com/contact',
+      type: 'website',
     },
-    generateWebPageSchema({
-      title: 'Contact Medplus Africa',
-      description: 'Get in touch with our team for inquiries and support',
-      url: 'https://medplusafrica.com/contact',
-    })
+    generateContactPageSchema()
   );
 
   // Initialize EmailJS
