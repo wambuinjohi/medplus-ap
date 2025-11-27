@@ -23,7 +23,7 @@ export const products: Product[] = [
     id: 'bandages-tapes-dressings',
     slug: 'bandages-tapes-and-dressings',
     name: 'Bandages, Tapes and Dressings',
-    image: 'https://images.unsplash.com/photo-1584308666744-24d5f400f6f0?w=500&h=400&fit=crop',
+    image: 'https://images.pexels.com/photos/5146554/pexels-photo-5146554.jpeg?w=500&h=400&fit=crop',
     description: 'Complete range of medical dressings and bandages for wound care',
     longDescription: 'Our comprehensive collection of bandages, tapes, and dressings includes sterile and non-sterile options suitable for various wound care applications. All products meet international medical standards and are suitable for hospitals, clinics, and healthcare facilities.',
     pricing: {
@@ -50,7 +50,7 @@ export const products: Product[] = [
     id: 'bottles-containers',
     slug: 'bottles-and-containers',
     name: 'Bottles and Containers',
-    image: 'https://images.unsplash.com/photo-1587854692152-cbe660dbde36?w=500&h=400&fit=crop',
+    image: 'https://images.pexels.com/photos/5921726/pexels-photo-5921726.jpeg?w=500&h=400&fit=crop',
     description: 'Sterile containers for specimen collection and storage',
     longDescription: 'Medical-grade bottles and containers for specimen collection, sample storage, and laboratory use. Our containers are manufactured with food-grade plastics and meet all regulatory requirements for medical use.',
     pricing: {
@@ -77,7 +77,7 @@ export const products: Product[] = [
     id: 'catheters-tubes',
     slug: 'catheters-and-tubes',
     name: 'Catheters and Tubes',
-    image: 'https://images.unsplash.com/photo-1579154204601-01d82b8c1cd7?w=500&h=400&fit=crop',
+    image: 'https://images.pexels.com/photos/8442032/pexels-photo-8442032.jpeg?w=500&h=400&fit=crop',
     description: 'Medical-grade catheters and tubing systems',
     longDescription: 'Complete range of catheters and tubes including urinary, nasogastric, endotracheal, and feeding tubes. All products are manufactured from medical-grade materials and meet international safety standards.',
     pricing: {
@@ -104,7 +104,7 @@ export const products: Product[] = [
     id: 'cotton-wool',
     slug: 'cotton-wool',
     name: 'Cotton Wool',
-    image: 'https://images.unsplash.com/photo-1587854692512-df5c9b1df0b5?w=500&h=400&fit=crop',
+    image: 'https://images.pexels.com/photos/6129902/pexels-photo-6129902.jpeg?w=500&h=400&fit=crop',
     description: 'High-quality absorbent cotton products',
     longDescription: 'Pure, high-quality cotton wool suitable for medical applications, wound care, and general use in healthcare facilities. Our cotton wool is naturally absorbent and gentle on skin.',
     pricing: {
@@ -131,7 +131,7 @@ export const products: Product[] = [
     id: 'diapers-sanitary',
     slug: 'diapers-and-sanitary',
     name: 'Diapers and Sanitary',
-    image: 'https://images.unsplash.com/photo-1599599810694-b5ac4dd5fcd6?w=500&h=400&fit=crop',
+    image: 'https://images.pexels.com/photos/7692272/pexels-photo-7692272.jpeg?w=500&h=400&fit=crop',
     description: 'Adult and pediatric incontinence products',
     longDescription: 'Comprehensive range of incontinence management products for both adults and pediatric patients. All products feature advanced moisture-absorbing technology and skin-friendly materials.',
     pricing: {
@@ -158,7 +158,7 @@ export const products: Product[] = [
     id: 'gloves',
     slug: 'gloves',
     name: 'Gloves',
-    image: 'https://images.unsplash.com/photo-1584308666744-24d5f400f6f0?w=500&h=400&fit=crop',
+    image: 'https://images.pexels.com/photos/4021267/pexels-photo-4021267.jpeg?w=500&h=400&fit=crop',
     description: 'Medical examination and surgical gloves',
     longDescription: 'High-quality medical gloves for examination and surgical use. Available in latex, nitrile, and latex-free options. All gloves are sterile, pre-powdered or powder-free, and meet international medical standards.',
     pricing: {
@@ -185,7 +185,7 @@ export const products: Product[] = [
     id: 'hospital-equipments',
     slug: 'hospital-equipments',
     name: 'Hospital Equipments',
-    image: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=500&h=400&fit=crop',
+    image: 'https://images.pexels.com/photos/3844581/pexels-photo-3844581.jpeg?w=500&h=400&fit=crop',
     description: 'Advanced medical equipment and monitors',
     longDescription: 'State-of-the-art hospital equipment including vital sign monitors, oxygen concentrators, suction machines, and diagnostic equipment. All equipment is certified, fully functional, and backed by comprehensive warranty.',
     pricing: {
@@ -212,7 +212,7 @@ export const products: Product[] = [
     id: 'hospital-furniture',
     slug: 'hospital-furniture',
     name: 'Hospital Furniture',
-    image: 'https://images.unsplash.com/photo-1587854692152-cbe660dbde36?w=500&h=400&fit=crop',
+    image: 'https://images.pexels.com/photos/236380/pexels-photo-236380.jpeg?w=500&h=400&fit=crop',
     description: 'Hospital beds, trolleys, and medical furniture',
     longDescription: 'Durable and comfortable hospital furniture including adjustable beds, trolleys, examination tables, and storage solutions. All furniture is designed for easy cleaning and long-term durability.',
     pricing: {
@@ -239,7 +239,7 @@ export const products: Product[] = [
     id: 'hospital-instruments',
     slug: 'hospital-instruments',
     name: 'Hospital Instruments',
-    image: 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=500&h=400&fit=crop',
+    image: 'https://images.pexels.com/photos/4269355/pexels-photo-4269355.jpeg?w=500&h=400&fit=crop',
     description: 'Surgical and diagnostic instruments',
     longDescription: 'Comprehensive range of surgical and diagnostic instruments manufactured from high-quality stainless steel. All instruments are precision-engineered and suitable for surgical, diagnostic, and clinical applications.',
     pricing: {
@@ -266,7 +266,7 @@ export const products: Product[] = [
     id: 'hospital-linen',
     slug: 'hospital-linen',
     name: 'Hospital Linen',
-    image: 'https://images.unsplash.com/photo-1587854692512-df5c9b1df0b5?w=500&h=400&fit=crop',
+    image: 'https://images.pexels.com/photos/4108807/pexels-photo-4108807.jpeg?w=500&h=400&fit=crop',
     description: 'Medical-grade sheets, pillows, and linens',
     longDescription: 'Medical-grade bed linens, pillows, and blankets designed for hospital and healthcare facility use. Our linens are durable, easy to clean, and maintain hygiene standards.',
     pricing: {
@@ -293,7 +293,7 @@ export const products: Product[] = [
     id: 'infection-control',
     slug: 'infection-control',
     name: 'Infection Control',
-    image: 'https://images.unsplash.com/photo-1584308666744-24d5f400f6f0?w=500&h=400&fit=crop',
+    image: 'https://images.pexels.com/photos/5128226/pexels-photo-5128226.jpeg?w=500&h=400&fit=crop',
     description: 'Disinfectants, sanitizers, and safety equipment',
     longDescription: 'Complete infection control solutions including hospital-grade disinfectants, hand sanitizers, and safety equipment. All products are EPA-approved and effective against bacteria, viruses, and fungi.',
     pricing: {
@@ -320,7 +320,7 @@ export const products: Product[] = [
     id: 'ppe',
     slug: 'ppe',
     name: 'PPE',
-    image: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=500&h=400&fit=crop',
+    image: 'https://images.pexels.com/photos/3951356/pexels-photo-3951356.jpeg?w=500&h=400&fit=crop',
     description: 'Personal protective equipment and safety gear',
     longDescription: 'Comprehensive personal protective equipment (PPE) including face masks, gowns, face shields, and protective aprons. All products meet international safety standards and provide excellent protection.',
     pricing: {
@@ -347,7 +347,7 @@ export const products: Product[] = [
     id: 'spirits-detergents',
     slug: 'spirits-detergents-and-disinfectants',
     name: 'Spirits, Detergents and Disinfectants',
-    image: 'https://images.unsplash.com/photo-1587854692512-df5c9b1df0b5?w=500&h=400&fit=crop',
+    image: 'https://images.pexels.com/photos/4099260/pexels-photo-4099260.jpeg?w=500&h=400&fit=crop',
     description: 'Cleaning and sterilization products',
     longDescription: 'Professional-grade cleaning and sterilization products for hospitals and healthcare facilities. Our range includes isopropyl alcohol, surgical spirits, and hospital-grade detergents.',
     pricing: {
@@ -374,7 +374,7 @@ export const products: Product[] = [
     id: 'syringes-needles',
     slug: 'syringes-and-needles',
     name: 'Syringes and Needles',
-    image: 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=500&h=400&fit=crop',
+    image: 'https://images.pexels.com/photos/7723193/pexels-photo-7723193.jpeg?w=500&h=400&fit=crop',
     description: 'Sterile syringes and hypodermic needles',
     longDescription: 'Sterile, disposable syringes and needles for medical use. All products are individually packaged, pre-sterilized, and meet international medical standards. Available in various sizes and gauges.',
     pricing: {
@@ -401,7 +401,7 @@ export const products: Product[] = [
     id: 'others',
     slug: 'others',
     name: 'Others',
-    image: 'https://images.unsplash.com/photo-1579154204601-01d82b8c1cd7?w=500&h=400&fit=crop',
+    image: 'https://images.pexels.com/photos/6129902/pexels-photo-6129902.jpeg?w=500&h=400&fit=crop',
     description: 'Additional medical supplies and accessories',
     longDescription: 'Miscellaneous medical supplies and healthcare accessories including thermometers, blood pressure monitors, stethoscopes, and other diagnostic aids. All products are high-quality and reliable.',
     pricing: {

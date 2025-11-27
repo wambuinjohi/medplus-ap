@@ -10,66 +10,64 @@ interface Slide {
 
 export default function HeroSlider() {
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [fadeIn, setFadeIn] = useState(true);
 
   const slides: Slide[] = [
     {
       id: 1,
-      image: 'https://images.pexels.com/photos/7469494/pexels-photo-7469494.jpeg?w=1200&h=800&fit=crop',
-      alt: 'Healthcare worker preparing medical tools'
+      image: 'https://images.pexels.com/photos/7722677/pexels-photo-7722677.jpeg?w=1200&h=800&fit=crop',
+      alt: 'Medical supplies including gauze, scissors, and alcohol prep pads'
     },
     {
       id: 2,
-      image: 'https://images.pexels.com/photos/4021775/pexels-photo-4021775.jpeg?w=1200&h=800&fit=crop',
-      alt: 'Healthcare professional with stethoscope'
+      image: 'https://images.pexels.com/photos/20041997/pexels-photo-20041997.jpeg?w=1200&h=800&fit=crop',
+      alt: 'Modern hospital examination room with medical equipment'
+    },
+    {
+      id: 3,
+      image: 'https://images.pexels.com/photos/6129902/pexels-photo-6129902.jpeg?w=1200&h=800&fit=crop',
+      alt: 'Healthcare supplies cotton balls for medical applications'
     }
   ];
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setFadeIn(false);
-      setTimeout(() => {
-        setCurrentSlide((prev) => (prev + 1) % slides.length);
-        setFadeIn(true);
-      }, 500);
+      setCurrentSlide((prev) => (prev + 1) % slides.length);
     }, 6000);
 
     return () => clearInterval(interval);
   }, [slides.length]);
 
   const goToSlide = (index: number) => {
-    setFadeIn(false);
-    setTimeout(() => {
-      setCurrentSlide(index);
-      setFadeIn(true);
-    }, 500);
+    setCurrentSlide(index);
   };
 
   const nextSlide = () => {
-    goToSlide((currentSlide + 1) % slides.length);
+    setCurrentSlide((currentSlide + 1) % slides.length);
   };
 
   const prevSlide = () => {
-    goToSlide((currentSlide - 1 + slides.length) % slides.length);
+    setCurrentSlide((currentSlide - 1 + slides.length) % slides.length);
   };
 
   return (
     <section className="relative h-screen bg-white overflow-hidden">
       {/* Slider Background */}
-      <div className="absolute inset-0">
-        <div
-          className={`absolute inset-0 transition-opacity duration-700 ${
-            fadeIn ? 'opacity-100' : 'opacity-0'
-          }`}
-          style={{
-            backgroundImage: `url(${slides[currentSlide].image})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center'
-          }}
-        >
-          {/* Gradient overlay - blue to green */}
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-green-500 opacity-40"></div>
-        </div>
+      <div className="absolute inset-0 overflow-hidden">
+        {slides.map((slide, index) => (
+          <div
+            key={slide.id}
+            className="absolute inset-0 transition-transform duration-1200 ease-out"
+            style={{
+              backgroundImage: `url(${slide.image})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              transform: `translateX(${(index - currentSlide) * 100}%)`
+            }}
+          >
+            {/* Gradient overlay - blue to green */}
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-green-500 opacity-40"></div>
+          </div>
+        ))}
       </div>
 
       {/* Content Container */}
@@ -128,21 +126,25 @@ export default function HeroSlider() {
 
             {/* Right: Image Section */}
             <div className="hidden md:flex justify-center items-center h-full">
-              <div className="relative w-full max-w-md h-96">
+              <div className="relative w-full max-w-md h-96 overflow-hidden rounded-2xl">
                 {/* Main Image */}
-                <div
-                  className={`absolute inset-0 transition-opacity duration-700 rounded-2xl overflow-hidden shadow-2xl ${
-                    fadeIn ? 'opacity-100' : 'opacity-0'
-                  }`}
-                >
-                  <img
-                    src={slides[currentSlide].image}
-                    alt={slides[currentSlide].alt}
-                    className="w-full h-full object-cover"
-                  />
-                  {/* Subtle overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
-                </div>
+                {slides.map((slide, index) => (
+                  <div
+                    key={slide.id}
+                    className="absolute inset-0 transition-transform duration-1200 ease-out rounded-2xl overflow-hidden shadow-2xl"
+                    style={{
+                      transform: `translateX(${(index - currentSlide) * 100}%)`
+                    }}
+                  >
+                    <img
+                      src={slide.image}
+                      alt={slide.alt}
+                      className="w-full h-full object-cover"
+                    />
+                    {/* Subtle overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                  </div>
+                ))}
 
                 {/* Navigation Arrows */}
                 <div className="absolute inset-0 flex items-center justify-between px-4">

@@ -254,7 +254,13 @@ Please provide a quotation for the above product and delivery terms.`;
           <h2 className="text-3xl font-bold text-gray-900 mb-2 text-center">Request a Quotation</h2>
           <p className="text-gray-600 text-center mb-12">Fill in the details below and we'll send you a quotation via WhatsApp</p>
 
-          <form className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 space-y-6">
+          <form className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 space-y-6 scroll-smooth" style={{ scrollBehavior: 'auto' }}>
+            {/* Category Name Display */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <p className="text-sm text-blue-600 font-semibold">Category</p>
+              <p className="text-lg text-blue-900 font-bold">{product.name}</p>
+            </div>
+
             <div className="grid md:grid-cols-2 gap-6">
               {/* Quantity */}
               <div>
@@ -267,6 +273,7 @@ Please provide a quotation for the above product and delivery terms.`;
                   type="number"
                   value={quotationForm.quantity}
                   onChange={handleFormChange}
+                  autoComplete="off"
                   placeholder="e.g., 50"
                   required
                   className="mt-1"
@@ -283,6 +290,7 @@ Please provide a quotation for the above product and delivery terms.`;
                   name="companyName"
                   value={quotationForm.companyName}
                   onChange={handleFormChange}
+                  autoComplete="organization"
                   placeholder="Your organization name"
                   required
                   className="mt-1"
@@ -299,6 +307,7 @@ Please provide a quotation for the above product and delivery terms.`;
                   name="contactPerson"
                   value={quotationForm.contactPerson}
                   onChange={handleFormChange}
+                  autoComplete="name"
                   placeholder="Your full name"
                   className="mt-1"
                 />
@@ -315,6 +324,7 @@ Please provide a quotation for the above product and delivery terms.`;
                   type="email"
                   value={quotationForm.email}
                   onChange={handleFormChange}
+                  autoComplete="email"
                   placeholder="your.email@example.com"
                   required
                   className="mt-1"
@@ -332,6 +342,7 @@ Please provide a quotation for the above product and delivery terms.`;
                   type="tel"
                   value={quotationForm.phone}
                   onChange={handleFormChange}
+                  autoComplete="tel"
                   placeholder="+254 XXX XXX XXX"
                   required
                   className="mt-1"
@@ -349,6 +360,7 @@ Please provide a quotation for the above product and delivery terms.`;
                 name="additionalNotes"
                 value={quotationForm.additionalNotes}
                 onChange={handleFormChange}
+                autoComplete="off"
                 rows={4}
                 placeholder="Any special requirements or additional information..."
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary mt-1"

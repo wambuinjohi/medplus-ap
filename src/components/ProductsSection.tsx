@@ -16,21 +16,21 @@ export default function ProductsSection() {
       name: 'Bandages, Tapes and Dressings',
       slug: 'bandages-tapes-and-dressings',
       description: 'High-quality bandages, tapes, and medical dressings for wound care and protection.',
-      image: 'https://images.pexels.com/photos-7469494/pexels-photo-7469494.jpeg?w=500&h=400&fit=crop'
+      image: 'https://images.pexels.com/photos/5146554/pexels-photo-5146554.jpeg?w=500&h=400&fit=crop'
     },
     {
       id: '2',
       name: 'Bottles and Containers',
       slug: 'bottles-and-containers',
       description: 'Medical-grade bottles and containers for safe storage and transportation.',
-      image: 'https://images.pexels.com/photos/9259963/pexels-photo-9259963.jpeg?w=500&h=400&fit=crop'
+      image: 'https://images.pexels.com/photos/5921726/pexels-photo-5921726.jpeg?w=500&h=400&fit=crop'
     },
     {
       id: '3',
       name: 'Catheters and Tubes',
       slug: 'catheters-and-tubes',
       description: 'Premium catheters and medical tubing for various clinical procedures.',
-      image: 'https://images.pexels.com/photos/4021775/pexels-photo-4021775.jpeg?w=500&h=400&fit=crop'
+      image: 'https://images.pexels.com/photos/8442032/pexels-photo-8442032.jpeg?w=500&h=400&fit=crop'
     },
     {
       id: '4',
@@ -44,21 +44,21 @@ export default function ProductsSection() {
       name: 'Diapers and Sanitary',
       slug: 'diapers-and-sanitary',
       description: 'Medical-grade incontinence and sanitary supplies for healthcare facilities.',
-      image: 'https://images.pexels.com/photos/7469494/pexels-photo-7469494.jpeg?w=500&h=400&fit=crop'
+      image: 'https://images.pexels.com/photos/7692192/pexels-photo-7692192.jpeg?w=500&h=400&fit=crop'
     },
     {
       id: '6',
       name: 'Gloves',
       slug: 'gloves',
       description: 'Protective medical gloves in latex, nitrile, and vinyl options.',
-      image: 'https://images.pexels.com/photos/7579833/pexels-photo-7579833.jpeg?w=500&h=400&fit=crop'
+      image: 'https://images.pexels.com/photos/6627783/pexels-photo-6627783.jpeg?w=500&h=400&fit=crop'
     },
     {
       id: '7',
       name: 'Hospital Equipments',
       slug: 'hospital-equipments',
       description: 'Essential hospital equipment including monitors and critical care devices.',
-      image: 'https://images.pexels.com/photos/7088524/pexels-photo-7088524.jpeg?w=500&h=400&fit=crop'
+      image: 'https://images.pexels.com/photos/3844581/pexels-photo-3844581.jpeg?w=500&h=400&fit=crop'
     },
     {
       id: '8',
@@ -72,28 +72,28 @@ export default function ProductsSection() {
       name: 'Hospital Instruments',
       slug: 'hospital-instruments',
       description: 'Surgical and diagnostic instruments including precision medical tools.',
-      image: 'https://images.pexels.com/photos/6627704/pexels-photo-6627704.jpeg?w=500&h=400&fit=crop'
+      image: 'https://images.pexels.com/photos/4269355/pexels-photo-4269355.jpeg?w=500&h=400&fit=crop'
     },
     {
       id: '10',
       name: 'Hospital Linen',
       slug: 'hospital-linen',
       description: 'Medical-grade linens including sheets, pillowcases, and gowns.',
-      image: 'https://images.pexels.com/photos/15792555/pexels-photo-15792555.jpeg?w=500&h=400&fit=crop'
+      image: 'https://images.pexels.com/photos/5049242/pexels-photo-5049242.jpeg?w=500&h=400&fit=crop'
     },
     {
       id: '11',
       name: 'Infection Control',
       slug: 'infection-control',
       description: 'Comprehensive infection prevention products and sterilization equipment.',
-      image: 'https://images.pexels.com/photos/5217889/pexels-photo-5217889.jpeg?w=500&h=400&fit=crop'
+      image: 'https://images.pexels.com/photos/4099467/pexels-photo-4099467.jpeg?w=500&h=400&fit=crop'
     },
     {
       id: '12',
       name: 'PPE',
       slug: 'ppe',
       description: 'Personal Protective Equipment including gowns, masks, and face shields.',
-      image: 'https://images.pexels.com/photos/8486925/pexels-photo-8486925.jpeg?w=500&h=400&fit=crop'
+      image: 'https://images.pexels.com/photos/9574531/pexels-photo-9574531.jpeg?w=500&h=400&fit=crop'
     },
     {
       id: '13',
@@ -114,7 +114,7 @@ export default function ProductsSection() {
       name: 'Others',
       slug: 'others',
       description: 'Additional medical supplies and healthcare products.',
-      image: 'https://images.pexels.com/photos/7469494/pexels-photo-7469494.jpeg?w=500&h=400&fit=crop'
+      image: 'https://images.pexels.com/photos/6129902/pexels-photo-6129902.jpeg?w=500&h=400&fit=crop'
     }
   ];
 
