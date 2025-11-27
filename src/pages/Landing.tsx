@@ -38,19 +38,19 @@ export default function Landing() {
   ];
 
   const partners = [
-    'International Rescue Committee',
-    'Bomu Hospital',
-    'FAO',
-    'Gertrudes Childrens Hospital',
-    'JHPIEGO',
-    'KEMSA',
-    'Kenya Ports Authority',
-    'Kenya Red Cross Society',
-    'MEDS',
-    'Metro',
-    'Stiegelmeyer Group',
-    'PSI',
-    'UNHCR',
+    { name: 'International Rescue Committee', icon: '🌍', type: 'NGO' },
+    { name: 'Bomu Hospital', icon: '🏥', type: 'Hospital' },
+    { name: 'FAO', icon: '🌱', type: 'Government' },
+    { name: 'Gertrudes Childrens Hospital', icon: '👶', type: 'Hospital' },
+    { name: 'JHPIEGO', icon: '💊', type: 'NGO' },
+    { name: 'KEMSA', icon: '📦', type: 'Government' },
+    { name: 'Kenya Ports Authority', icon: '🚢', type: 'Government' },
+    { name: 'Kenya Red Cross Society', icon: '❤️', type: 'NGO' },
+    { name: 'MEDS', icon: '🏢', type: 'Organization' },
+    { name: 'Metro', icon: '🏪', type: 'Organization' },
+    { name: 'Stiegelmeyer Group', icon: '🛏️', type: 'Corporate' },
+    { name: 'PSI', icon: '⚕️', type: 'NGO' },
+    { name: 'UNHCR', icon: '🤝', type: 'NGO' },
   ];
 
   const productCategories = [
