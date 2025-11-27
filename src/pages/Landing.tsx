@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Menu, X, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { BiolegendLogo } from '@/components/ui/biolegend-logo';
+import HeroSlider from '@/components/HeroSlider';
 
 export default function Landing() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -180,28 +181,8 @@ export default function Landing() {
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="bg-gradient-to-r from-primary/90 to-primary text-white py-24">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div className="space-y-6">
-              <h1 className="text-5xl md:text-6xl font-bold">SINCE 1989</h1>
-              <p className="text-xl md:text-2xl text-white/90">
-                World Class Critical Care, Hospital Consumables and Furniture Distributors.
-              </p>
-              <p className="text-white/80 text-lg">
-                Bettering lives together.
-              </p>
-            </div>
-            <div className="hidden md:flex justify-center items-center">
-              <div className="text-center">
-                <div className="text-7xl font-bold text-white/20">25+</div>
-                <p className="text-xl text-white/80">Years of Excellence</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* Hero Section with Slider */}
+      <HeroSlider />
 
       {/* Our Goals Section */}
       <section className="py-20 bg-gray-50">
