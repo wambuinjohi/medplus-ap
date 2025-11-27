@@ -155,17 +155,10 @@ Please provide a quotation for the above product and delivery terms.`;
       </header>
 
       {/* Breadcrumb */}
-      <div className="bg-gray-50 border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <nav className="text-sm text-gray-600 flex items-center gap-2">
-            <Link to="/" className="hover:text-primary transition-colors">Home</Link>
-            <span>/</span>
-            <Link to="/products" className="hover:text-primary transition-colors">Products</Link>
-            <span>/</span>
-            <span className="text-gray-900 font-medium">{product.name}</span>
-          </nav>
-        </div>
-      </div>
+      <BreadcrumbNav items={[
+        { label: 'Products', href: '/products' },
+        { label: product.name, href: `/products/${productSlug}` }
+      ]} />
 
       {/* Product Details */}
       <section className="py-12">
