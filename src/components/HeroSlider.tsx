@@ -10,7 +10,6 @@ interface Slide {
 
 export default function HeroSlider() {
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [fadeIn, setFadeIn] = useState(true);
 
   const slides: Slide[] = [
     {
