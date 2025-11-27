@@ -186,8 +186,8 @@ export default function Contact() {
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">Sales & Inquiries</h3>
                   <p className="text-gray-600 mb-1">
-                    <a href="mailto:sales@alphamedicalafrica.com" className="text-primary hover:underline">
-                      sales@alphamedicalafrica.com
+                    <a href="mailto:sales@medplusafrica.com" className="text-primary hover:underline">
+                      sales@medplusafrica.com
                     </a>
                   </p>
                   <p className="text-gray-600">
@@ -200,8 +200,8 @@ export default function Contact() {
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">General Inquiries</h3>
                   <p className="text-gray-600 mb-1">
-                    <a href="mailto:admin@alphamedicalafrica.com" className="text-primary hover:underline">
-                      admin@alphamedicalafrica.com
+                    <a href="mailto:info@medplusafrica.com" className="text-primary hover:underline">
+                      info@medplusafrica.com
                     </a>
                   </p>
                   <p className="text-gray-600">
