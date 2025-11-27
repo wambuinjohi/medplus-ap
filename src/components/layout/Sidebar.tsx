@@ -33,61 +33,61 @@ const sidebarItems: SidebarItem[] = [
   {
     title: 'Dashboard',
     icon: Home,
-    href: '/'
+    href: '/app'
   },
   {
     title: 'Sales',
     icon: Receipt,
     children: [
-      { title: 'Quotations', icon: FileText, href: '/quotations' },
-      { title: 'Proforma Invoices', icon: FileCheck, href: '/proforma' },
-      { title: 'Invoices', icon: Receipt, href: '/invoices' },
-      { title: 'Credit Notes', icon: RotateCcw, href: '/credit-notes' }
+      { title: 'Quotations', icon: FileText, href: '/app/quotations' },
+      { title: 'Proforma Invoices', icon: FileCheck, href: '/app/proforma' },
+      { title: 'Invoices', icon: Receipt, href: '/app/invoices' },
+      { title: 'Credit Notes', icon: RotateCcw, href: '/app/credit-notes' }
     ]
   },
   {
     title: 'Payments',
     icon: DollarSign,
     children: [
-      { title: 'Payments', icon: DollarSign, href: '/payments' },
-      { title: 'Remittance Advice', icon: CreditCard, href: '/remittance' }
+      { title: 'Payments', icon: DollarSign, href: '/app/payments' },
+      { title: 'Remittance Advice', icon: CreditCard, href: '/app/remittance' }
     ]
   },
   {
     title: 'Inventory',
     icon: Package,
-    href: '/inventory'
+    href: '/app/inventory'
   },
   {
     title: 'Delivery Notes',
     icon: Truck,
-    href: '/delivery-notes'
+    href: '/app/delivery-notes'
   },
   {
     title: 'Customers',
     icon: Users,
-    href: '/customers'
+    href: '/app/customers'
   },
   {
     title: 'Purchase Orders',
     icon: ShoppingCart,
-    href: '/lpos'
+    href: '/app/lpos'
   },
   {
     title: 'Reports',
     icon: BarChart3,
     children: [
-      { title: 'Sales Reports', icon: BarChart3, href: '/reports/sales' },
-      { title: 'Inventory Reports', icon: Package, href: '/reports/inventory' },
-      { title: 'Customer Statements', icon: FileSpreadsheet, href: '/reports/statements' }
+      { title: 'Sales Reports', icon: BarChart3, href: '/app/reports/sales' },
+      { title: 'Inventory Reports', icon: Package, href: '/app/reports/inventory' },
+      { title: 'Customer Statements', icon: FileSpreadsheet, href: '/app/reports/statements' }
     ]
   },
   {
     title: 'Settings',
     icon: Settings,
     children: [
-      { title: 'Company Settings', icon: Building2, href: '/settings/company' },
-      { title: 'User Management', icon: Users, href: '/settings/users' },
+      { title: 'Company Settings', icon: Building2, href: '/app/settings/company' },
+      { title: 'User Management', icon: Users, href: '/app/settings/users' },
       { title: 'Database Setup', icon: Package, href: '/database-setup' }
     ]
   }
