@@ -111,19 +111,19 @@ export function EnhancedLogin() {
             </div>
           </CardHeader>
 
-          <CardContent className="space-y-6 pt-8">
+          <CardContent className="space-y-4 sm:space-y-6 pt-6 sm:pt-8 p-6 sm:p-8">
             <Tabs value={'login'}>
               <TabsList className="w-full bg-gradient-to-r from-blue-100 to-green-100">
                 <TabsTrigger
                   value="login"
-                  className="flex-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-green-500 data-[state=active]:text-white transition-all duration-300"
+                  className="flex-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-green-500 data-[state=active]:text-white transition-all duration-300 text-sm sm:text-base"
                 >
                   🚀 Sign In
                 </TabsTrigger>
               </TabsList>
 
               <TabsContent value="login">
-                <form onSubmit={handleSubmit} className="space-y-5 mt-6">
+                <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5 mt-4 sm:mt-6">
                   {/* Email Field */}
                   <div className="space-y-2 group">
                     <Label htmlFor="email" className="text-gray-700 font-semibold flex items-center gap-2">
