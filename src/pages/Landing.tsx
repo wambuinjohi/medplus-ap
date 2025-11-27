@@ -245,7 +245,7 @@ export default function Landing() {
       </section>
 
       {/* Our Partners Section */}
-      <section className="py-24 bg-gradient-to-b from-blue-50/30 to-white">
+      <section className="py-24 bg-gradient-to-b from-white to-blue-50/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent mb-4">Our Partners</h2>
@@ -256,11 +256,32 @@ export default function Landing() {
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
             {partners.map((partner) => (
               <div
-                key={partner}
-                className="group relative bg-white rounded-xl p-6 flex items-center justify-center h-32 shadow-md hover:shadow-xl transition-all duration-300 border border-gray-200 overflow-hidden hover:-translate-y-1 hover:border-blue-300"
+                key={partner.name}
+                className="group relative bg-white rounded-2xl p-6 flex flex-col items-center justify-center h-40 shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100 overflow-hidden hover:-translate-y-2 hover:border-blue-400 cursor-pointer"
               >
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/0 to-green-500/0 group-hover:from-blue-500/5 group-hover:to-green-500/5 transition-all duration-300"></div>
-                <p className="text-center text-sm text-gray-700 font-semibold leading-tight relative z-10">{partner}</p>
+                {/* Gradient background on hover */}
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/0 via-transparent to-green-500/0 group-hover:from-blue-500/10 group-hover:to-green-500/10 transition-all duration-300"></div>
+
+                {/* Gradient border accent */}
+                <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-500 to-green-500 opacity-0 group-hover:opacity-20 pointer-events-none transition-opacity duration-300"></div>
+
+                {/* Content */}
+                <div className="relative z-10 flex flex-col items-center justify-center text-center">
+                  {/* Icon */}
+                  <div className="text-4xl mb-3 group-hover:scale-125 transition-transform duration-300">
+                    {partner.icon}
+                  </div>
+
+                  {/* Partner Name */}
+                  <p className="text-sm font-bold text-gray-900 leading-tight mb-2">
+                    {partner.name}
+                  </p>
+
+                  {/* Partner Type Badge */}
+                  <span className="inline-block text-xs font-semibold px-2 py-1 rounded-full bg-gradient-to-r from-blue-100 to-green-100 text-gray-700 group-hover:from-blue-200 group-hover:to-green-200 transition-colors duration-300">
+                    {partner.type}
+                  </span>
+                </div>
               </div>
             ))}
           </div>
