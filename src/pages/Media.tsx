@@ -152,9 +152,9 @@ export default function Media() {
                     {item.title}
                   </h3>
                   <p className="text-gray-600 mb-4">{item.excerpt}</p>
-                  <a href="#" className="text-primary font-medium hover:text-primary/80 transition">
+                  <Link to="/media" className="text-primary font-medium hover:text-primary/80 transition">
                     Read more →
-                  </a>
+                  </Link>
                 </div>
               </article>
             ))}

@@ -16,105 +16,105 @@ export default function ProductsSection() {
       name: 'Bandages, Tapes and Dressings',
       slug: 'bandages-tapes-and-dressings',
       description: 'High-quality bandages, tapes, and medical dressings for wound care and protection.',
-      image: 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=500&h=400&fit=crop'
+      image: 'https://images.pexels.com/photos-7469494/pexels-photo-7469494.jpeg?w=500&h=400&fit=crop'
     },
     {
       id: '2',
       name: 'Bottles and Containers',
       slug: 'bottles-and-containers',
       description: 'Medical-grade bottles and containers for safe storage and transportation.',
-      image: 'https://images.unsplash.com/photo-1584308666744-24d5f400f6f6?w=500&h=400&fit=crop'
+      image: 'https://images.pexels.com/photos/9259963/pexels-photo-9259963.jpeg?w=500&h=400&fit=crop'
     },
     {
       id: '3',
       name: 'Catheters and Tubes',
       slug: 'catheters-and-tubes',
       description: 'Premium catheters and medical tubing for various clinical procedures.',
-      image: 'https://images.unsplash.com/photo-1579154204601-01d82b06ae57?w=500&h=400&fit=crop'
+      image: 'https://images.pexels.com/photos/4021775/pexels-photo-4021775.jpeg?w=500&h=400&fit=crop'
     },
     {
       id: '4',
       name: 'Cotton Wool',
       slug: 'cotton-wool',
       description: 'Pure cotton wool products for medical and healthcare applications.',
-      image: 'https://images.unsplash.com/photo-1584308666744-24d5f400f6f6?w=500&h=400&fit=crop'
+      image: 'https://images.pexels.com/photos/6129902/pexels-photo-6129902.jpeg?w=500&h=400&fit=crop'
     },
     {
       id: '5',
       name: 'Diapers and Sanitary',
       slug: 'diapers-and-sanitary',
       description: 'Medical-grade incontinence and sanitary supplies for healthcare facilities.',
-      image: 'https://images.unsplash.com/photo-1631217314830-68f7d8fb3d7c?w=500&h=400&fit=crop'
+      image: 'https://images.pexels.com/photos/7469494/pexels-photo-7469494.jpeg?w=500&h=400&fit=crop'
     },
     {
       id: '6',
       name: 'Gloves',
       slug: 'gloves',
       description: 'Protective medical gloves in latex, nitrile, and vinyl options.',
-      image: 'https://images.unsplash.com/photo-1584308666744-24d5f400f6f6?w=500&h=400&fit=crop'
+      image: 'https://images.pexels.com/photos/7579833/pexels-photo-7579833.jpeg?w=500&h=400&fit=crop'
     },
     {
       id: '7',
       name: 'Hospital Equipments',
       slug: 'hospital-equipments',
       description: 'Essential hospital equipment including monitors and critical care devices.',
-      image: 'https://images.unsplash.com/photo-1576091160668-112b348f1a20?w=500&h=400&fit=crop'
+      image: 'https://images.pexels.com/photos/7088524/pexels-photo-7088524.jpeg?w=500&h=400&fit=crop'
     },
     {
       id: '8',
       name: 'Hospital Furniture',
       slug: 'hospital-furniture',
       description: 'Professional hospital beds, patient chairs, and examination tables.',
-      image: 'https://images.unsplash.com/photo-1631217314830-68f7d8fb3d7c?w=500&h=400&fit=crop'
+      image: 'https://images.pexels.com/photos/236380/pexels-photo-236380.jpeg?w=500&h=400&fit=crop'
     },
     {
       id: '9',
       name: 'Hospital Instruments',
       slug: 'hospital-instruments',
       description: 'Surgical and diagnostic instruments including precision medical tools.',
-      image: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=500&h=400&fit=crop'
+      image: 'https://images.pexels.com/photos/6627704/pexels-photo-6627704.jpeg?w=500&h=400&fit=crop'
     },
     {
       id: '10',
       name: 'Hospital Linen',
       slug: 'hospital-linen',
       description: 'Medical-grade linens including sheets, pillowcases, and gowns.',
-      image: 'https://images.unsplash.com/photo-1584308666744-24d5f400f6f6?w=500&h=400&fit=crop'
+      image: 'https://images.pexels.com/photos/15792555/pexels-photo-15792555.jpeg?w=500&h=400&fit=crop'
     },
     {
       id: '11',
       name: 'Infection Control',
       slug: 'infection-control',
       description: 'Comprehensive infection prevention products and sterilization equipment.',
-      image: 'https://images.unsplash.com/photo-1584308666744-24d5f400f6f6?w=500&h=400&fit=crop'
+      image: 'https://images.pexels.com/photos/5217889/pexels-photo-5217889.jpeg?w=500&h=400&fit=crop'
     },
     {
       id: '12',
       name: 'PPE',
       slug: 'ppe',
       description: 'Personal Protective Equipment including gowns, masks, and face shields.',
-      image: 'https://images.unsplash.com/photo-1587854692152-cbe660dbde0f?w=500&h=400&fit=crop'
+      image: 'https://images.pexels.com/photos/8486925/pexels-photo-8486925.jpeg?w=500&h=400&fit=crop'
     },
     {
       id: '13',
       name: 'Spirits, Detergents and Disinfectants',
       slug: 'spirits-detergents-and-disinfectants',
       description: 'Pharmaceutical-grade disinfectants and sterilization solutions.',
-      image: 'https://images.unsplash.com/photo-1584308666744-24d5f400f6f6?w=500&h=400&fit=crop'
+      image: 'https://images.pexels.com/photos/5217889/pexels-photo-5217889.jpeg?w=500&h=400&fit=crop'
     },
     {
       id: '14',
       name: 'Syringes and Needles',
       slug: 'syringes-and-needles',
       description: 'Sterile syringes and needles in various gauges and sizes.',
-      image: 'https://images.unsplash.com/photo-1587854692152-cbe660dbde0f?w=500&h=400&fit=crop'
+      image: 'https://images.pexels.com/photos/7723205/pexels-photo-7723205.jpeg?w=500&h=400&fit=crop'
     },
     {
       id: '15',
       name: 'Others',
       slug: 'others',
       description: 'Additional medical supplies and healthcare products.',
-      image: 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=500&h=400&fit=crop'
+      image: 'https://images.pexels.com/photos/7469494/pexels-photo-7469494.jpeg?w=500&h=400&fit=crop'
     }
   ];
 
