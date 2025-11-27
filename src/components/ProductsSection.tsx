@@ -139,109 +139,49 @@ export default function ProductsSection() {
         {/* Products Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {products.map((product) => (
-            <button
+            <div
               key={product.id}
-              onClick={() => setSelectedProduct(product)}
-              className="group relative bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100 overflow-hidden hover:-translate-y-1 hover:border-blue-300 text-left"
+              className="group relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100 overflow-hidden hover:-translate-y-1 hover:border-blue-300"
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/0 to-green-500/0 group-hover:from-blue-500/5 group-hover:to-green-500/5 transition-all duration-300"></div>
-              
-              <div className="relative z-10">
-                {/* Icon */}
-                <div className="text-5xl mb-4">{product.icon}</div>
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/0 to-green-500/0 group-hover:from-blue-500/5 group-hover:to-green-500/5 transition-all duration-300 pointer-events-none"></div>
 
+              {/* Product Image */}
+              <div className="relative h-48 overflow-hidden bg-gray-200">
+                <img
+                  src={product.image}
+                  alt={product.name}
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
+              </div>
+
+              {/* Content */}
+              <div className="p-6 relative z-10">
                 {/* Title */}
-                <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-blue-600 transition-colors">
+                <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-blue-600 transition-colors line-clamp-2">
                   {product.name}
                 </h3>
 
-                {/* Description Preview */}
-                <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+                {/* Description */}
+                <p className="text-gray-600 text-sm mb-6 line-clamp-2">
                   {product.description}
                 </p>
 
-                {/* CTA */}
-                <div className="flex items-center text-blue-600 font-semibold group-hover:text-green-600 transition-colors">
-                  View Details
-                  <ChevronRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </div>
+                {/* Request Quote Button */}
+                <a
+                  href={generateWhatsAppLink(product)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 w-full bg-gradient-to-r from-blue-500 to-green-500 text-white font-bold py-3 px-4 rounded-lg hover:shadow-lg transition-all duration-300 hover:scale-105"
+                >
+                  <MessageCircle size={18} />
+                  Request Quote
+                </a>
               </div>
-            </button>
+            </div>
           ))}
         </div>
       </div>
-
-      {/* Detail Modal */}
-      {selectedProduct && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
-            {/* Modal Header */}
-            <div className="sticky top-0 bg-gradient-to-r from-blue-500 to-green-500 text-white p-8 flex justify-between items-start">
-              <div>
-                <div className="text-5xl mb-4">{selectedProduct.icon}</div>
-                <h2 className="text-3xl font-bold">{selectedProduct.name}</h2>
-              </div>
-              <button
-                onClick={() => setSelectedProduct(null)}
-                className="p-2 hover:bg-white/20 rounded-full transition-colors"
-              >
-                <X size={24} />
-              </button>
-            </div>
-
-            {/* Modal Content */}
-            <div className="p-8">
-              <div className="mb-8">
-                <h3 className="text-xl font-bold text-gray-900 mb-4">About this product category</h3>
-                <p className="text-gray-700 leading-relaxed text-lg">
-                  {selectedProduct.description}
-                </p>
-              </div>
-
-              {/* Features/Benefits */}
-              <div className="mb-8">
-                <h3 className="text-xl font-bold text-gray-900 mb-4">Key Features</h3>
-                <ul className="space-y-2">
-                  <li className="flex items-start">
-                    <span className="inline-block w-2 h-2 bg-gradient-to-r from-blue-500 to-green-500 rounded-full mt-2 mr-3"></span>
-                    <span className="text-gray-700">Premium quality medical-grade products</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="inline-block w-2 h-2 bg-gradient-to-r from-blue-500 to-green-500 rounded-full mt-2 mr-3"></span>
-                    <span className="text-gray-700">Sterilized and safety certified</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="inline-block w-2 h-2 bg-gradient-to-r from-blue-500 to-green-500 rounded-full mt-2 mr-3"></span>
-                    <span className="text-gray-700">Competitive pricing and bulk discounts</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="inline-block w-2 h-2 bg-gradient-to-r from-blue-500 to-green-500 rounded-full mt-2 mr-3"></span>
-                    <span className="text-gray-700">Fast and reliable delivery</span>
-                  </li>
-                </ul>
-              </div>
-
-              {/* Call to Action */}
-              <div className="flex gap-4">
-                <a
-                  href={selectedProduct.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex-1 bg-gradient-to-r from-blue-500 to-green-500 text-white font-bold py-3 px-6 rounded-lg hover:shadow-lg transition-all duration-300 text-center hover:scale-105"
-                >
-                  Browse Products
-                </a>
-                <button
-                  onClick={() => setSelectedProduct(null)}
-                  className="flex-1 bg-gray-100 text-gray-900 font-bold py-3 px-6 rounded-lg hover:bg-gray-200 transition-all duration-300"
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </section>
   );
 }
