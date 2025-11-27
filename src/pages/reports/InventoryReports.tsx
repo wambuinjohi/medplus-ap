@@ -177,6 +177,15 @@ export default function InventoryReports() {
 
   const stats = calculateStats();
 
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-KE', {
+      style: 'currency',
+      currency: 'KES',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(amount);
+  };
+
   const getStockStatusBadge = (product: any) => {
     if ((product.stock_quantity || 0) === 0) {
       return <Badge variant="destructive">Out of Stock</Badge>;
