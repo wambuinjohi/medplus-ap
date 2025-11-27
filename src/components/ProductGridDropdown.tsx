@@ -72,7 +72,7 @@ const productCategories: ProductCategory[] = [
     name: 'Hospital Equipments',
     icon: '🏥',
     products: [
-      { name: 'Patient Monitors', icon: '📊' },
+      { name: 'Patient Monitors', icon: '���' },
       { name: 'Hospital Carts', icon: '🛒' },
       { name: 'Infusion Pumps', icon: '💧' },
     ]
@@ -157,7 +157,7 @@ export default function ProductGridDropdown() {
   return (
     <>
       {/* Grid Dropdown */}
-      <div className="absolute top-full mt-2 bg-white shadow-2xl rounded-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 py-6 px-4 sm:py-8 sm:px-8 z-50 border border-gray-100" style={{ left: '-9999px', right: '-9999px', width: 'calc(100vw - 1rem)', marginLeft: 'auto', marginRight: 'auto' }}>
+      <div className="absolute top-full mt-2 left-0 bg-white shadow-2xl rounded-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 py-6 px-4 sm:py-8 sm:px-8 z-50 border border-gray-100" style={{ width: 'calc(100vw - 1rem)', maxWidth: 'calc(100vw - 1rem)', marginLeft: 'calc(-100vw / 2 + 50%)' }}>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6 w-full">
           {productCategories.map((category) => (
             <button
@@ -214,7 +214,7 @@ export default function ProductGridDropdown() {
                     <p className="font-semibold text-gray-900 group-hover/product:text-blue-600 transition-colors text-sm md:text-base truncate">
                       {product.name}
                     </p>
-                    <p className="text-xs md:text-sm text-gray-600">In stock ��� Quick delivery</p>
+                    <p className="text-xs md:text-sm text-gray-600">In stock • Quick delivery</p>
                   </div>
                   <ChevronRight className="text-gray-400 group-hover/product:text-blue-600 transition-colors flex-shrink-0 w-5 h-5" />
                 </div>
