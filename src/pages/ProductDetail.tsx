@@ -255,6 +255,12 @@ Please provide a quotation for the above product and delivery terms.`;
           <p className="text-gray-600 text-center mb-12">Fill in the details below and we'll send you a quotation via WhatsApp</p>
 
           <form className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 space-y-6">
+            {/* Category Name Display */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <p className="text-sm text-blue-600 font-semibold">Category</p>
+              <p className="text-lg text-blue-900 font-bold">{product.name}</p>
+            </div>
+
             <div className="grid md:grid-cols-2 gap-6">
               {/* Quantity */}
               <div>
