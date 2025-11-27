@@ -101,7 +101,7 @@ export default function Landing() {
             </Link>
 
             {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center space-x-8 flex-1">
+            <nav className="hidden md:flex items-center space-x-8 ml-auto">
               {navigationItems.map((item) => {
               if (item.label === 'Talk to us') {
                 return (
@@ -135,7 +135,7 @@ export default function Landing() {
                     {item.submenu && <ChevronDown size={16} className="group-hover:rotate-180 transition-transform duration-200" />}
                   </a>
                   {item.submenu && (
-                    <div className="absolute left-1/2 -translate-x-1/2 mt-2 bg-white shadow-lg rounded-md opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10 border border-gray-100 before:absolute before:bottom-full before:left-1/2 before:-translate-x-1/2 before:w-6 before:h-4 before:bg-white before:border-t-2 before:border-l-2 before:border-gray-100 before:rotate-45" style={{ minWidth: '750px' }}>
+                    <div className="absolute right-0 mt-2 bg-white shadow-lg rounded-md opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10 border border-gray-100 before:absolute before:bottom-full before:right-8 before:w-6 before:h-4 before:bg-white before:border-t-2 before:border-l-2 before:border-gray-100 before:rotate-45" style={{ minWidth: '750px' }}>
                       <div className="grid grid-cols-5 gap-x-8 gap-y-4 p-6">
                         {item.submenu.map((sub) => {
                           const product = getProductBySlug(sub.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''));

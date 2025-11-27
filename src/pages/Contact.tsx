@@ -1,9 +1,10 @@
 import { useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { BiolegendLogo } from '@/components/ui/biolegend-logo';
+import { PublicHeader } from '@/components/PublicHeader';
 import { useToast } from '@/hooks/use-toast';
 
 export default function Contact() {
@@ -60,22 +61,7 @@ export default function Contact() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Header */}
-      <header className="sticky top-0 bg-white shadow-sm z-50 border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-20">
-            <Link to="/" className="flex-shrink-0">
-              <BiolegendLogo size="md" showText={true} />
-            </Link>
-            <nav className="hidden md:flex items-center space-x-8">
-              <a href="/" className="text-gray-700 hover:text-primary transition-colors font-medium">Home</a>
-              <a href="/about-us" className="text-gray-700 hover:text-primary transition-colors font-medium">About Us</a>
-              <a href="/products" className="text-gray-700 hover:text-primary transition-colors font-medium">Our Products</a>
-              <a href="/contact" className="text-primary font-medium">Contact Us</a>
-            </nav>
-          </div>
-        </div>
-      </header>
+      <PublicHeader currentPage="contact" />
 
       {/* Breadcrumb */}
       <div className="bg-gray-50 border-b border-gray-200">

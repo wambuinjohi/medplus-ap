@@ -165,17 +165,6 @@ Please provide a quotation for the above product and delivery terms.`;
               <h1 className="text-4xl font-bold text-gray-900 mb-2">{product.name}</h1>
               <p className="text-lg text-gray-600 mb-6">{product.description}</p>
 
-              {/* Pricing */}
-              <div className="bg-primary/10 border border-primary/20 rounded-lg p-6 mb-8">
-                <h3 className="text-sm font-semibold text-gray-700 mb-2">PRICE</h3>
-                <p className="text-3xl font-bold text-gray-900">
-                  {product.pricing.basePrice} {product.pricing.currency}
-                  <span className="text-lg text-gray-600 font-normal ml-2">{product.pricing.unit}</span>
-                </p>
-                {product.pricing.minOrder && (
-                  <p className="text-sm text-gray-600 mt-2">Minimum Order: {product.pricing.minOrder}</p>
-                )}
-              </div>
 
               {/* Features */}
               <div className="mb-8">

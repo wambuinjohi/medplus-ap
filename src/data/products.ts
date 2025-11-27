@@ -372,7 +372,7 @@ export const products: Product[] = [
   },
   {
     id: 'syringes-needles',
-    slug: 'syringes-needles',
+    slug: 'syringes-and-needles',
     name: 'Syringes and Needles',
     image: 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=500&h=400&fit=crop',
     description: 'Sterile syringes and hypodermic needles',
