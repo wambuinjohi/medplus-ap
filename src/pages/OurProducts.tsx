@@ -5,7 +5,6 @@ import { BreadcrumbNav } from '@/components/ui/breadcrumb-nav';
 import ProductCategorySidebar from '@/components/ProductCategorySidebar';
 import { useSEO } from '@/hooks/useSEO';
 import { generateWebPageSchema } from '@/utils/seoHelpers';
-import { products } from '@/data/products';
 
 export default function OurProducts() {
   useSEO(
