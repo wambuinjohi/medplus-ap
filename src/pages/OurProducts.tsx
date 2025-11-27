@@ -87,9 +87,9 @@ export default function OurProducts() {
                     <div className="text-4xl mb-4">{category.icon}</div>
                     <h3 className="text-xl font-bold text-gray-900 mb-2">{category.name}</h3>
                     <p className="text-gray-600 mb-4">{category.description}</p>
-                    <a href="#" className="text-primary font-medium hover:text-primary/80 transition">
+                    <Link to={`/products/${category.slug}`} className="text-primary font-medium hover:text-primary/80 transition">
                       Learn more →
-                    </a>
+                    </Link>
                   </div>
                 ))}
               </div>
