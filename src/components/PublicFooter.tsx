@@ -33,16 +33,19 @@ export const PublicFooter = ({ productCategories = [] }: PublicFooterProps) => {
                 Products
               </h3>
               <ul className="text-gray-300 space-y-2 text-sm">
-                {productCategories.slice(0, 5).map((cat) => (
-                  <li key={cat.name}>
-                    <Link
-                      to={`/products/${getProductSlug(cat.name)}`}
-                      className="hover:text-white hover:translate-x-1 transition-all duration-200 inline-block"
-                    >
-                      {cat.name}
-                    </Link>
-                  </li>
-                ))}
+                {productCategories.slice(0, 5).map((cat) => {
+                  const catName = getCategoryName(cat);
+                  return (
+                    <li key={catName}>
+                      <Link
+                        to={`/products/${getProductSlug(catName)}`}
+                        className="hover:text-white hover:translate-x-1 transition-all duration-200 inline-block"
+                      >
+                        {catName}
+                      </Link>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
 
@@ -51,16 +54,19 @@ export const PublicFooter = ({ productCategories = [] }: PublicFooterProps) => {
                 More Products
               </h3>
               <ul className="text-gray-300 space-y-2 text-sm">
-                {productCategories.slice(5, 10).map((cat) => (
-                  <li key={cat.name}>
-                    <Link
-                      to={`/products/${getProductSlug(cat.name)}`}
-                      className="hover:text-white hover:translate-x-1 transition-all duration-200 inline-block"
-                    >
-                      {cat.name}
-                    </Link>
-                  </li>
-                ))}
+                {productCategories.slice(5, 10).map((cat) => {
+                  const catName = getCategoryName(cat);
+                  return (
+                    <li key={catName}>
+                      <Link
+                        to={`/products/${getProductSlug(catName)}`}
+                        className="hover:text-white hover:translate-x-1 transition-all duration-200 inline-block"
+                      >
+                        {catName}
+                      </Link>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
 
@@ -69,16 +75,19 @@ export const PublicFooter = ({ productCategories = [] }: PublicFooterProps) => {
                 Additional
               </h3>
               <ul className="text-gray-300 space-y-2 text-sm">
-                {productCategories.slice(10).map((cat) => (
-                  <li key={cat.name}>
-                    <Link
-                      to={`/products/${getProductSlug(cat.name)}`}
-                      className="hover:text-white hover:translate-x-1 transition-all duration-200 inline-block"
-                    >
-                      {cat.name}
-                    </Link>
-                  </li>
-                ))}
+                {productCategories.slice(10).map((cat) => {
+                  const catName = getCategoryName(cat);
+                  return (
+                    <li key={catName}>
+                      <Link
+                        to={`/products/${getProductSlug(catName)}`}
+                        className="hover:text-white hover:translate-x-1 transition-all duration-200 inline-block"
+                      >
+                        {catName}
+                      </Link>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
 
