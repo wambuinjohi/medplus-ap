@@ -54,9 +54,7 @@ export default function HeroSlider() {
       {/* Slider Background */}
       <div className="absolute inset-0">
         <div
-          className={`absolute inset-0 transition-opacity duration-1000 ${
-            fadeIn ? 'opacity-100' : 'opacity-0'
-          }`}
+          className="absolute inset-0 transition-opacity duration-1200"
           style={{
             backgroundImage: `url(${slides[currentSlide].image})`,
             backgroundSize: 'cover',
