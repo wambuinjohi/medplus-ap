@@ -52,13 +52,14 @@ export default function HeroSlider() {
   return (
     <section className="relative h-screen bg-white overflow-hidden">
       {/* Slider Background */}
-      <div className="absolute inset-0">
+      <div className="absolute inset-0 overflow-hidden">
         <div
-          className="absolute inset-0 transition-opacity duration-1200"
+          className="absolute inset-0 transition-transform duration-1200 ease-out"
           style={{
             backgroundImage: `url(${slides[currentSlide].image})`,
             backgroundSize: 'cover',
-            backgroundPosition: 'center'
+            backgroundPosition: 'center',
+            transform: 'translateX(0)'
           }}
         >
           {/* Gradient overlay - blue to green */}
