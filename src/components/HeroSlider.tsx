@@ -14,13 +14,13 @@ export default function HeroSlider() {
   const slides: Slide[] = [
     {
       id: 1,
-      image: 'https://images.unsplash.com/photo-1557821552-17105176677c?w=800&h=600&fit=crop',
-      alt: 'Flat neutral healthcare background'
+      image: 'https://images.unsplash.com/photo-1631217314830-68f7d8fb3d7c?w=1200&h=800&fit=crop',
+      alt: 'Medical supplies and equipment'
     },
     {
       id: 2,
-      image: 'https://images.unsplash.com/photo-1576091160674-4f10897f0aeb?w=800&h=600&fit=crop',
-      alt: 'Minimalist medical illustration'
+      image: 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=1200&h=800&fit=crop',
+      alt: 'Hospital bed and medical equipment'
     }
   ];
 
