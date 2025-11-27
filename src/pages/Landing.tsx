@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Menu, X, ChevronDown } from 'lucide-react';
+import { Menu, X, ChevronDown, Bandage, Package, Pipette, Wind, Baby, Hand, Monitor, Sofa, Wrench, Shirt, Shield, MoreHorizontal, Droplet, Syringe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { BiolegendLogo } from '@/components/ui/biolegend-logo';
 import HeroSlider from '@/components/HeroSlider';
