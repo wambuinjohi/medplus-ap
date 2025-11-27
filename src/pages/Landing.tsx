@@ -82,7 +82,30 @@ export default function Landing() {
 
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center space-x-8">
-              {navigationItems.map((item) => (
+              {navigationItems.map((item) => {
+              if (item.label === 'Talk to us') {
+                return (
+                  <Link
+                    key={item.label}
+                    to="/contact"
+                    className="text-gray-700 hover:text-primary transition-colors font-medium"
+                  >
+                    {item.label}
+                  </Link>
+                );
+              }
+              if (item.label === 'About Us') {
+                return (
+                  <Link
+                    key={item.label}
+                    to="/about-us"
+                    className="text-gray-700 hover:text-primary transition-colors font-medium"
+                  >
+                    {item.label}
+                  </Link>
+                );
+              }
+              return (
                 <div key={item.label} className="relative group">
                   <a
                     href={item.href}
@@ -105,7 +128,8 @@ export default function Landing() {
                     </div>
                   )}
                 </div>
-              ))}
+              );
+            })}
             </nav>
 
             {/* Mobile Menu Button */}
