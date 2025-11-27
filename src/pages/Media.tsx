@@ -1,8 +1,24 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { BiolegendLogo } from '@/components/ui/biolegend-logo';
+import { BreadcrumbNav } from '@/components/ui/breadcrumb-nav';
+import { useSEO } from '@/hooks/useSEO';
+import { generateWebPageSchema } from '@/utils/seoHelpers';
 
 export default function Media() {
+  useSEO(
+    {
+      title: 'Media Center',
+      description: 'Latest news, CME sessions, and events from Medplus Africa. Stay updated on industry news and healthcare developments.',
+      keywords: 'healthcare news, medical news, healthcare events, CME sessions',
+      url: 'https://medplusafrica.com/media',
+    },
+    generateWebPageSchema({
+      title: 'Media Center - News & Events',
+      description: 'News, CME sessions, and events',
+      url: 'https://medplusafrica.com/media',
+    })
+  );
   const newsItems = [
     {
       id: 1,
@@ -105,15 +121,7 @@ export default function Media() {
       </header>
 
       {/* Breadcrumb */}
-      <div className="bg-gray-50 border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <nav className="text-sm text-gray-600">
-            <Link to="/" className="hover:text-primary transition-colors">Home</Link>
-            <span className="mx-2">/</span>
-            <span className="text-gray-900 font-medium">Media</span>
-          </nav>
-        </div>
-      </div>
+      <BreadcrumbNav items={[{ label: 'Media', href: '/media' }]} />
 
       {/* Page Hero */}
       <section className="bg-gradient-to-r from-blue-600 to-green-600 text-white py-16">
@@ -175,7 +183,7 @@ export default function Media() {
                     <p className="text-gray-600 mb-2">{item.description}</p>
                     <div className="flex items-center gap-4 text-sm text-gray-500">
                       <span>📅 {item.date}</span>
-                      <span>📍 {item.location}</span>
+                      <span>�� {item.location}</span>
                     </div>
                   </div>
                   <Button className="bg-primary hover:bg-primary/90 text-white font-semibold whitespace-nowrap">
