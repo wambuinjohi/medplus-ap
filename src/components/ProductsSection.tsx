@@ -1,4 +1,5 @@
-import { MessageCircle } from 'lucide-react';
+import { MessageCircle, ArrowRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 interface Product {
   id: string;
