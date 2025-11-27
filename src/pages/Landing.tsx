@@ -286,11 +286,12 @@ export default function Landing() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-4 gap-8 mb-8">
+      <footer className="bg-gray-900 text-white py-16 relative overflow-hidden">
+        <div className="absolute inset-0 opacity-5 bg-gradient-to-r from-blue-500 to-green-500"></div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="grid md:grid-cols-4 gap-12 mb-12">
             <div>
-              <h3 className="text-lg font-semibold mb-4 text-gray-200">Products</h3>
+              <h3 className="text-lg font-bold mb-6 bg-gradient-to-r from-blue-400 to-green-400 bg-clip-text text-transparent">Products</h3>
               <ul className="text-gray-400 space-y-2 text-sm">
                 {productCategories.slice(0, 5).map((cat) => (
                   <li key={cat}>
