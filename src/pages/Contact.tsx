@@ -289,10 +289,24 @@ ${formData.message}
                 <Button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full bg-primary hover:bg-primary/90 text-white font-semibold"
+                  className={`w-full text-white font-semibold flex items-center justify-center gap-2 ${
+                    contactMethod === 'email'
+                      ? 'bg-primary hover:bg-primary/90'
+                      : 'bg-green-600 hover:bg-green-700'
+                  }`}
                   size="lg"
                 >
-                  {isSubmitting ? 'Sending...' : 'Send Inquiry'}
+                  {contactMethod === 'email' ? (
+                    <>
+                      <Mail size={18} />
+                      {isSubmitting ? 'Sending via Email...' : 'Send via Email'}
+                    </>
+                  ) : (
+                    <>
+                      <MessageCircle size={18} />
+                      {isSubmitting ? 'Opening WhatsApp...' : 'Send via WhatsApp'}
+                    </>
+                  )}
                 </Button>
               </form>
             </div>
