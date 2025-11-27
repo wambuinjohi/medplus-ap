@@ -52,7 +52,7 @@ const productCategories: ProductCategory[] = [
   },
   {
     name: 'Diapers and Sanitary',
-    icon: '👶',
+    icon: '��',
     products: [
       { name: 'Incontinence Diapers', icon: '👶' },
       { name: 'Sanitary Pads', icon: '🩸' },
@@ -137,7 +137,7 @@ const productCategories: ProductCategory[] = [
     products: [
       { name: 'Sterile Syringes', icon: '💉' },
       { name: 'Hypodermic Needles', icon: '💉' },
-      { name: 'Syringe Filters', icon: '����' },
+      { name: 'Syringe Filters', icon: '🔬' },
     ]
   },
   {
@@ -188,21 +188,21 @@ export default function ProductGridDropdown() {
           {/* Drawer - Positioned relative to viewport but constrained */}
           <div className="fixed right-0 top-0 h-screen bg-white shadow-2xl z-50 overflow-y-auto w-full md:w-96 animate-slideInRight">
             {/* Header */}
-            <div className="sticky top-0 bg-gradient-to-r from-blue-500 to-green-500 text-white p-6 flex items-center justify-between gap-4">
-              <div>
-                <div className="text-4xl mb-2">{selectedCategory.icon}</div>
-                <h2 className="text-2xl font-bold">{selectedCategory.name}</h2>
+            <div className="sticky top-0 bg-gradient-to-r from-blue-500 to-green-500 text-white p-4 md:p-6 flex items-center justify-between gap-4">
+              <div className="flex-grow">
+                <div className="text-3xl md:text-4xl mb-2">{selectedCategory.icon}</div>
+                <h2 className="text-lg md:text-2xl font-bold leading-tight">{selectedCategory.name}</h2>
               </div>
               <button
                 onClick={() => setSelectedCategory(null)}
                 className="p-2 hover:bg-white/20 rounded-full transition-colors flex-shrink-0"
               >
-                <X size={24} />
+                <X size={20} className="md:w-6 md:h-6" />
               </button>
             </div>
 
             {/* Products List */}
-            <div className="p-6 space-y-3">
+            <div className="p-4 md:p-6 space-y-3">
               <h3 className="text-lg font-bold text-gray-900 mb-4">Available Products</h3>
               {selectedCategory.products.map((product) => (
                 <div
