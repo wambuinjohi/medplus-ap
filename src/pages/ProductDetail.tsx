@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { BiolegendLogo } from '@/components/ui/biolegend-logo';
+import ProductCategorySidebar from '@/components/ProductCategorySidebar';
 import { useToast } from '@/hooks/use-toast';
 import { getProductBySlug } from '@/data/products';
 import { MessageCircle, ArrowLeft, Check } from 'lucide-react';
@@ -160,60 +161,87 @@ Please provide a quotation for the above product and delivery terms.`;
         { label: product.name, href: `/products/${productSlug}` }
       ]} />
 
-      {/* Product Details */}
-      <section className="py-12">
+      {/* Product Details with Sidebar */}
+      <section className="py-12 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-2 gap-12">
-            {/* Product Image */}
-            <div>
-              <div className="bg-gray-100 rounded-lg overflow-hidden">
-                <img
-                  src={product.image}
-                  alt={product.name}
-                  className="w-full h-96 object-cover"
-                />
-              </div>
-            </div>
+          <div className="flex flex-col md:flex-row gap-8">
+            {/* Sidebar */}
+            <ProductCategorySidebar
+              categories={[
+                { name: 'Bandages, Tapes and Dressings' },
+                { name: 'Bottles and Containers' },
+                { name: 'Catheters and Tubes' },
+                { name: 'Cotton Wool' },
+                { name: 'Diapers and Sanitary' },
+                { name: 'Gloves' },
+                { name: 'Hospital Equipments' },
+                { name: 'Hospital Furniture' },
+                { name: 'Hospital Instruments' },
+                { name: 'Hospital Linen' },
+                { name: 'Infection Control' },
+                { name: 'Others' },
+                { name: 'PPE' },
+                { name: 'Spirits, Detergents and Disinfectants' },
+                { name: 'Syringes and Needles' },
+              ]}
+              activeCategory={product.name}
+            />
 
-            {/* Product Info */}
-            <div>
-              <h1 className="text-4xl font-bold text-gray-900 mb-2">{product.name}</h1>
-              <p className="text-lg text-gray-600 mb-6">{product.description}</p>
-
-
-              {/* Features */}
-              <div className="mb-8">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">Key Features</h3>
-                <ul className="space-y-2">
-                  {product.features.map((feature, idx) => (
-                    <li key={idx} className="flex items-start gap-3">
-                      <Check size={20} className="text-green-600 flex-shrink-0 mt-0.5" />
-                      <span className="text-gray-700">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </div>
-
-          {/* Full Description & Specs */}
-          <div className="grid md:grid-cols-2 gap-12 mt-16">
-            {/* Description */}
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">About This Product</h2>
-              <p className="text-gray-700 leading-relaxed mb-6">{product.longDescription}</p>
-            </div>
-
-            {/* Specifications */}
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Specifications</h2>
-              <div className="space-y-4">
-                {product.specifications.map((spec, idx) => (
-                  <div key={idx} className="border-b border-gray-200 pb-3">
-                    <h4 className="font-semibold text-gray-900 text-sm mb-1">{spec.label}</h4>
-                    <p className="text-gray-600">{spec.value}</p>
+            {/* Main Content */}
+            <div className="flex-1">
+              <div className="grid md:grid-cols-2 gap-12">
+                {/* Product Image */}
+                <div>
+                  <div className="bg-white rounded-lg overflow-hidden shadow-sm border border-gray-200">
+                    <img
+                      src={product.image}
+                      alt={product.name}
+                      className="w-full h-96 object-cover"
+                    />
                   </div>
-                ))}
+                </div>
+
+                {/* Product Info */}
+                <div>
+                  <h1 className="text-4xl font-bold text-gray-900 mb-2">{product.name}</h1>
+                  <p className="text-lg text-gray-600 mb-6">{product.description}</p>
+
+
+                  {/* Features */}
+                  <div className="mb-8">
+                    <h3 className="text-lg font-bold text-gray-900 mb-4">Key Features</h3>
+                    <ul className="space-y-2">
+                      {product.features.map((feature, idx) => (
+                        <li key={idx} className="flex items-start gap-3">
+                          <Check size={20} className="text-green-600 flex-shrink-0 mt-0.5" />
+                          <span className="text-gray-700">{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              {/* Full Description & Specs */}
+              <div className="grid md:grid-cols-2 gap-12 mt-16">
+                {/* Description */}
+                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-4">About This Product</h2>
+                  <p className="text-gray-700 leading-relaxed mb-6">{product.longDescription}</p>
+                </div>
+
+                {/* Specifications */}
+                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-4">Specifications</h2>
+                  <div className="space-y-4">
+                    {product.specifications.map((spec, idx) => (
+                      <div key={idx} className="border-b border-gray-200 pb-3">
+                        <h4 className="font-semibold text-gray-900 text-sm mb-1">{spec.label}</h4>
+                        <p className="text-gray-600">{spec.value}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           </div>

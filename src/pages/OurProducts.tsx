@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { PublicHeader } from '@/components/PublicHeader';
 import { BreadcrumbNav } from '@/components/ui/breadcrumb-nav';
+import ProductCategorySidebar from '@/components/ProductCategorySidebar';
 import { useSEO } from '@/hooks/useSEO';
 import { generateWebPageSchema } from '@/utils/seoHelpers';
 
@@ -63,24 +64,35 @@ export default function OurProducts() {
         </div>
       </section>
 
-      {/* Product Categories Grid */}
+      {/* Product Categories Section with Sidebar */}
       <section className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-12">Product Categories</h2>
-          <div className="grid md:grid-cols-3 gap-6">
-            {productCategories.map((category) => (
-              <div
-                key={category.name}
-                className="bg-white rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition p-6"
-              >
-                <div className="text-4xl mb-4">{category.icon}</div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">{category.name}</h3>
-                <p className="text-gray-600 mb-4">{category.description}</p>
-                <a href="#" className="text-primary font-medium hover:text-primary/80 transition">
-                  Learn more →
-                </a>
+          {/* Flex Container for Sidebar and Content */}
+          <div className="flex flex-col md:flex-row gap-8">
+            {/* Sidebar */}
+            <ProductCategorySidebar
+              categories={productCategories.map((cat) => ({ name: cat.name }))}
+            />
+
+            {/* Main Content */}
+            <div className="flex-1">
+              <h2 className="text-3xl font-bold text-gray-900 mb-12">Product Categories</h2>
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {productCategories.map((category) => (
+                  <div
+                    key={category.name}
+                    className="bg-white rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition p-6"
+                  >
+                    <div className="text-4xl mb-4">{category.icon}</div>
+                    <h3 className="text-xl font-bold text-gray-900 mb-2">{category.name}</h3>
+                    <p className="text-gray-600 mb-4">{category.description}</p>
+                    <a href="#" className="text-primary font-medium hover:text-primary/80 transition">
+                      Learn more →
+                    </a>
+                  </div>
+                ))}
               </div>
-            ))}
+            </div>
           </div>
         </div>
       </section>
