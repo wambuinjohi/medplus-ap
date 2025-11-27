@@ -34,7 +34,7 @@ export default function AboutUs() {
               <h2 className="text-4xl font-bold text-gray-900 mb-6">Our Story</h2>
               <div className="space-y-4 text-gray-700 text-lg leading-relaxed">
                 <p>
-                  Founded in 1989, Medplus Africa has been a trusted distributor of critical care, hospital consumables, and furniture for over three decades. What started as a small operation has grown into a leading healthcare solutions provider across Africa.
+                  With over 10 years of trusted service, Medplus Africa has been a leading distributor of critical care, hospital consumables, and furniture. What started as a small operation has grown into a leading healthcare solutions provider across Africa.
                 </p>
                 <p>
                   Our journey is built on the foundation of quality, reliability, and a deep commitment to improving healthcare delivery. We understand the challenges faced by hospitals and healthcare facilities, and we're dedicated to providing solutions that make a difference.

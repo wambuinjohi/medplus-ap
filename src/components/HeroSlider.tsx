@@ -82,10 +82,10 @@ export default function HeroSlider() {
                 <div className="space-y-6">
                   <div>
                     <span className="inline-block bg-gradient-to-r from-blue-500 to-green-500 text-white px-4 py-2 rounded-full text-sm font-semibold mb-4">
-                      EST. 1989
+                      OVER 10 YEARS
                     </span>
                     <h1 className="text-5xl md:text-6xl font-bold text-white mb-4 leading-tight">
-                      SINCE 1989
+                      OF TRUSTED SERVICE
                     </h1>
                   </div>
 
