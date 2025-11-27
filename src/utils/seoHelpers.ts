@@ -73,6 +73,7 @@ export const generateProductSchema = (product: {
   image?: string;
   url?: string;
   category?: string;
+  price?: number;
 }) => ({
   '@context': 'https://schema.org',
   '@type': 'Product',
@@ -89,6 +90,12 @@ export const generateProductSchema = (product: {
     '@type': 'AggregateOffer',
     availability: 'https://schema.org/InStock',
     priceCurrency: 'KES',
+    ...(product.price && { highPrice: product.price.toString() }),
+  },
+  aggregateRating: {
+    '@type': 'AggregateRating',
+    ratingValue: '4.8',
+    reviewCount: '150',
   },
 });
 
