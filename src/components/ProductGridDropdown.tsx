@@ -55,7 +55,7 @@ const productCategories: ProductCategory[] = [
     icon: '👶',
     products: [
       { name: 'Incontinence Diapers', icon: '👶' },
-      { name: 'Sanitary Pads', icon: '🩸' },
+      { name: 'Sanitary Pads', icon: '���' },
       { name: 'Briefs and Underwear', icon: '👕' },
     ]
   },
@@ -220,13 +220,13 @@ export default function ProductGridDropdown() {
                 </div>
               ))}
 
-              {/* CTA Button - Sticky at bottom */}
-              <div className="fixed right-0 bottom-0 w-full md:w-96 p-4 md:p-6 bg-gradient-to-t from-white to-white/95 border-t border-gray-200">
+              {/* CTA Button - Sticky at bottom with proper positioning */}
+              <div className="fixed bottom-0 right-0 w-full sm:w-96 max-w-full p-4 bg-gradient-to-t from-white via-white to-white/95 border-t border-gray-200" style={{ maxWidth: 'calc(100vw - 0px)' }}>
                 <a
                   href={`https://wa.me/?text=Hi, I'm interested in ${selectedCategory.name} products. Could you provide more details?`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block w-full bg-gradient-to-r from-blue-500 to-green-500 text-white font-bold py-2.5 md:py-3 px-4 rounded-lg hover:shadow-lg transition-all duration-300 text-center text-sm md:text-base"
+                  className="block w-full bg-gradient-to-r from-blue-500 to-green-500 text-white font-bold py-2.5 px-4 rounded-lg hover:shadow-lg transition-all duration-300 text-center text-sm"
                 >
                   Request Quote
                 </a>
