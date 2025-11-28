@@ -1,4 +1,4 @@
--- Create web_categories table
+-- Create web_categories table (independent, public)
 CREATE TABLE IF NOT EXISTS web_categories (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name VARCHAR(255) NOT NULL UNIQUE,
@@ -8,12 +8,10 @@ CREATE TABLE IF NOT EXISTS web_categories (
   display_order INTEGER DEFAULT 0,
   is_active BOOLEAN DEFAULT true,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-  created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
-  updated_by UUID REFERENCES auth.users(id) ON DELETE SET NULL
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create web_variants table
+-- Create web_variants table (independent, public)
 CREATE TABLE IF NOT EXISTS web_variants (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   category_id UUID NOT NULL REFERENCES web_categories(id) ON DELETE CASCADE,
@@ -26,14 +24,12 @@ CREATE TABLE IF NOT EXISTS web_variants (
   is_active BOOLEAN DEFAULT true,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-  created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
-  updated_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
   UNIQUE(category_id, sku)
 );
 
 -- Create view for categories with variant counts
 CREATE OR REPLACE VIEW web_categories_with_counts AS
-SELECT 
+SELECT
   c.id,
   c.name,
   c.slug,
@@ -57,109 +53,21 @@ CREATE INDEX IF NOT EXISTS idx_web_variants_slug ON web_variants(slug);
 CREATE INDEX IF NOT EXISTS idx_web_variants_sku ON web_variants(sku);
 CREATE INDEX IF NOT EXISTS idx_web_variants_is_active ON web_variants(is_active);
 
--- Enable RLS
+-- Enable RLS (but allow all public access - no restrictions)
 ALTER TABLE web_categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE web_variants ENABLE ROW LEVEL SECURITY;
 
--- RLS Policies for web_categories
--- Allow everyone to read active categories
-CREATE POLICY "Allow public read active categories" ON web_categories
-  FOR SELECT
-  USING (is_active = true);
+-- RLS Policies for web_categories - Allow everyone full access
+CREATE POLICY "Allow all access to web_categories" ON web_categories
+  FOR ALL
+  USING (true)
+  WITH CHECK (true);
 
--- Allow admins to read all categories
-CREATE POLICY "Allow admins read all categories" ON web_categories
-  FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM auth.users
-      WHERE auth.users.id = auth.uid()
-      AND auth.users.user_metadata->>'role' = 'admin'
-    )
-  );
-
--- Allow admins to create categories
-CREATE POLICY "Allow admins create categories" ON web_categories
-  FOR INSERT
-  WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM auth.users
-      WHERE auth.users.id = auth.uid()
-      AND auth.users.user_metadata->>'role' = 'admin'
-    )
-  );
-
--- Allow admins to update categories
-CREATE POLICY "Allow admins update categories" ON web_categories
-  FOR UPDATE
-  USING (
-    EXISTS (
-      SELECT 1 FROM auth.users
-      WHERE auth.users.id = auth.uid()
-      AND auth.users.user_metadata->>'role' = 'admin'
-    )
-  );
-
--- Allow admins to delete categories
-CREATE POLICY "Allow admins delete categories" ON web_categories
-  FOR DELETE
-  USING (
-    EXISTS (
-      SELECT 1 FROM auth.users
-      WHERE auth.users.id = auth.uid()
-      AND auth.users.user_metadata->>'role' = 'admin'
-    )
-  );
-
--- RLS Policies for web_variants
--- Allow everyone to read active variants
-CREATE POLICY "Allow public read active variants" ON web_variants
-  FOR SELECT
-  USING (is_active = true);
-
--- Allow admins to read all variants
-CREATE POLICY "Allow admins read all variants" ON web_variants
-  FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM auth.users
-      WHERE auth.users.id = auth.uid()
-      AND auth.users.user_metadata->>'role' = 'admin'
-    )
-  );
-
--- Allow admins to create variants
-CREATE POLICY "Allow admins create variants" ON web_variants
-  FOR INSERT
-  WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM auth.users
-      WHERE auth.users.id = auth.uid()
-      AND auth.users.user_metadata->>'role' = 'admin'
-    )
-  );
-
--- Allow admins to update variants
-CREATE POLICY "Allow admins update variants" ON web_variants
-  FOR UPDATE
-  USING (
-    EXISTS (
-      SELECT 1 FROM auth.users
-      WHERE auth.users.id = auth.uid()
-      AND auth.users.user_metadata->>'role' = 'admin'
-    )
-  );
-
--- Allow admins to delete variants
-CREATE POLICY "Allow admins delete variants" ON web_variants
-  FOR DELETE
-  USING (
-    EXISTS (
-      SELECT 1 FROM auth.users
-      WHERE auth.users.id = auth.uid()
-      AND auth.users.user_metadata->>'role' = 'admin'
-    )
-  );
+-- RLS Policies for web_variants - Allow everyone full access
+CREATE POLICY "Allow all access to web_variants" ON web_variants
+  FOR ALL
+  USING (true)
+  WITH CHECK (true);
 
 -- Insert default categories
 INSERT INTO web_categories (name, slug, icon, description, display_order, is_active) VALUES
