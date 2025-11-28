@@ -172,15 +172,40 @@ Please provide a quotation for the above product and delivery terms.`;
         ]} />
 
         {/* Category Products Grid */}
-        <section className="py-12 bg-white">
+        <section className="py-12 bg-gray-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="mb-12">
-              <h1 className="text-4xl font-bold text-gray-900 mb-2">{categoryName}</h1>
-              <p className="text-lg text-gray-600">Browse our collection of {categoryName?.toLowerCase()} products</p>
-            </div>
+            <div className="flex flex-col md:flex-row gap-8">
+              {/* Sidebar */}
+              <ProductCategorySidebar
+                categories={[
+                  { name: 'Bandages, Tapes and Dressings' },
+                  { name: 'Bottles and Containers' },
+                  { name: 'Catheters and Tubes' },
+                  { name: 'Cotton Wool' },
+                  { name: 'Diapers and Sanitary' },
+                  { name: 'Gloves' },
+                  { name: 'Hospital Equipments' },
+                  { name: 'Hospital Furniture' },
+                  { name: 'Hospital Instruments' },
+                  { name: 'Hospital Linen' },
+                  { name: 'Infection Control' },
+                  { name: 'Others' },
+                  { name: 'PPE' },
+                  { name: 'Spirits, Detergents and Disinfectants' },
+                  { name: 'Syringes and Needles' },
+                ]}
+                activeCategory={categoryName}
+              />
 
-            {/* Products Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {/* Main Content */}
+              <div className="flex-1">
+                <div className="mb-12">
+                  <h1 className="text-4xl font-bold text-gray-900 mb-2">{categoryName}</h1>
+                  <p className="text-lg text-gray-600">Browse our collection of {categoryName?.toLowerCase()} products</p>
+                </div>
+
+                {/* Products Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {categoryProducts.map((prod) => (
                 <div
                   key={prod.id}
@@ -223,16 +248,18 @@ Please provide a quotation for the above product and delivery terms.`;
                   </div>
                 </div>
               ))}
-            </div>
+                </div>
 
-            {/* Back Button */}
-            <div className="mt-12 text-center">
-              <Link to="/products">
-                <Button className="bg-primary hover:bg-primary/90 text-white font-semibold">
-                  <ArrowLeft size={16} className="mr-2" />
-                  Back to Products
-                </Button>
-              </Link>
+                {/* Back Button */}
+                <div className="mt-12 text-center">
+                  <Link to="/products">
+                    <Button className="bg-primary hover:bg-primary/90 text-white font-semibold">
+                      <ArrowLeft size={16} className="mr-2" />
+                      Back to Products
+                    </Button>
+                  </Link>
+                </div>
+              </div>
             </div>
           </div>
         </section>
