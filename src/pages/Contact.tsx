@@ -14,6 +14,7 @@ import emailjs from 'emailjs-com';
 import { Mail, MessageCircle } from 'lucide-react';
 
 export default function Contact() {
+  const { categories } = useWebCategories();
   useSEO(
     {
       title: 'Contact Us',
