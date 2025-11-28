@@ -203,8 +203,8 @@ export default function Landing() {
       {/* Hero Section with Slider */}
       <HeroSlider />
 
-      {/* Products Section */}
-      <ProductsSection />
+      {/* Intro Section */}
+      <IntroSection />
 
       {/* Our Goals Section */}
       <section className="py-12 sm:py-24 bg-gradient-to-b from-white to-blue-50/30">
