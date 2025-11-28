@@ -282,89 +282,46 @@ Please provide a quotation for the above product and delivery terms.`;
       {/* Breadcrumb */}
       <BreadcrumbNav items={[
         { label: 'Products', href: '/products' },
-        { label: product.name, href: `/products/${productSlug}` }
+        { label: category?.name || 'Category', href: `/products/${category?.slug}` },
+        { label: variant?.name || 'Variant', href: `/products/${productSlug}` }
       ]} />
 
       {/* Product Details with Sidebar */}
       <section className="py-12 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row gap-8">
-            {/* Sidebar */}
+            {/* Sidebar - Using ProductCategorySidebar which fetches its own data */}
             <ProductCategorySidebar
-              categories={[
-                { name: 'Bandages, Tapes and Dressings' },
-                { name: 'Bottles and Containers' },
-                { name: 'Catheters and Tubes' },
-                { name: 'Cotton Wool' },
-                { name: 'Diapers and Sanitary' },
-                { name: 'Gloves' },
-                { name: 'Hospital Equipments' },
-                { name: 'Hospital Furniture' },
-                { name: 'Hospital Instruments' },
-                { name: 'Hospital Linen' },
-                { name: 'Infection Control' },
-                { name: 'Others' },
-                { name: 'PPE' },
-                { name: 'Spirits, Detergents and Disinfectants' },
-                { name: 'Syringes and Needles' },
-              ]}
-              activeCategory={product.name}
+              activeCategory={category?.name}
             />
 
             {/* Main Content */}
             <div className="flex-1">
               <div className="grid md:grid-cols-2 gap-12">
-                {/* Product Image */}
+                {/* Variant Image */}
                 <div>
                   <div className="bg-white rounded-lg overflow-hidden shadow-sm border border-gray-200">
-                    <img
-                      src={product.image}
-                      alt={product.name}
-                      className="w-full h-96 object-cover"
-                    />
-                  </div>
-                </div>
-
-                {/* Product Info */}
-                <div>
-                  <h1 className="text-4xl font-bold text-gray-900 mb-2">{product.name}</h1>
-                  <p className="text-lg text-gray-600 mb-6">{product.description}</p>
-
-
-                  {/* Features */}
-                  <div className="mb-8">
-                    <h3 className="text-lg font-bold text-gray-900 mb-4">Key Features</h3>
-                    <ul className="space-y-2">
-                      {product.features.map((feature, idx) => (
-                        <li key={idx} className="flex items-start gap-3">
-                          <Check size={20} className="text-green-600 flex-shrink-0 mt-0.5" />
-                          <span className="text-gray-700">{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              </div>
-
-              {/* Full Description & Specs */}
-              <div className="grid md:grid-cols-2 gap-12 mt-16">
-                {/* Description */}
-                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-4">About This Product</h2>
-                  <p className="text-gray-700 leading-relaxed mb-6">{product.longDescription}</p>
-                </div>
-
-                {/* Specifications */}
-                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-4">Specifications</h2>
-                  <div className="space-y-4">
-                    {product.specifications.map((spec, idx) => (
-                      <div key={idx} className="border-b border-gray-200 pb-3">
-                        <h4 className="font-semibold text-gray-900 text-sm mb-1">{spec.label}</h4>
-                        <p className="text-gray-600">{spec.value}</p>
+                    {variant?.image_path ? (
+                      <img
+                        src={variant.image_path}
+                        alt={variant.name}
+                        className="w-full h-96 object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-96 flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 text-gray-400">
+                        <span className="text-6xl">📦</span>
                       </div>
-                    ))}
+                    )}
                   </div>
+                </div>
+
+                {/* Variant Info */}
+                <div>
+                  <h1 className="text-4xl font-bold text-gray-900 mb-2">{variant?.name}</h1>
+                  <p className="text-sm text-gray-600 font-semibold mb-4">SKU: {variant?.sku}</p>
+                  <p className="text-lg text-gray-600 mb-6">
+                    {variant?.description || 'High-quality product for medical and healthcare applications'}
+                  </p>
                 </div>
               </div>
             </div>
@@ -379,17 +336,19 @@ Please provide a quotation for the above product and delivery terms.`;
           <p className="text-gray-600 text-center mb-12">Fill in the details below and we'll send you a quotation via WhatsApp</p>
 
           <form className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 space-y-6 scroll-smooth" style={{ scrollBehavior: 'auto' }}>
-            {/* Category Name Display */}
+            {/* Product Display */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <p className="text-sm text-blue-600 font-semibold">Category</p>
-              <p className="text-lg text-blue-900 font-bold">{product.name}</p>
+              <p className="text-sm text-blue-600 font-semibold">Product Category</p>
+              <p className="text-lg text-blue-900 font-bold">{category?.name}</p>
+              <p className="text-sm text-blue-700 mt-2">Variant: {variant?.name}</p>
+              <p className="text-sm text-blue-600">SKU: {variant?.sku}</p>
             </div>
 
             <div className="grid md:grid-cols-2 gap-6">
               {/* Quantity */}
               <div>
                 <Label htmlFor="quantity" className="text-gray-700 mb-2 block">
-                  Quantity * <span className="text-xs text-gray-500">({product.pricing.unit})</span>
+                  Quantity *
                 </Label>
                 <Input
                   id="quantity"
