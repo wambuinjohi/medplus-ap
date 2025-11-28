@@ -18,6 +18,7 @@ const productCategories: ProductCategory[] = [
   {
     name: 'Bandages, Tapes and Dressings',
     icon: '🩹',
+    slug: 'bandages-tapes-and-dressings',
     products: [
       { name: 'Sterile Adhesive Bandages', icon: '🩹' },
       { name: 'Medical Tape', icon: '📋' },
@@ -28,6 +29,7 @@ const productCategories: ProductCategory[] = [
   {
     name: 'Bottles and Containers',
     icon: '🧴',
+    slug: 'bottles-and-containers',
     products: [
       { name: 'Sample Collection Bottles', icon: '🧪' },
       { name: 'Pharmaceutical Containers', icon: '🧴' },
@@ -37,6 +39,7 @@ const productCategories: ProductCategory[] = [
   {
     name: 'Catheters and Tubes',
     icon: '🔬',
+    slug: 'catheters-and-tubes',
     products: [
       { name: 'Urinary Catheters', icon: '💉' },
       { name: 'Peritoneal Dialysis Catheters', icon: '🔬' },
@@ -46,6 +49,7 @@ const productCategories: ProductCategory[] = [
   {
     name: 'Cotton Wool',
     icon: '☁️',
+    slug: 'cotton-wool',
     products: [
       { name: 'Sterilized Cotton Wool Balls', icon: '☁️' },
       { name: 'Medical Grade Cotton Wool', icon: '🧻' },
@@ -55,6 +59,7 @@ const productCategories: ProductCategory[] = [
   {
     name: 'Diapers and Sanitary',
     icon: '👶',
+    slug: 'diapers-and-sanitary',
     products: [
       { name: 'Incontinence Diapers', icon: '👶' },
       { name: 'Sanitary Pads', icon: '🩸' },
@@ -64,6 +69,7 @@ const productCategories: ProductCategory[] = [
   {
     name: 'Gloves',
     icon: '🧤',
+    slug: 'gloves',
     products: [
       { name: 'Latex Examination Gloves', icon: '🧤' },
       { name: 'Nitrile Gloves', icon: '🧤' },
@@ -73,6 +79,7 @@ const productCategories: ProductCategory[] = [
   {
     name: 'Hospital Equipments',
     icon: '🏥',
+    slug: 'hospital-equipments',
     products: [
       { name: 'Patient Monitors', icon: '📊' },
       { name: 'Hospital Carts', icon: '🛒' },
@@ -82,6 +89,7 @@ const productCategories: ProductCategory[] = [
   {
     name: 'Hospital Furniture',
     icon: '🛏️',
+    slug: 'hospital-furniture',
     products: [
       { name: 'Hospital Beds', icon: '🛏️' },
       { name: 'Patient Chairs', icon: '🪑' },
@@ -91,8 +99,9 @@ const productCategories: ProductCategory[] = [
   {
     name: 'Hospital Instruments',
     icon: '⚕️',
+    slug: 'hospital-instruments',
     products: [
-      { name: 'Surgical Scissors', icon: '�����️' },
+      { name: 'Surgical Scissors', icon: '✂️' },
       { name: 'Specula', icon: '⚕️' },
       { name: 'Forceps', icon: '🔧' },
     ]
@@ -100,6 +109,7 @@ const productCategories: ProductCategory[] = [
   {
     name: 'Hospital Linen',
     icon: '🧻',
+    slug: 'hospital-linen',
     products: [
       { name: 'Hospital Bed Sheets', icon: '🧻' },
       { name: 'Pillowcases', icon: '🛏️' },
@@ -109,6 +119,7 @@ const productCategories: ProductCategory[] = [
   {
     name: 'Infection Control',
     icon: '🛡️',
+    slug: 'infection-control',
     products: [
       { name: 'Disinfectants', icon: '🧼' },
       { name: 'Sterilization Equipment', icon: '🔬' },
@@ -118,6 +129,7 @@ const productCategories: ProductCategory[] = [
   {
     name: 'PPE',
     icon: '👕',
+    slug: 'ppe',
     products: [
       { name: 'Face Masks', icon: '😷' },
       { name: 'Protective Gowns', icon: '👕' },
@@ -127,6 +139,7 @@ const productCategories: ProductCategory[] = [
   {
     name: 'Spirits, Detergents and Disinfectants',
     icon: '🧼',
+    slug: 'spirits-detergents-and-disinfectants',
     products: [
       { name: 'Hand Sanitizer', icon: '🧴' },
       { name: 'Surface Disinfectant', icon: '🧼' },
@@ -136,6 +149,7 @@ const productCategories: ProductCategory[] = [
   {
     name: 'Syringes and Needles',
     icon: '💉',
+    slug: 'syringes-and-needles',
     products: [
       { name: 'Sterile Syringes', icon: '💉' },
       { name: 'Hypodermic Needles', icon: '💉' },
@@ -145,6 +159,7 @@ const productCategories: ProductCategory[] = [
   {
     name: 'Others',
     icon: '📦',
+    slug: 'others',
     products: [
       { name: 'Medical Supplies', icon: '📦' },
       { name: 'Healthcare Products', icon: '🏥' },
