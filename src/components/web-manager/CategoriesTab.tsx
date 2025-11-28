@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useWebManager, WebCategory } from '@/hooks/useWebManager';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Edit, Trash2, Toggle2 } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, EyeOff } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -143,7 +143,7 @@ export const CategoriesTab = () => {
                         onClick={() => handleToggleStatus(category.id, category.is_active)}
                         title={category.is_active ? 'Deactivate' : 'Activate'}
                       >
-                        <Toggle2 size={16} />
+                        {category.is_active ? <Eye size={16} /> : <EyeOff size={16} />}
                       </Button>
                       <Button
                         variant="ghost"

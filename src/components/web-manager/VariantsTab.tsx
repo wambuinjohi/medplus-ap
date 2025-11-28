@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Edit, Trash2, Toggle2 } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, EyeOff } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -201,7 +201,7 @@ export const VariantsTab = () => {
                         onClick={() => handleToggleStatus(variant.id, variant.is_active)}
                         title={variant.is_active ? 'Deactivate' : 'Activate'}
                       >
-                        <Toggle2 size={16} />
+                        {variant.is_active ? <Eye size={16} /> : <EyeOff size={16} />}
                       </Button>
                       <Button
                         variant="ghost"
