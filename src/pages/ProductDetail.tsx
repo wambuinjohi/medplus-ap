@@ -7,7 +7,7 @@ import { BiolegendLogo } from '@/components/ui/biolegend-logo';
 import { PublicFooter } from '@/components/PublicFooter';
 import ProductCategorySidebar from '@/components/ProductCategorySidebar';
 import { useToast } from '@/hooks/use-toast';
-import { getProductBySlug } from '@/data/products';
+import { getProductBySlug, getProductsByCategory } from '@/data/products';
 import { productCategoryNames } from '@/data/categories';
 import { MessageCircle, ArrowLeft, Check } from 'lucide-react';
 import { BreadcrumbNav } from '@/components/ui/breadcrumb-nav';
