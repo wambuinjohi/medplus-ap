@@ -94,17 +94,9 @@ export const useWebManager = () => {
       setLoading(true);
       setError(null);
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
       const { data: newCategory, error: err } = await supabase
         .from('web_categories')
-        .insert({
-          ...data,
-          created_by: user?.id,
-          updated_by: user?.id,
-        })
+        .insert(data)
         .select()
         .single();
 
@@ -126,16 +118,9 @@ export const useWebManager = () => {
       setLoading(true);
       setError(null);
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
       const { data: updated, error: err } = await supabase
         .from('web_categories')
-        .update({
-          ...data,
-          updated_by: user?.id,
-        })
+        .update(data)
         .eq('id', id)
         .select()
         .single();
@@ -179,15 +164,10 @@ export const useWebManager = () => {
     try {
       setError(null);
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
       const { error: err } = await supabase
         .from('web_categories')
         .update({
           is_active: isActive,
-          updated_by: user?.id,
         })
         .eq('id', id);
 
@@ -239,17 +219,9 @@ export const useWebManager = () => {
       setLoading(true);
       setError(null);
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
       const { data: newVariant, error: err } = await supabase
         .from('web_variants')
-        .insert({
-          ...data,
-          created_by: user?.id,
-          updated_by: user?.id,
-        })
+        .insert(data)
         .select()
         .single();
 
@@ -271,16 +243,9 @@ export const useWebManager = () => {
       setLoading(true);
       setError(null);
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
       const { data: updated, error: err } = await supabase
         .from('web_variants')
-        .update({
-          ...data,
-          updated_by: user?.id,
-        })
+        .update(data)
         .eq('id', id)
         .select()
         .single();
@@ -324,15 +289,10 @@ export const useWebManager = () => {
     try {
       setError(null);
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
       const { error: err } = await supabase
         .from('web_variants')
         .update({
           is_active: isActive,
-          updated_by: user?.id,
         })
         .eq('id', id);
 

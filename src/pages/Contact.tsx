@@ -9,11 +9,12 @@ import { useToast } from '@/hooks/use-toast';
 import { BreadcrumbNav } from '@/components/ui/breadcrumb-nav';
 import { useSEO } from '@/hooks/useSEO';
 import { generateContactPageSchema } from '@/utils/seoHelpers';
-import { productCategoryNames } from '@/data/categories';
+import { useWebCategories } from '@/hooks/useWebCategories';
 import emailjs from 'emailjs-com';
 import { Mail, MessageCircle } from 'lucide-react';
 
 export default function Contact() {
+  const { categories } = useWebCategories();
   useSEO(
     {
       title: 'Contact Us',
@@ -387,7 +388,7 @@ ${formData.message}
         </div>
       </section>
 
-      <PublicFooter productCategories={productCategoryNames} />
+      <PublicFooter productCategories={categories} />
     </div>
   );
 }

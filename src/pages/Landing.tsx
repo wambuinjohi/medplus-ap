@@ -328,7 +328,7 @@ export default function Landing() {
         </div>
       </section>
 
-      <PublicFooter productCategories={productCategoryNames} />
+      <PublicFooter productCategories={categories} />
     </div>
   );
 }

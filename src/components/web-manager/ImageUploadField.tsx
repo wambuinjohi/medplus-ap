@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Upload, X } from 'lucide-react';
+import { Upload, X, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { uploadProductImage } from '@/utils/imageUploadService';
 
 interface ImageUploadFieldProps {
   value: string;
@@ -14,54 +15,32 @@ export const ImageUploadField = ({ value, onChange, variantName }: ImageUploadFi
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState<string | null>(value || null);
 
-  const generateFileName = () => {
-    const slug = variantName
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '');
-    return `${slug}.jpg`;
-  };
-
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('File size must be less than 5MB');
-      return;
-    }
-
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please select a valid image file');
-      return;
-    }
-
     try {
       setUploading(true);
 
-      // Create FormData
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('fileName', generateFileName());
+      // Upload to Supabase Storage
+      const result = await uploadProductImage(file, variantName);
 
-      // Note: This assumes you have an API endpoint for image uploads
-      // For now, we'll store the image path as a local reference
-      // If you implement a backend endpoint, update this fetch call
+      if (!result.success) {
+        toast.error(result.error || 'Failed to upload image');
+        return;
+      }
 
-      // Generate a temporary preview URL
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const dataUrl = reader.result as string;
-        setPreview(dataUrl);
-        // Store as relative path to public/products directory
-        onChange(`/products/${generateFileName()}`);
-        toast.success('Image selected (will be uploaded when variant is saved)');
-      };
-      reader.readAsDataURL(file);
+      if (!result.url) {
+        toast.error('No URL returned from upload');
+        return;
+      }
+
+      // Update preview and value
+      setPreview(result.url);
+      onChange(result.url);
+      toast.success('Image uploaded successfully');
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to process image';
+      const message = error instanceof Error ? error.message : 'Failed to upload image';
       toast.error(message);
     } finally {
       setUploading(false);
@@ -115,19 +94,30 @@ export const ImageUploadField = ({ value, onChange, variantName }: ImageUploadFi
             type="button"
             variant="outline"
             className="w-full mt-4 cursor-pointer"
+            disabled={uploading}
             asChild
           >
-            <span>{uploading ? 'Uploading...' : preview ? 'Change Image' : 'Upload Image'}</span>
+            <span className="flex items-center justify-center gap-2">
+              {uploading && <Loader2 size={16} className="animate-spin" />}
+              {uploading ? 'Uploading...' : preview ? 'Change Image' : 'Upload Image'}
+            </span>
           </Button>
         </label>
       </div>
       {value && !preview && (
-        <div className="text-sm text-muted-foreground">
-          Current: {value}
+        <div className="text-sm text-muted-foreground break-all">
+          Uploaded: {(() => {
+            try {
+              const url = new URL(value);
+              return url.pathname.split('/').pop() || value;
+            } catch {
+              return value;
+            }
+          })()}
         </div>
       )}
       <p className="text-xs text-muted-foreground">
-        Images will be stored in /public/products/ directory
+        Images are securely stored in cloud storage (max 5MB)
       </p>
     </div>
   );

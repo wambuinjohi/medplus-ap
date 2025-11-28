@@ -34,7 +34,7 @@ export const VariantsTab = () => {
   const [variants, setVariants] = useState<WebVariant[]>([]);
   const [categories, setCategories] = useState<WebCategory[]>([]);
   const [search, setSearch] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedVariant, setSelectedVariant] = useState<WebVariant | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -58,7 +58,8 @@ export const VariantsTab = () => {
   };
 
   const loadVariants = async () => {
-    const data = await fetchVariants(selectedCategory || undefined, search || undefined);
+    const categoryId = selectedCategory && selectedCategory !== 'all' ? selectedCategory : undefined;
+    const data = await fetchVariants(categoryId, search || undefined);
     setVariants(data);
   };
 
@@ -71,9 +72,7 @@ export const VariantsTab = () => {
   };
 
   useEffect(() => {
-    if (search || selectedCategory) {
-      loadVariants();
-    }
+    loadVariants();
   }, [search, selectedCategory]);
 
   const handleCreate = async () => {
@@ -121,7 +120,7 @@ export const VariantsTab = () => {
               <SelectValue placeholder="Filter by category" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Categories</SelectItem>
+              <SelectItem value="all">All Categories</SelectItem>
               {categories.map((cat) => (
                 <SelectItem key={cat.id} value={cat.id}>
                   {cat.name}
