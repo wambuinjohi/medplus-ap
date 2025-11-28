@@ -692,67 +692,70 @@ Website: www.biolegendscientific.co.ke`;
                             </Button>
                           );
                         })()}
-                        {invoice.status !== 'paid' && (
-                          <>
-                            {invoice.status === 'draft' && (
+                        {(() => {
+                          const status = calculateActualStatus(invoice);
+                          return status !== 'paid' && (
+                            <>
+                              {status === 'draft' && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleSendInvoice(invoice.id)}
+                                  className="bg-primary-light text-primary border-primary/20 hover:bg-primary hover:text-primary-foreground"
+                                >
+                                  <Send className="h-4 w-4 mr-1" />
+                                  Send
+                                </Button>
+                              )}
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => handleSendInvoice(invoice.id)}
-                                className="bg-primary-light text-primary border-primary/20 hover:bg-primary hover:text-primary-foreground"
+                                onClick={() => handleRecordPayment(invoice)}
+                                className="bg-success-light text-success border-success/20 hover:bg-success hover:text-success-foreground"
                               >
-                                <Send className="h-4 w-4 mr-1" />
-                                Send
+                                <DollarSign className="h-4 w-4 mr-1" />
+                                {(invoice.balance_due || 0) > 0 ? 'Record Payment' : 'Payment Adjustment'}
                               </Button>
-                            )}
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleRecordPayment(invoice)}
-                              className="bg-success-light text-success border-success/20 hover:bg-success hover:text-success-foreground"
-                            >
-                              <DollarSign className="h-4 w-4 mr-1" />
-                              {(invoice.balance_due || 0) > 0 ? 'Record Payment' : 'Payment Adjustment'}
-                            </Button>
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  title="Delete invoice"
-                                  className="text-destructive"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-48">
-                                <div className="text-sm mb-2">Delete invoice {invoice.invoice_number}?</div>
-                                <div className="flex justify-end space-x-2">
-                                  <Button variant="ghost" size="sm" onClick={() => {}}>
-                                    Cancel
-                                  </Button>
+                              <Popover>
+                                <PopoverTrigger asChild>
                                   <Button
-                                    variant="destructive"
-                                    size="sm"
-                                    onClick={async () => {
-                                      try {
-                                        await deleteInvoice.mutateAsync(invoice.id);
-                                        refetch();
-                                        setSelectedInvoice(null);
-                                        toast.success('Invoice deleted');
-                                      } catch (e) {
-                                        console.error('Delete failed:', e);
-                                        toast.error('Failed to delete invoice');
-                                      }
-                                    }}
+                                    variant="ghost"
+                                    size="icon"
+                                    title="Delete invoice"
+                                    className="text-destructive"
                                   >
-                                    Delete
+                                    <Trash2 className="h-4 w-4" />
                                   </Button>
-                                </div>
-                              </PopoverContent>
-                            </Popover>
-                          </>
-                        )}
+                                </PopoverTrigger>
+                                <PopoverContent className="w-48">
+                                  <div className="text-sm mb-2">Delete invoice {invoice.invoice_number}?</div>
+                                  <div className="flex justify-end space-x-2">
+                                    <Button variant="ghost" size="sm" onClick={() => {}}>
+                                      Cancel
+                                    </Button>
+                                    <Button
+                                      variant="destructive"
+                                      size="sm"
+                                      onClick={async () => {
+                                        try {
+                                          await deleteInvoice.mutateAsync(invoice.id);
+                                          refetch();
+                                          setSelectedInvoice(null);
+                                          toast.success('Invoice deleted');
+                                        } catch (e) {
+                                          console.error('Delete failed:', e);
+                                          toast.error('Failed to delete invoice');
+                                        }
+                                      }}
+                                    >
+                                      Delete
+                                    </Button>
+                                  </div>
+                                </PopoverContent>
+                              </Popover>
+                            </>
+                          );
+                        })()}
                       </div>
                     </TableCell>
                   </TableRow>
