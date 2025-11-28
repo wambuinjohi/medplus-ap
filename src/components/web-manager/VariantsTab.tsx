@@ -72,9 +72,7 @@ export const VariantsTab = () => {
   };
 
   useEffect(() => {
-    if (search || (selectedCategory && selectedCategory !== 'all')) {
-      loadVariants();
-    }
+    loadVariants();
   }, [search, selectedCategory]);
 
   const handleCreate = async () => {
