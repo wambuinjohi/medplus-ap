@@ -34,7 +34,7 @@ export const VariantsTab = () => {
   const [variants, setVariants] = useState<WebVariant[]>([]);
   const [categories, setCategories] = useState<WebCategory[]>([]);
   const [search, setSearch] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedVariant, setSelectedVariant] = useState<WebVariant | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
