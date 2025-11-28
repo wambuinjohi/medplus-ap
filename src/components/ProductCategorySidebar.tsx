@@ -1,13 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronDown } from 'lucide-react';
+import { useWebCategories } from '@/hooks/useWebCategories';
 
 interface ProductCategory {
   name: string;
 }
 
 interface ProductCategorySidebarProps {
-  categories: ProductCategory[];
+  categories?: ProductCategory[];
   activeCategory?: string;
 }
 
@@ -20,10 +21,14 @@ const getCategorySlug = (name: string): string => {
 };
 
 export default function ProductCategorySidebar({
-  categories,
+  categories: providedCategories,
   activeCategory,
 }: ProductCategorySidebarProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const { categories: dynamicCategories } = useWebCategories();
+
+  // Use provided categories or fall back to dynamic categories
+  const categories = providedCategories || dynamicCategories.map((cat) => ({ name: cat.name }));
 
   return (
     <>

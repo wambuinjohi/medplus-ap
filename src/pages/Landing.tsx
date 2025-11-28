@@ -1,19 +1,19 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Menu, X, ChevronDown, Bandage, Package, Pipette, Wind, Baby, Hand, Monitor, Sofa, Wrench, Shirt, Shield, MoreHorizontal, Droplet, Syringe, AlertCircle } from 'lucide-react';
+import { Menu, X, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { BiolegendLogo } from '@/components/ui/biolegend-logo';
 import HeroSlider from '@/components/HeroSlider';
 import ProductsSection from '@/components/ProductsSection';
 import { PublicFooter } from '@/components/PublicFooter';
-import { productCategoryNames } from '@/data/categories';
-import { getProductBySlug } from '@/data/products';
+import { useWebCategories } from '@/hooks/useWebCategories';
 import { useSEO } from '@/hooks/useSEO';
 import { generateOrganizationSchema } from '@/utils/seoHelpers';
 
 export default function Landing() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [productsDropdownOpen, setProductsDropdownOpen] = useState(false);
+  const { categories } = useWebCategories();
 
   useSEO(
     {
@@ -25,31 +25,13 @@ export default function Landing() {
     generateOrganizationSchema()
   );
 
-  const productIconMap: { [key: string]: React.ReactNode } = {
-    'Bandages, Tapes and Dressings': <Bandage size={24} className="text-red-500" />,
-    'Bottles and Containers': <Package size={24} className="text-blue-600" />,
-    'Catheters and Tubes': <Pipette size={24} className="text-purple-600" />,
-    'Cotton Wool': <Wind size={24} className="text-gray-500" />,
-    'Diapers and Sanitary': <Baby size={24} className="text-pink-500" />,
-    'Gloves': <Hand size={24} className="text-yellow-600" />,
-    'Hospital Equipments': <Monitor size={24} className="text-indigo-600" />,
-    'Hospital Furniture': <Sofa size={24} className="text-amber-600" />,
-    'Hospital Instruments': <Wrench size={24} className="text-orange-600" />,
-    'Hospital Linen': <Shirt size={24} className="text-cyan-600" />,
-    'Infection Control': <Shield size={24} className="text-green-600" />,
-    'Others': <MoreHorizontal size={24} className="text-slate-600" />,
-    'PPE': <AlertCircle size={24} className="text-rose-600" />,
-    'Spirits, Detergents and Disinfectants': <Droplet size={24} className="text-teal-600" />,
-    'Syringes and Needles': <Syringe size={24} className="text-lime-600" />,
-  };
-
   const navigationItems = [
     { label: 'Home', href: '/' },
     { label: 'About Us', href: '#about' },
     {
       label: 'Our Products',
       href: '#',
-      submenu: productCategoryNames,
+      submenu: categories.map((cat) => ({ name: cat.name, slug: cat.slug })),
     },
     { label: 'Talk to us', href: '#talk-to-us' },
   ];
@@ -119,24 +101,20 @@ export default function Landing() {
                   {item.submenu && (
                     <div className="absolute right-0 mt-2 bg-white shadow-lg rounded-md opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10 border border-gray-100 before:absolute before:bottom-full before:right-8 before:w-6 before:h-4 before:bg-white before:border-t-2 before:border-l-2 before:border-gray-100 before:rotate-45" style={{ minWidth: '750px' }}>
                       <div className="grid grid-cols-5 gap-x-8 gap-y-4 p-6">
-                        {item.submenu.map((sub) => {
-                          const product = getProductBySlug(sub.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''));
-                          const productSlug = product?.slug || sub.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-                          return (
-                            <Link
-                              key={sub}
-                              to={`/products/${productSlug}`}
-                              className="flex flex-col items-center text-center group/item transition-all duration-200 hover:scale-110"
-                            >
-                              <div className="mb-2 transition-transform group-hover/item:scale-125">
-                                {productIconMap[sub]}
-                              </div>
-                              <span className="text-xs text-gray-700 group-hover/item:text-primary group-hover/item:font-semibold transition-colors leading-tight">
-                                {sub}
-                              </span>
-                            </Link>
-                          );
-                        })}
+                        {item.submenu.map((sub) => (
+                          <Link
+                            key={sub.slug}
+                            to={`/products/${sub.slug}`}
+                            className="flex flex-col items-center text-center group/item transition-all duration-200 hover:scale-110"
+                          >
+                            <div className="mb-2 transition-transform group-hover/item:scale-125 text-2xl">
+                              {categories.find((c) => c.slug === sub.slug)?.icon || '📦'}
+                            </div>
+                            <span className="text-xs text-gray-700 group-hover/item:text-primary group-hover/item:font-semibold transition-colors leading-tight">
+                              {sub.name}
+                            </span>
+                          </Link>
+                        ))}
                       </div>
                     </div>
                   )}
@@ -192,7 +170,7 @@ export default function Landing() {
                         className="w-full text-left px-4 py-3 text-gray-700 hover:bg-primary/10 rounded flex justify-between items-center font-medium text-sm"
                       >
                         {item.label}
-                        {item.submenu && (
+                        {item.submenu && item.submenu.length > 0 && (
                           <ChevronDown
                             size={16}
                             className={`transition-transform ${productsDropdownOpen ? 'rotate-180' : ''}`}
@@ -201,20 +179,16 @@ export default function Landing() {
                       </button>
                       {item.submenu && productsDropdownOpen && (
                         <div className="bg-gray-50 pl-4 py-1">
-                          {item.submenu.map((sub) => {
-                            const product = getProductBySlug(sub.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''));
-                            const productSlug = product?.slug || sub.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-                            return (
-                              <Link
-                                key={sub}
-                                to={`/products/${productSlug}`}
-                                className="block px-4 py-2 text-xs text-gray-700 hover:text-primary transition-colors"
-                                onClick={() => setMobileMenuOpen(false)}
-                              >
-                                {sub}
-                              </Link>
-                            );
-                          })}
+                          {item.submenu.map((sub) => (
+                            <Link
+                              key={sub.slug}
+                              to={`/products/${sub.slug}`}
+                              className="block px-4 py-2 text-xs text-gray-700 hover:text-primary transition-colors"
+                              onClick={() => setMobileMenuOpen(false)}
+                            >
+                              {sub.name}
+                            </Link>
+                          ))}
                         </div>
                       )}
                     </>

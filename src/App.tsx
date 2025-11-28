@@ -31,6 +31,7 @@ import RemittanceAdvice from "./pages/RemittanceAdvice";
 import AuditLogs from "./pages/AuditLogs";
 import LPOs from "./pages/LPOs";
 import CreditNotes from "./pages/CreditNotes";
+import WebManager from "./pages/WebManager";
 import NotFound from "./pages/NotFound";
 import PaymentSynchronizationPage from "./pages/PaymentSynchronization";
 import OptimizedInventory from "./pages/OptimizedInventory";
@@ -252,6 +253,16 @@ const App = () => {
             element={
               <ProtectedRoute>
                 <StatementOfAccounts />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Web Manager */}
+          <Route
+            path="/app/web-manager"
+            element={
+              <ProtectedRoute requiredRole="admin">
+                <WebManager />
               </ProtectedRoute>
             }
           />

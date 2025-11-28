@@ -7,8 +7,7 @@ import { BiolegendLogo } from '@/components/ui/biolegend-logo';
 import { PublicFooter } from '@/components/PublicFooter';
 import ProductCategorySidebar from '@/components/ProductCategorySidebar';
 import { useToast } from '@/hooks/use-toast';
-import { getProductBySlug, getProductsByCategory } from '@/data/products';
-import { productCategoryNames } from '@/data/categories';
+import { useWebCategoryBySlug, useWebVariantBySlug } from '@/hooks/useWebCategories';
 import { MessageCircle, ArrowLeft, Check } from 'lucide-react';
 import { BreadcrumbNav } from '@/components/ui/breadcrumb-nav';
 import { useSEO } from '@/hooks/useSEO';
@@ -18,27 +17,30 @@ export default function ProductDetail() {
   const { productSlug } = useParams<{ productSlug: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const product = productSlug ? getProductBySlug(productSlug) : undefined;
-  const categoryProducts = productSlug ? getProductsByCategory(productSlug) : [];
-  const isCategory = categoryProducts.length > 0;
-  const categoryName = isCategory && categoryProducts.length > 0 ? categoryProducts[0].category : undefined;
+
+  // Try to fetch as category first, then as variant
+  const { category, variants } = useWebCategoryBySlug(productSlug || '');
+  const { variant } = useWebVariantBySlug(productSlug || '');
+
+  const isCategory = !!category && variants.length > 0;
+  const isVariant = !!variant && !isCategory;
 
   // Set SEO for product
   useSEO(
     {
-      title: product?.name || categoryName || 'Product',
-      description: product?.description || `Browse our ${categoryName} collection`,
-      keywords: `${product?.name || categoryName}, medical supplies, healthcare`,
+      title: variant?.name || category?.name || 'Product',
+      description: variant?.description || category?.description || 'Browse our product collection',
+      keywords: `${variant?.name || category?.name}, medical supplies, healthcare`,
       url: `${SITE_CONFIG.url}/products/${productSlug}`,
       type: isCategory ? 'website' : 'product',
-      image: product?.image || (categoryProducts[0]?.image),
+      image: variant?.image_path || undefined,
     },
-    product && !isCategory ? generateProductSchema({
-      name: product.name,
-      description: product.description,
-      image: product.image,
+    variant ? generateProductSchema({
+      name: variant.name,
+      description: variant.description || '',
+      image: variant.image_path || '',
       url: `${SITE_CONFIG.url}/products/${productSlug}`,
-      category: product.category,
+      category: category?.name || '',
     }) : undefined
   );
 
@@ -73,7 +75,7 @@ export default function ProductDetail() {
 ━━━━━━━━━━━━━━━━━━━━━━
 
 *Product:*
-${product?.name}
+${variant?.name || category?.name}
 
 *Customer Details:*
 Company: ${quotationForm.companyName}
@@ -82,7 +84,7 @@ Email: ${quotationForm.email}
 Phone: ${quotationForm.phone}
 
 *Order Details:*
-Quantity: ${quotationForm.quantity} ${product?.pricing.unit || 'units'}
+Quantity: ${quotationForm.quantity} units
 ${quotationForm.additionalNotes ? `Additional Notes: ${quotationForm.additionalNotes}` : ''}
 
 ━━━━━━━━━━━━━━━━━━━━━━
@@ -109,7 +111,7 @@ Please provide a quotation for the above product and delivery terms.`;
     });
   };
 
-  if (!product && !isCategory) {
+  if (!variant && !isCategory) {
     return (
       <div className="min-h-screen bg-white">
         <header className="sticky top-0 bg-white shadow-sm z-50 border-b border-gray-200">
@@ -168,74 +170,63 @@ Please provide a quotation for the above product and delivery terms.`;
         {/* Breadcrumb */}
         <BreadcrumbNav items={[
           { label: 'Products', href: '/products' },
-          { label: categoryName || 'Category', href: `/products/${productSlug}` }
+          { label: category?.name || 'Category', href: `/products/${productSlug}` }
         ]} />
 
         {/* Category Products Grid */}
         <section className="py-12 bg-gray-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col md:flex-row gap-8">
-              {/* Sidebar */}
+              {/* Sidebar - Using ProductCategorySidebar which fetches its own data */}
               <ProductCategorySidebar
-                categories={[
-                  { name: 'Bandages, Tapes and Dressings' },
-                  { name: 'Bottles and Containers' },
-                  { name: 'Catheters and Tubes' },
-                  { name: 'Cotton Wool' },
-                  { name: 'Diapers and Sanitary' },
-                  { name: 'Gloves' },
-                  { name: 'Hospital Equipments' },
-                  { name: 'Hospital Furniture' },
-                  { name: 'Hospital Instruments' },
-                  { name: 'Hospital Linen' },
-                  { name: 'Infection Control' },
-                  { name: 'Others' },
-                  { name: 'PPE' },
-                  { name: 'Spirits, Detergents and Disinfectants' },
-                  { name: 'Syringes and Needles' },
-                ]}
-                activeCategory={categoryName}
+                activeCategory={category?.name}
               />
 
               {/* Main Content */}
               <div className="flex-1">
                 <div className="mb-12">
-                  <h1 className="text-4xl font-bold text-gray-900 mb-2">{categoryName}</h1>
-                  <p className="text-lg text-gray-600">Browse our collection of {categoryName?.toLowerCase()} products</p>
+                  <h1 className="text-4xl font-bold text-gray-900 mb-2">{category?.name}</h1>
+                  <p className="text-lg text-gray-600">
+                    {category?.description || `Browse our collection of ${category?.name?.toLowerCase()} products`}
+                  </p>
                 </div>
 
-                {/* Products Grid */}
+                {/* Variants Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {categoryProducts.map((prod) => (
+              {variants.map((variant) => (
                 <div
-                  key={prod.id}
+                  key={variant.id}
                   className="group relative bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-300"
                 >
-                  {/* Product Image */}
+                  {/* Variant Image */}
                   <div className="relative h-48 bg-gray-200 overflow-hidden">
-                    <img
-                      src={prod.image}
-                      alt={prod.name}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                    />
+                    {variant.image_path ? (
+                      <img
+                        src={variant.image_path}
+                        alt={variant.name}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 text-gray-400">
+                        <span className="text-4xl">📦</span>
+                      </div>
+                    )}
                   </div>
 
-                  {/* Product Info */}
+                  {/* Variant Info */}
                   <div className="p-4">
                     {/* SKU */}
-                    {prod.sku && (
-                      <p className="text-xs text-gray-500 font-semibold mb-2">SKU: {prod.sku}</p>
-                    )}
+                    <p className="text-xs text-gray-500 font-semibold mb-2">SKU: {variant.sku}</p>
 
-                    {/* Product Name */}
+                    {/* Variant Name */}
                     <h3 className="text-base font-bold text-gray-900 mb-4 line-clamp-2">
-                      {prod.name}
+                      {variant.name}
                     </h3>
 
                     {/* Request Quotation Button */}
                     <button
                       onClick={() => {
-                        const message = `Hi, I'm interested in requesting a quotation for: ${prod.name} (SKU: ${prod.sku}). Could you please provide pricing and availability details?`;
+                        const message = `Hi, I'm interested in requesting a quotation for: ${variant.name} (SKU: ${variant.sku}). Could you please provide pricing and availability details?`;
                         const encodedMessage = encodeURIComponent(message);
                         const whatsappUrl = `https://wa.me/?text=${encodedMessage}`;
                         window.open(whatsappUrl, '_blank');
@@ -264,7 +255,7 @@ Please provide a quotation for the above product and delivery terms.`;
           </div>
         </section>
 
-        <PublicFooter productCategories={productCategoryNames} />
+        <PublicFooter />
       </div>
     );
   }
@@ -291,89 +282,46 @@ Please provide a quotation for the above product and delivery terms.`;
       {/* Breadcrumb */}
       <BreadcrumbNav items={[
         { label: 'Products', href: '/products' },
-        { label: product.name, href: `/products/${productSlug}` }
+        { label: category?.name || 'Category', href: `/products/${category?.slug}` },
+        { label: variant?.name || 'Variant', href: `/products/${productSlug}` }
       ]} />
 
       {/* Product Details with Sidebar */}
       <section className="py-12 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row gap-8">
-            {/* Sidebar */}
+            {/* Sidebar - Using ProductCategorySidebar which fetches its own data */}
             <ProductCategorySidebar
-              categories={[
-                { name: 'Bandages, Tapes and Dressings' },
-                { name: 'Bottles and Containers' },
-                { name: 'Catheters and Tubes' },
-                { name: 'Cotton Wool' },
-                { name: 'Diapers and Sanitary' },
-                { name: 'Gloves' },
-                { name: 'Hospital Equipments' },
-                { name: 'Hospital Furniture' },
-                { name: 'Hospital Instruments' },
-                { name: 'Hospital Linen' },
-                { name: 'Infection Control' },
-                { name: 'Others' },
-                { name: 'PPE' },
-                { name: 'Spirits, Detergents and Disinfectants' },
-                { name: 'Syringes and Needles' },
-              ]}
-              activeCategory={product.name}
+              activeCategory={category?.name}
             />
 
             {/* Main Content */}
             <div className="flex-1">
               <div className="grid md:grid-cols-2 gap-12">
-                {/* Product Image */}
+                {/* Variant Image */}
                 <div>
                   <div className="bg-white rounded-lg overflow-hidden shadow-sm border border-gray-200">
-                    <img
-                      src={product.image}
-                      alt={product.name}
-                      className="w-full h-96 object-cover"
-                    />
-                  </div>
-                </div>
-
-                {/* Product Info */}
-                <div>
-                  <h1 className="text-4xl font-bold text-gray-900 mb-2">{product.name}</h1>
-                  <p className="text-lg text-gray-600 mb-6">{product.description}</p>
-
-
-                  {/* Features */}
-                  <div className="mb-8">
-                    <h3 className="text-lg font-bold text-gray-900 mb-4">Key Features</h3>
-                    <ul className="space-y-2">
-                      {product.features.map((feature, idx) => (
-                        <li key={idx} className="flex items-start gap-3">
-                          <Check size={20} className="text-green-600 flex-shrink-0 mt-0.5" />
-                          <span className="text-gray-700">{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              </div>
-
-              {/* Full Description & Specs */}
-              <div className="grid md:grid-cols-2 gap-12 mt-16">
-                {/* Description */}
-                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-4">About This Product</h2>
-                  <p className="text-gray-700 leading-relaxed mb-6">{product.longDescription}</p>
-                </div>
-
-                {/* Specifications */}
-                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-4">Specifications</h2>
-                  <div className="space-y-4">
-                    {product.specifications.map((spec, idx) => (
-                      <div key={idx} className="border-b border-gray-200 pb-3">
-                        <h4 className="font-semibold text-gray-900 text-sm mb-1">{spec.label}</h4>
-                        <p className="text-gray-600">{spec.value}</p>
+                    {variant?.image_path ? (
+                      <img
+                        src={variant.image_path}
+                        alt={variant.name}
+                        className="w-full h-96 object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-96 flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 text-gray-400">
+                        <span className="text-6xl">📦</span>
                       </div>
-                    ))}
+                    )}
                   </div>
+                </div>
+
+                {/* Variant Info */}
+                <div>
+                  <h1 className="text-4xl font-bold text-gray-900 mb-2">{variant?.name}</h1>
+                  <p className="text-sm text-gray-600 font-semibold mb-4">SKU: {variant?.sku}</p>
+                  <p className="text-lg text-gray-600 mb-6">
+                    {variant?.description || 'High-quality product for medical and healthcare applications'}
+                  </p>
                 </div>
               </div>
             </div>
@@ -388,17 +336,19 @@ Please provide a quotation for the above product and delivery terms.`;
           <p className="text-gray-600 text-center mb-12">Fill in the details below and we'll send you a quotation via WhatsApp</p>
 
           <form className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 space-y-6 scroll-smooth" style={{ scrollBehavior: 'auto' }}>
-            {/* Category Name Display */}
+            {/* Product Display */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <p className="text-sm text-blue-600 font-semibold">Category</p>
-              <p className="text-lg text-blue-900 font-bold">{product.name}</p>
+              <p className="text-sm text-blue-600 font-semibold">Product Category</p>
+              <p className="text-lg text-blue-900 font-bold">{category?.name}</p>
+              <p className="text-sm text-blue-700 mt-2">Variant: {variant?.name}</p>
+              <p className="text-sm text-blue-600">SKU: {variant?.sku}</p>
             </div>
 
             <div className="grid md:grid-cols-2 gap-6">
               {/* Quantity */}
               <div>
                 <Label htmlFor="quantity" className="text-gray-700 mb-2 block">
-                  Quantity * <span className="text-xs text-gray-500">({product.pricing.unit})</span>
+                  Quantity *
                 </Label>
                 <Input
                   id="quantity"
@@ -549,7 +499,7 @@ Please provide a quotation for the above product and delivery terms.`;
         </div>
       </section>
 
-      <PublicFooter productCategories={productCategoryNames} />
+      <PublicFooter />
     </div>
   );
 }
