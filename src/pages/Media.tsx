@@ -5,9 +5,10 @@ import { PublicFooter } from '@/components/PublicFooter';
 import { BreadcrumbNav } from '@/components/ui/breadcrumb-nav';
 import { useSEO } from '@/hooks/useSEO';
 import { generateWebPageSchema } from '@/utils/seoHelpers';
-import { productCategoryNames } from '@/data/categories';
+import { useWebCategories } from '@/hooks/useWebCategories';
 
 export default function Media() {
+  const { categories } = useWebCategories();
   useSEO(
     {
       title: 'Media Center',
