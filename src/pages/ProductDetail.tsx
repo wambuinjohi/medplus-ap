@@ -7,7 +7,7 @@ import { BiolegendLogo } from '@/components/ui/biolegend-logo';
 import { PublicFooter } from '@/components/PublicFooter';
 import ProductCategorySidebar from '@/components/ProductCategorySidebar';
 import { useToast } from '@/hooks/use-toast';
-import { getProductBySlug } from '@/data/products';
+import { getProductBySlug, getProductsByCategory } from '@/data/products';
 import { productCategoryNames } from '@/data/categories';
 import { MessageCircle, ArrowLeft, Check } from 'lucide-react';
 import { BreadcrumbNav } from '@/components/ui/breadcrumb-nav';
@@ -19,18 +19,21 @@ export default function ProductDetail() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const product = productSlug ? getProductBySlug(productSlug) : undefined;
+  const categoryProducts = productSlug ? getProductsByCategory(productSlug) : [];
+  const isCategory = categoryProducts.length > 0;
+  const categoryName = isCategory && categoryProducts.length > 0 ? categoryProducts[0].category : undefined;
 
   // Set SEO for product
   useSEO(
     {
-      title: product?.name || 'Product',
-      description: product?.description || 'Medical product from Medplus Africa',
-      keywords: `${product?.name}, medical supplies, ${product?.category}`,
+      title: product?.name || categoryName || 'Product',
+      description: product?.description || `Browse our ${categoryName} collection`,
+      keywords: `${product?.name || categoryName}, medical supplies, healthcare`,
       url: `${SITE_CONFIG.url}/products/${productSlug}`,
-      type: 'product',
-      image: product?.image,
+      type: isCategory ? 'website' : 'product',
+      image: product?.image || (categoryProducts[0]?.image),
     },
-    product ? generateProductSchema({
+    product && !isCategory ? generateProductSchema({
       name: product.name,
       description: product.description,
       image: product.image,
@@ -106,7 +109,7 @@ Please provide a quotation for the above product and delivery terms.`;
     });
   };
 
-  if (!product) {
+  if (!product && !isCategory) {
     return (
       <div className="min-h-screen bg-white">
         <header className="sticky top-0 bg-white shadow-sm z-50 border-b border-gray-200">
@@ -137,6 +140,131 @@ Please provide a quotation for the above product and delivery terms.`;
             </Link>
           </div>
         </div>
+      </div>
+    );
+  }
+
+  // Render category view
+  if (isCategory) {
+    return (
+      <div className="min-h-screen bg-white">
+        {/* Header */}
+        <header className="sticky top-0 bg-white shadow-sm z-50 border-b border-gray-200">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center h-20">
+              <Link to="/" className="flex-shrink-0">
+                <BiolegendLogo size="md" showText={true} />
+              </Link>
+              <nav className="hidden md:flex items-center space-x-8">
+                <Link to="/" className="text-gray-700 hover:text-primary transition-colors font-medium">Home</Link>
+                <Link to="/about-us" className="text-gray-700 hover:text-primary transition-colors font-medium">About Us</Link>
+                <Link to="/products" className="text-gray-700 hover:text-primary transition-colors font-medium">Our Products</Link>
+                <Link to="/contact" className="text-gray-700 hover:text-primary transition-colors font-medium">Contact Us</Link>
+              </nav>
+            </div>
+          </div>
+        </header>
+
+        {/* Breadcrumb */}
+        <BreadcrumbNav items={[
+          { label: 'Products', href: '/products' },
+          { label: categoryName || 'Category', href: `/products/${productSlug}` }
+        ]} />
+
+        {/* Category Products Grid */}
+        <section className="py-12 bg-gray-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex flex-col md:flex-row gap-8">
+              {/* Sidebar */}
+              <ProductCategorySidebar
+                categories={[
+                  { name: 'Bandages, Tapes and Dressings' },
+                  { name: 'Bottles and Containers' },
+                  { name: 'Catheters and Tubes' },
+                  { name: 'Cotton Wool' },
+                  { name: 'Diapers and Sanitary' },
+                  { name: 'Gloves' },
+                  { name: 'Hospital Equipments' },
+                  { name: 'Hospital Furniture' },
+                  { name: 'Hospital Instruments' },
+                  { name: 'Hospital Linen' },
+                  { name: 'Infection Control' },
+                  { name: 'Others' },
+                  { name: 'PPE' },
+                  { name: 'Spirits, Detergents and Disinfectants' },
+                  { name: 'Syringes and Needles' },
+                ]}
+                activeCategory={categoryName}
+              />
+
+              {/* Main Content */}
+              <div className="flex-1">
+                <div className="mb-12">
+                  <h1 className="text-4xl font-bold text-gray-900 mb-2">{categoryName}</h1>
+                  <p className="text-lg text-gray-600">Browse our collection of {categoryName?.toLowerCase()} products</p>
+                </div>
+
+                {/* Products Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {categoryProducts.map((prod) => (
+                <div
+                  key={prod.id}
+                  className="group relative bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-300"
+                >
+                  {/* Product Image */}
+                  <div className="relative h-48 bg-gray-200 overflow-hidden">
+                    <img
+                      src={prod.image}
+                      alt={prod.name}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                    />
+                  </div>
+
+                  {/* Product Info */}
+                  <div className="p-4">
+                    {/* SKU */}
+                    {prod.sku && (
+                      <p className="text-xs text-gray-500 font-semibold mb-2">SKU: {prod.sku}</p>
+                    )}
+
+                    {/* Product Name */}
+                    <h3 className="text-base font-bold text-gray-900 mb-4 line-clamp-2">
+                      {prod.name}
+                    </h3>
+
+                    {/* Request Quotation Button */}
+                    <button
+                      onClick={() => {
+                        const message = `Hi, I'm interested in requesting a quotation for: ${prod.name} (SKU: ${prod.sku}). Could you please provide pricing and availability details?`;
+                        const encodedMessage = encodeURIComponent(message);
+                        const whatsappUrl = `https://wa.me/?text=${encodedMessage}`;
+                        window.open(whatsappUrl, '_blank');
+                      }}
+                      className="w-full bg-gradient-to-r from-blue-500 to-green-500 text-white font-bold py-2 px-4 rounded-lg hover:shadow-lg transition-all duration-300 hover:scale-105 text-sm flex items-center justify-center gap-2"
+                    >
+                      <MessageCircle size={16} />
+                      Request Quotation
+                    </button>
+                  </div>
+                </div>
+              ))}
+                </div>
+
+                {/* Back Button */}
+                <div className="mt-12 text-center">
+                  <Link to="/products">
+                    <Button className="bg-primary hover:bg-primary/90 text-white font-semibold">
+                      <ArrowLeft size={16} className="mr-2" />
+                      Back to Products
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <PublicFooter productCategories={productCategoryNames} />
       </div>
     );
   }

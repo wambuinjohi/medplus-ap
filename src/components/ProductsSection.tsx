@@ -1,4 +1,4 @@
-import { MessageCircle, ArrowRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 interface Product {
@@ -118,11 +118,6 @@ export default function ProductsSection() {
     }
   ];
 
-  const generateWhatsAppLink = (product: Product) => {
-    const message = `Hi, I'm interested in requesting a quote for: ${product.name}. Could you please provide pricing and availability details?`;
-    const encodedMessage = encodeURIComponent(message);
-    return `https://wa.me/?text=${encodedMessage}`;
-  };
 
   return (
     <section className="py-12 sm:py-24 bg-gradient-to-b from-white via-blue-50/20 to-white">
@@ -168,16 +163,13 @@ export default function ProductsSection() {
                   {product.description}
                 </p>
 
-                {/* Request Quote Button */}
-                <a
-                  href={generateWhatsAppLink(product)}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                {/* View More Button */}
+                <Link
+                  to={`/products/${product.slug}`}
                   className="flex items-center justify-center gap-2 w-full bg-gradient-to-r from-blue-500 to-green-500 text-white font-bold py-2 sm:py-3 px-4 rounded-lg hover:shadow-lg transition-all duration-300 hover:scale-105 text-sm sm:text-base"
                 >
-                  <MessageCircle size={16} className="sm:w-[18px] sm:h-[18px]" />
-                  Request Quote
-                </a>
+                  View More....
+                </Link>
               </div>
             </div>
           ))}
