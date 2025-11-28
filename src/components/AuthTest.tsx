@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Shield, User, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { PublicFooter } from '@/components/PublicFooter';
+import { useWebCategories } from '@/hooks/useWebCategories';
 
 export function AuthTest() {
   const { user, isAuthenticated, loading } = useAuth();
