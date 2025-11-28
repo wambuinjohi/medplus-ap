@@ -4,7 +4,7 @@ import { Menu, X, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { BiolegendLogo } from '@/components/ui/biolegend-logo';
 import HeroSlider from '@/components/HeroSlider';
-import ProductsSection from '@/components/ProductsSection';
+import IntroSection from '@/components/IntroSection';
 import { PublicFooter } from '@/components/PublicFooter';
 import { useWebCategories } from '@/hooks/useWebCategories';
 import { useSEO } from '@/hooks/useSEO';
@@ -48,7 +48,7 @@ export default function Landing() {
     { name: 'MEDS', icon: '🏢', type: 'Organization' },
     { name: 'Metro', icon: '🏪', type: 'Organization' },
     { name: 'Stiegelmeyer Group', icon: '🛏️', type: 'Corporate' },
-    { name: 'PSI', icon: '���️', type: 'NGO' },
+    { name: 'PSI', icon: '💉', type: 'NGO' },
     { name: 'UNHCR', icon: '🤝', type: 'NGO' },
   ];
 
@@ -203,8 +203,8 @@ export default function Landing() {
       {/* Hero Section with Slider */}
       <HeroSlider />
 
-      {/* Products Section */}
-      <ProductsSection />
+      {/* Intro Section */}
+      <IntroSection />
 
       {/* Our Goals Section */}
       <section className="py-12 sm:py-24 bg-gradient-to-b from-white to-blue-50/30">
