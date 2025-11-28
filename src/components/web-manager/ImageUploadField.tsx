@@ -106,7 +106,14 @@ export const ImageUploadField = ({ value, onChange, variantName }: ImageUploadFi
       </div>
       {value && !preview && (
         <div className="text-sm text-muted-foreground break-all">
-          Uploaded: {new URL(value).pathname.split('/').pop()}
+          Uploaded: {(() => {
+            try {
+              const url = new URL(value);
+              return url.pathname.split('/').pop() || value;
+            } catch {
+              return value;
+            }
+          })()}
         </div>
       )}
       <p className="text-xs text-muted-foreground">
