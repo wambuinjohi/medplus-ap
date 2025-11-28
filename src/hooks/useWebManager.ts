@@ -263,16 +263,9 @@ export const useWebManager = () => {
       setLoading(true);
       setError(null);
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
       const { data: updated, error: err } = await supabase
         .from('web_variants')
-        .update({
-          ...data,
-          updated_by: user?.id,
-        })
+        .update(data)
         .eq('id', id)
         .select()
         .single();
