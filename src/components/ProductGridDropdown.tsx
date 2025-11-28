@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { X, ChevronRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 interface Product {
   name: string;
