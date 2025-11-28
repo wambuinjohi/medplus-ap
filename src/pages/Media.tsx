@@ -251,7 +251,7 @@ export default function Media() {
         </div>
       </section>
 
-      <PublicFooter productCategories={productCategoryNames} />
+      <PublicFooter productCategories={categories} />
     </div>
   );
 }
