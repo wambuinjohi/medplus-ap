@@ -128,11 +128,35 @@ export default function Invoices() {
 
   const { data: companies } = useCompanies();
   const currentCompany = companies?.[0];
-  
+
   // Use the fixed invoices hook
   const { data: invoices, isLoading, error, refetch } = useInvoices(currentCompany?.id);
   const deleteInvoice = useDeleteInvoice();
 
+  // Auto-reconcile invoices on component mount to fix any status mismatches
+  useEffect(() => {
+    if (currentCompany?.id && !isLoading) {
+      const autoReconcile = async () => {
+        try {
+          console.log('Auto-reconciling invoices for company:', currentCompany.id);
+          const result = await reconcileAllInvoiceBalances(currentCompany.id, true);
+
+          if (result.fixed > 0) {
+            console.log(`Auto-reconciliation fixed ${result.fixed} invoices`);
+            // Refetch invoices to show corrected status
+            refetch();
+          }
+        } catch (error) {
+          console.warn('Auto-reconciliation warning (non-critical):', error);
+          // Don't show error toast for auto-reconciliation, it's a background operation
+        }
+      };
+
+      // Run reconciliation with a small delay to allow initial data load
+      const timer = setTimeout(autoReconcile, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [currentCompany?.id, isLoading, refetch]);
 
   // Filter and search logic
   const filteredInvoices = invoices?.filter(invoice => {
