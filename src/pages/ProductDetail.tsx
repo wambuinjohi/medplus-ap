@@ -19,18 +19,21 @@ export default function ProductDetail() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const product = productSlug ? getProductBySlug(productSlug) : undefined;
+  const categoryProducts = productSlug ? getProductsByCategory(productSlug) : [];
+  const isCategory = categoryProducts.length > 0;
+  const categoryName = isCategory && categoryProducts.length > 0 ? categoryProducts[0].category : undefined;
 
   // Set SEO for product
   useSEO(
     {
-      title: product?.name || 'Product',
-      description: product?.description || 'Medical product from Medplus Africa',
-      keywords: `${product?.name}, medical supplies, ${product?.category}`,
+      title: product?.name || categoryName || 'Product',
+      description: product?.description || `Browse our ${categoryName} collection`,
+      keywords: `${product?.name || categoryName}, medical supplies, healthcare`,
       url: `${SITE_CONFIG.url}/products/${productSlug}`,
-      type: 'product',
-      image: product?.image,
+      type: isCategory ? 'website' : 'product',
+      image: product?.image || (categoryProducts[0]?.image),
     },
-    product ? generateProductSchema({
+    product && !isCategory ? generateProductSchema({
       name: product.name,
       description: product.description,
       image: product.image,
