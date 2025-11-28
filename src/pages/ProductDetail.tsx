@@ -170,74 +170,63 @@ Please provide a quotation for the above product and delivery terms.`;
         {/* Breadcrumb */}
         <BreadcrumbNav items={[
           { label: 'Products', href: '/products' },
-          { label: categoryName || 'Category', href: `/products/${productSlug}` }
+          { label: category?.name || 'Category', href: `/products/${productSlug}` }
         ]} />
 
         {/* Category Products Grid */}
         <section className="py-12 bg-gray-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col md:flex-row gap-8">
-              {/* Sidebar */}
+              {/* Sidebar - Using ProductCategorySidebar which fetches its own data */}
               <ProductCategorySidebar
-                categories={[
-                  { name: 'Bandages, Tapes and Dressings' },
-                  { name: 'Bottles and Containers' },
-                  { name: 'Catheters and Tubes' },
-                  { name: 'Cotton Wool' },
-                  { name: 'Diapers and Sanitary' },
-                  { name: 'Gloves' },
-                  { name: 'Hospital Equipments' },
-                  { name: 'Hospital Furniture' },
-                  { name: 'Hospital Instruments' },
-                  { name: 'Hospital Linen' },
-                  { name: 'Infection Control' },
-                  { name: 'Others' },
-                  { name: 'PPE' },
-                  { name: 'Spirits, Detergents and Disinfectants' },
-                  { name: 'Syringes and Needles' },
-                ]}
-                activeCategory={categoryName}
+                activeCategory={category?.name}
               />
 
               {/* Main Content */}
               <div className="flex-1">
                 <div className="mb-12">
-                  <h1 className="text-4xl font-bold text-gray-900 mb-2">{categoryName}</h1>
-                  <p className="text-lg text-gray-600">Browse our collection of {categoryName?.toLowerCase()} products</p>
+                  <h1 className="text-4xl font-bold text-gray-900 mb-2">{category?.name}</h1>
+                  <p className="text-lg text-gray-600">
+                    {category?.description || `Browse our collection of ${category?.name?.toLowerCase()} products`}
+                  </p>
                 </div>
 
-                {/* Products Grid */}
+                {/* Variants Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {categoryProducts.map((prod) => (
+              {variants.map((variant) => (
                 <div
-                  key={prod.id}
+                  key={variant.id}
                   className="group relative bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-300"
                 >
-                  {/* Product Image */}
+                  {/* Variant Image */}
                   <div className="relative h-48 bg-gray-200 overflow-hidden">
-                    <img
-                      src={prod.image}
-                      alt={prod.name}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                    />
+                    {variant.image_path ? (
+                      <img
+                        src={variant.image_path}
+                        alt={variant.name}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 text-gray-400">
+                        <span className="text-4xl">📦</span>
+                      </div>
+                    )}
                   </div>
 
-                  {/* Product Info */}
+                  {/* Variant Info */}
                   <div className="p-4">
                     {/* SKU */}
-                    {prod.sku && (
-                      <p className="text-xs text-gray-500 font-semibold mb-2">SKU: {prod.sku}</p>
-                    )}
+                    <p className="text-xs text-gray-500 font-semibold mb-2">SKU: {variant.sku}</p>
 
-                    {/* Product Name */}
+                    {/* Variant Name */}
                     <h3 className="text-base font-bold text-gray-900 mb-4 line-clamp-2">
-                      {prod.name}
+                      {variant.name}
                     </h3>
 
                     {/* Request Quotation Button */}
                     <button
                       onClick={() => {
-                        const message = `Hi, I'm interested in requesting a quotation for: ${prod.name} (SKU: ${prod.sku}). Could you please provide pricing and availability details?`;
+                        const message = `Hi, I'm interested in requesting a quotation for: ${variant.name} (SKU: ${variant.sku}). Could you please provide pricing and availability details?`;
                         const encodedMessage = encodeURIComponent(message);
                         const whatsappUrl = `https://wa.me/?text=${encodedMessage}`;
                         window.open(whatsappUrl, '_blank');
@@ -266,7 +255,7 @@ Please provide a quotation for the above product and delivery terms.`;
           </div>
         </section>
 
-        <PublicFooter productCategories={productCategoryNames} />
+        <PublicFooter />
       </div>
     );
   }
