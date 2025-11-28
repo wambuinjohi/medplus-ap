@@ -388,7 +388,7 @@ ${formData.message}
         </div>
       </section>
 
-      <PublicFooter productCategories={productCategoryNames} />
+      <PublicFooter productCategories={categories} />
     </div>
   );
 }
