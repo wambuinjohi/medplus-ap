@@ -70,6 +70,27 @@ interface Invoice {
   created_by_profile?: { full_name?: string } | null;
 }
 
+function calculateActualStatus(invoice: Invoice): 'draft' | 'sent' | 'paid' | 'partial' | 'overdue' {
+  // If balance is fully paid (0 or less) and there was some payment, mark as paid
+  if ((invoice.balance_due || 0) <= 0 && (invoice.paid_amount || 0) > 0) {
+    return 'paid';
+  }
+  // If there's a payment but balance remains, mark as partial
+  if ((invoice.paid_amount || 0) > 0 && (invoice.balance_due || 0) > 0) {
+    return 'partial';
+  }
+  // If status is overdue, preserve that
+  if (invoice.status === 'overdue') {
+    return 'overdue';
+  }
+  // If status is sent, preserve that
+  if (invoice.status === 'sent') {
+    return 'sent';
+  }
+  // Default to draft (no payments)
+  return 'draft';
+}
+
 function getStatusColor(status: string) {
   switch (status) {
     case 'draft':
