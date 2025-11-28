@@ -499,7 +499,7 @@ Please provide a quotation for the above product and delivery terms.`;
         </div>
       </section>
 
-      <PublicFooter productCategories={productCategoryNames} />
+      <PublicFooter />
     </div>
   );
 }
