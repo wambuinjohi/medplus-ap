@@ -14,18 +14,18 @@ export default function HeroSlider() {
   const slides: Slide[] = [
     {
       id: 1,
-      image: 'https://images.pexels.com/photos/7722677/pexels-photo-7722677.jpeg?w=1200&h=800&fit=crop',
-      alt: 'Medical supplies including gauze, scissors, and alcohol prep pads'
+      image: 'https://cdn.builder.io/api/v1/image/assets%2F61f5e6f266e944e8a52ca608d3d23214%2F1f0c36a192784b5987fa0711827198f8?format=webp&width=800',
+      alt: 'Electrosurgical Generator 400W - Advanced surgical equipment for precise tissue cutting and coagulation'
     },
     {
       id: 2,
-      image: 'https://images.pexels.com/photos/20041997/pexels-photo-20041997.jpeg?w=1200&h=800&fit=crop',
-      alt: 'Modern hospital examination room with medical equipment'
+      image: 'https://cdn.builder.io/api/v1/image/assets%2F61f5e6f266e944e8a52ca608d3d23214%2F496df3358cdb47939a419c9e84363fdb?format=webp&width=800',
+      alt: 'Digital Humidifier and Nebulizer - Advanced respiratory care equipment for patient treatment'
     },
     {
       id: 3,
-      image: 'https://images.pexels.com/photos/6129902/pexels-photo-6129902.jpeg?w=1200&h=800&fit=crop',
-      alt: 'Healthcare supplies cotton balls for medical applications'
+      image: 'https://cdn.builder.io/api/v1/image/assets%2F61f5e6f266e944e8a52ca608d3d23214%2Fb4917e9b1dab4de889749c3beb055718?format=webp&width=800',
+      alt: 'Digital Baby Scale - Precision weighing equipment for pediatric care and monitoring'
     }
   ];
 
