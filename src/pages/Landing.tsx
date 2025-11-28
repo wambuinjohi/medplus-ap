@@ -343,12 +343,12 @@ export default function Landing() {
           <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-white/95 mb-6 sm:mb-10 max-w-3xl mx-auto leading-relaxed font-light">
             Interested in our products? Let's connect and discuss how we can support your healthcare needs across Africa.
           </p>
-          <Link to="/app">
+          <Link to="/contact">
             <Button
               size="lg"
               className="bg-white text-blue-600 hover:bg-gray-100 font-bold text-base sm:text-lg px-6 sm:px-10 py-3 sm:py-6 rounded-lg shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 w-full sm:w-auto"
             >
-              Access Our Application
+              Contact
             </Button>
           </Link>
         </div>
