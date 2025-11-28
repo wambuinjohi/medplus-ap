@@ -1,14 +1,15 @@
 import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
 import { PublicHeader } from '@/components/PublicHeader';
 import { PublicFooter } from '@/components/PublicFooter';
 import { BreadcrumbNav } from '@/components/ui/breadcrumb-nav';
 import ProductCategorySidebar from '@/components/ProductCategorySidebar';
+import { useWebCategories } from '@/hooks/useWebCategories';
 import { useSEO } from '@/hooks/useSEO';
 import { generateWebPageSchema } from '@/utils/seoHelpers';
-import { productCategoryNames } from '@/data/categories';
 
 export default function OurProducts() {
+  const { categories } = useWebCategories();
+
   useSEO(
     {
       title: 'Our Products',
@@ -22,23 +23,6 @@ export default function OurProducts() {
       url: 'https://medplusafrica.com/products',
     })
   );
-  const productCategories = [
-    { name: 'Bandages, Tapes and Dressings', icon: '🩹', description: 'Complete range of medical dressings and bandages for wound care', slug: 'bandages-tapes-and-dressings' },
-    { name: 'Bottles and Containers', icon: '🧴', description: 'Sterile containers for specimen collection and storage', slug: 'bottles-and-containers' },
-    { name: 'Catheters and Tubes', icon: '💉', description: 'Medical-grade catheters and tubing systems', slug: 'catheters-and-tubes' },
-    { name: 'Cotton Wool', icon: '☁️', description: 'High-quality absorbent cotton products', slug: 'cotton-wool' },
-    { name: 'Diapers and Sanitary', icon: '👶', description: 'Adult and pediatric incontinence products', slug: 'diapers-and-sanitary' },
-    { name: 'Gloves', icon: '🧤', description: 'Medical examination and surgical gloves', slug: 'gloves' },
-    { name: 'Hospital Equipments', icon: '🏥', description: 'Advanced medical equipment and monitors', slug: 'hospital-equipments' },
-    { name: 'Hospital Furniture', icon: '🛏️', description: 'Hospital beds, trolleys, and medical furniture', slug: 'hospital-furniture' },
-    { name: 'Hospital Instruments', icon: '⚕️', description: 'Surgical and diagnostic instruments', slug: 'hospital-instruments' },
-    { name: 'Hospital Linen', icon: '🧺', description: 'Medical-grade sheets, pillows, and linens', slug: 'hospital-linen' },
-    { name: 'Infection Control', icon: '🛡️', description: 'Disinfectants, sanitizers, and safety equipment', slug: 'infection-control' },
-    { name: 'Others', icon: '📦', description: 'Additional medical supplies and accessories', slug: 'others' },
-    { name: 'PPE', icon: '🦺', description: 'Personal protective equipment and safety gear', slug: 'ppe' },
-    { name: 'Spirits, Detergents and Disinfectants', icon: '🧼', description: 'Cleaning and sterilization products', slug: 'spirits-detergents-and-disinfectants' },
-    { name: 'Syringes and Needles', icon: '💊', description: 'Sterile syringes and hypodermic needles', slug: 'syringes-and-needles' },
-  ];
 
   return (
     <div className="min-h-screen bg-white">
@@ -72,28 +56,34 @@ export default function OurProducts() {
           {/* Flex Container for Sidebar and Content */}
           <div className="flex flex-col md:flex-row gap-8">
             {/* Sidebar */}
-            <ProductCategorySidebar
-              categories={productCategories.map((cat) => ({ name: cat.name }))}
-            />
+            <ProductCategorySidebar />
 
             {/* Main Content */}
             <div className="flex-1">
               <h2 className="text-3xl font-bold text-gray-900 mb-12">Product Categories</h2>
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {productCategories.map((category) => (
-                  <div
-                    key={category.name}
-                    className="bg-white rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition p-6"
-                  >
-                    <div className="text-4xl mb-4">{category.icon}</div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">{category.name}</h3>
-                    <p className="text-gray-600 mb-4">{category.description}</p>
-                    <Link to={`/products/${category.slug}`} className="text-primary font-medium hover:text-primary/80 transition">
-                      Learn more →
-                    </Link>
-                  </div>
-                ))}
-              </div>
+              {categories.length === 0 ? (
+                <div className="text-center py-12">
+                  <p className="text-gray-600">Loading categories...</p>
+                </div>
+              ) : (
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {categories.map((category) => (
+                    <div
+                      key={category.id}
+                      className="bg-white rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition p-6"
+                    >
+                      <div className="text-4xl mb-4">{category.icon || '📦'}</div>
+                      <h3 className="text-xl font-bold text-gray-900 mb-2">{category.name}</h3>
+                      <p className="text-gray-600 mb-4 text-sm">
+                        {category.description || `Browse our ${category.name.toLowerCase()} collection`}
+                      </p>
+                      <Link to={`/products/${category.slug}`} className="text-primary font-medium hover:text-primary/80 transition">
+                        Learn more → <span className="text-xs">({category.variant_count || 0} items)</span>
+                      </Link>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -167,7 +157,7 @@ export default function OurProducts() {
         </div>
       </section>
 
-      <PublicFooter productCategories={productCategoryNames} />
+      <PublicFooter />
     </div>
   );
 }
