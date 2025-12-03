@@ -1166,6 +1166,16 @@ CREATE POLICY "Company scoped access" ON payments
         SELECT company_id FROM profiles WHERE id = auth.uid()
     ));
 
+CREATE POLICY "Company scoped access" ON payment_allocations
+    FOR ALL USING (
+        invoice_id IN (
+            SELECT id FROM invoices
+            WHERE company_id IN (
+                SELECT company_id FROM profiles WHERE id = auth.uid()
+            )
+        )
+    );
+
 -- ===============================================================================
 -- VERIFICATION
 -- ===============================================================================
