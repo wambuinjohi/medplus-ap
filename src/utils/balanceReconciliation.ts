@@ -50,9 +50,11 @@ export async function reconcileInvoiceBalance(
     );
     const calculatedBalance = invoice.total_amount - calculatedPaidAmount;
 
-    // 4. Determine expected status
+    // 4. Determine expected status (using tolerance for floating-point precision)
     let expectedStatus = 'draft';
-    if (calculatedBalance <= 0 && calculatedPaidAmount > 0) {
+    const tolerance = 0.01;
+    const adjustedBalance = Math.abs(calculatedBalance) < tolerance ? 0 : calculatedBalance;
+    if (adjustedBalance <= 0 && calculatedPaidAmount > 0) {
       expectedStatus = 'paid';
     } else if (calculatedPaidAmount > 0) {
       expectedStatus = 'partial';

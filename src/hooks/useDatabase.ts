@@ -1136,14 +1136,16 @@ export const useCreatePayment = () => {
           const newBalanceDue = invoice.total_amount - newPaidAmount;
           let newStatus = invoice.status;
 
-          // Determine status based on balance and any payment activity
-          if (newBalanceDue <= 0 && newPaidAmount !== 0) {
+          // Determine status based on balance and any payment activity (using tolerance for floating-point precision)
+          const tolerance = 0.01;
+          const adjustedBalance = Math.abs(newBalanceDue) < tolerance ? 0 : newBalanceDue;
+          if (adjustedBalance <= 0 && newPaidAmount !== 0) {
             // Fully paid or overpaid (balance is 0 or negative)
             newStatus = 'paid';
-          } else if (newPaidAmount !== 0 && newBalanceDue > 0) {
+          } else if (newPaidAmount !== 0 && adjustedBalance > 0) {
             // Partially paid (has payment but balance remains)
             newStatus = 'partial';
-          } else if (newPaidAmount === 0 && newBalanceDue > 0) {
+          } else if (newPaidAmount === 0 && adjustedBalance > 0) {
             // No payments (negative payment fully reversed to 0)
             newStatus = 'draft';
           }
@@ -1244,10 +1246,12 @@ export const useDeletePayment = () => {
             const newBalanceDue = invoice.total_amount - newPaidAmount;
             let newStatus = 'draft';
 
-            // Determine status based on balance and payment activity
-            if (newBalanceDue <= 0 && newPaidAmount !== 0) {
+            // Determine status based on balance and payment activity (using tolerance for floating-point precision)
+            const tolerance = 0.01;
+            const adjustedBalance = Math.abs(newBalanceDue) < tolerance ? 0 : newBalanceDue;
+            if (adjustedBalance <= 0 && newPaidAmount !== 0) {
               newStatus = 'paid';
-            } else if (newPaidAmount !== 0 && newBalanceDue > 0) {
+            } else if (newPaidAmount !== 0 && adjustedBalance > 0) {
               newStatus = 'partial';
             } else {
               newStatus = 'draft';
