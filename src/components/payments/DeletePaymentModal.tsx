@@ -64,8 +64,13 @@ export function DeletePaymentModal({
     try {
       const result = await deletePaymentMutation.mutateAsync(payment.id);
 
+      let description = `Invoice balances updated for ${result.invoices_updated} invoice(s)`;
+      if (result.credit_notes_deleted && result.credit_notes_deleted > 0) {
+        description += `. Deleted ${result.credit_notes_deleted} associated credit note(s).`;
+      }
+
       toast.success(`Payment ${payment.payment_number} deleted successfully!`, {
-        description: `Invoice balances updated for ${result.invoices_updated} invoice(s)`
+        description
       });
 
       onSuccess();
