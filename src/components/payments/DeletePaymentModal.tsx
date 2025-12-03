@@ -126,7 +126,7 @@ export function DeletePaymentModal({
               <div>
                 <p className="text-xs text-muted-foreground">Amount</p>
                 <p className="font-medium text-sm text-destructive">
-                  {formatCurrency(payment.amount)}
+                  {formatCurrency(payment.amount || 0)}
                 </p>
               </div>
             </div>
