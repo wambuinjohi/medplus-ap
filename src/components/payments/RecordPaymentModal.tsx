@@ -722,6 +722,58 @@ export function RecordPaymentModal({ open, onOpenChange, onSuccess, invoice }: R
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Overpayment Confirmation Modal */}
+      <Dialog open={showOverpaymentConfirm} onOpenChange={setShowOverpaymentConfirm}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <AlertTriangle className="h-5 w-5 text-warning" />
+              <span>Overpayment Confirmation</span>
+            </DialogTitle>
+            <DialogDescription>
+              This payment will result in an overpayment
+            </DialogDescription>
+          </DialogHeader>
+
+          {pendingOverpaymentData && (
+            <div className="space-y-4">
+              <div className="bg-warning/10 border border-warning/20 rounded-lg p-4">
+                <p className="text-sm text-muted-foreground mb-3">
+                  Payment amount ({formatCurrency(pendingOverpaymentData.amount)}) exceeds outstanding balance ({formatCurrency(pendingOverpaymentData.currentBalance)}).
+                </p>
+                <p className="text-sm font-semibold text-warning">
+                  This will create an overpayment of {formatCurrency(pendingOverpaymentData.overpaymentAmount)}
+                </p>
+              </div>
+
+              <div className="bg-info/10 border border-info/20 rounded-lg p-4">
+                <p className="text-sm text-muted-foreground">
+                  ℹ️ A credit note will be automatically created for the overpayment amount. The credit note can be applied to this or other invoices.
+                </p>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="space-x-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleOverpaymentCancel}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={handleOverpaymentConfirm}
+              className="bg-warning hover:bg-warning/90"
+            >
+              <AlertTriangle className="h-4 w-4 mr-2" />
+              Confirm Overpayment
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }
