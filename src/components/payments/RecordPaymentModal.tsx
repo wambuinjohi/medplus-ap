@@ -31,7 +31,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { parseErrorMessageWithCodes } from '@/utils/errorHelpers';
-import { useCreatePayment, usePaymentMethods, useCreatePaymentMethod } from '@/hooks/useDatabase';
+import { useCreatePayment, usePaymentMethods, useCreatePaymentMethod, useCreateOverpaymentCreditNote } from '@/hooks/useDatabase';
 import { useInvoicesFixed as useInvoices } from '@/hooks/useInvoicesFixed';
 import { useCurrentCompany } from '@/contexts/CompanyContext';
 import { PaymentAllocationQuickFix } from './PaymentAllocationQuickFix';
