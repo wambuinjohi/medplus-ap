@@ -261,6 +261,20 @@ export function RecordPaymentModal({ open, onOpenChange, onSuccess, invoice }: R
     }
   };
 
+  const handleOverpaymentConfirm = async () => {
+    setShowOverpaymentConfirm(false);
+    if (!paymentData.payment_method) {
+      toast.error('Please select a payment method');
+      return;
+    }
+    await processPayment();
+  };
+
+  const handleOverpaymentCancel = () => {
+    setShowOverpaymentConfirm(false);
+    setPendingOverpaymentData(null);
+  };
+
   const resetForm = () => {
     setPaymentData({
       invoice_id: invoice?.id || '',
