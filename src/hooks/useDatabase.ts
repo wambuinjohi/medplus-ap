@@ -1207,6 +1207,137 @@ export const useCreatePayment = () => {
   });
 };
 
+// Hook to create a credit note for overpayment
+export const useCreateOverpaymentCreditNote = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (params: {
+      invoice_id: string;
+      company_id: string;
+      customer_id: string | null;
+      overpayment_amount: number;
+      payment_date: string;
+      payment_reference?: string;
+    }) => {
+      const {
+        invoice_id,
+        company_id,
+        customer_id,
+        overpayment_amount,
+        payment_date,
+        payment_reference
+      } = params;
+
+      // Fetch invoice details
+      const { data: invoice, error: invoiceError } = await supabase
+        .from('invoices')
+        .select('id, invoice_number, total_amount, customers!inner(name)')
+        .eq('id', invoice_id)
+        .single();
+
+      if (invoiceError) throw invoiceError;
+      if (!invoice) throw new Error('Invoice not found');
+
+      // Generate unique credit note number
+      const timestamp = Date.now();
+      const creditNoteNumber = `CN-${timestamp}`;
+
+      // Create credit note with overpayment amount
+      const creditNoteData = {
+        company_id,
+        customer_id,
+        invoice_id,
+        credit_note_number: creditNoteNumber,
+        credit_note_date: payment_date,
+        status: 'draft',
+        reason: 'Overpayment from Payment',
+        subtotal: overpayment_amount,
+        tax_amount: 0,
+        total_amount: overpayment_amount,
+        applied_amount: 0,
+        balance: overpayment_amount,
+        affects_inventory: false,
+        notes: `Auto-generated credit note for overpayment on invoice ${invoice.invoice_number}${payment_reference ? ` (Payment Ref: ${payment_reference})` : ''}`,
+        terms_and_conditions: null,
+        created_by: null
+      };
+
+      // Insert credit note
+      const { data: createdCreditNote, error: creditNoteError } = await supabase
+        .from('credit_notes')
+        .insert([creditNoteData])
+        .select()
+        .single();
+
+      if (creditNoteError) {
+        // Retry with created_by as null if foreign key constraint error
+        if (creditNoteError.code === '23503' && String(creditNoteError.message || '').includes('created_by')) {
+          const retryData = { ...creditNoteData, created_by: null };
+          const retryRes = await supabase
+            .from('credit_notes')
+            .insert([retryData])
+            .select()
+            .single();
+
+          if (retryRes.error) throw retryRes.error;
+
+          return {
+            success: true,
+            credit_note_id: retryRes.data.id,
+            credit_note_number: retryRes.data.credit_note_number,
+            amount: overpayment_amount
+          };
+        }
+        throw creditNoteError;
+      }
+
+      if (!createdCreditNote) {
+        throw new Error('Failed to create credit note');
+      }
+
+      // Create a single line item for the credit note
+      const creditNoteItem = {
+        credit_note_id: createdCreditNote.id,
+        description: `Overpayment credit from invoice ${invoice.invoice_number}`,
+        quantity: 1,
+        unit_price: overpayment_amount,
+        tax_rate: 0,
+        line_total: overpayment_amount,
+        sort_order: 0
+      };
+
+      const { error: itemError } = await supabase
+        .from('credit_note_items')
+        .insert([creditNoteItem]);
+
+      if (itemError) {
+        console.error('Error creating credit note item:', itemError);
+        // Delete the credit note if item creation fails
+        await supabase
+          .from('credit_notes')
+          .delete()
+          .eq('id', createdCreditNote.id);
+        throw itemError;
+      }
+
+      return {
+        success: true,
+        credit_note_id: createdCreditNote.id,
+        credit_note_number: createdCreditNote.credit_note_number,
+        amount: overpayment_amount
+      };
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['creditNotes'] });
+      queryClient.invalidateQueries({ queryKey: ['customerCreditNotes'] });
+    },
+    onError: (error: any) => {
+      console.error('Error creating overpayment credit note:', error);
+    }
+  });
+};
+
 // Hook to delete a payment and reverse invoice updates
 export const useDeletePayment = () => {
   const queryClient = useQueryClient();
