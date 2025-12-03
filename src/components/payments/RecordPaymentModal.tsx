@@ -168,20 +168,66 @@ export function RecordPaymentModal({ open, onOpenChange, onSuccess, invoice }: R
 
       const result = await createPaymentMutation.mutateAsync(paymentRecord);
 
+      // Check if this is an overpayment and create a credit note automatically
+      const invoiceData = invoices.find(inv => inv.id === paymentData.invoice_id);
+      if (invoiceData) {
+        const invoiceBalance = invoiceData.balance_due || (invoiceData.total_amount || 0) - (invoiceData.paid_amount || 0);
+        const overpaymentAmount = paymentData.amount > invoiceBalance ? paymentData.amount - invoiceBalance : 0;
+
+        if (overpaymentAmount > 0.01) {
+          try {
+            const creditNoteResult = await createOverpaymentCreditNoteMutation.mutateAsync({
+              invoice_id: paymentData.invoice_id,
+              company_id: selectedInvoice?.company_id || currentCompany.id,
+              customer_id: selectedInvoice?.customer_id || null,
+              overpayment_amount: overpaymentAmount,
+              payment_date: paymentData.payment_date,
+              payment_reference: paymentRecord.reference_number
+            });
+
+            if (creditNoteResult.success) {
+              setCreatedCreditNoteNumber(creditNoteResult.credit_note_number);
+            }
+          } catch (creditNoteError) {
+            console.error('Failed to create overpayment credit note:', creditNoteError);
+            // Don't fail the payment if credit note creation fails
+            // The overpayment is still recorded on the invoice
+          }
+        }
+      }
+
       // Check if payment was recorded but allocation might have failed
       if (result.fallback_used) {
         if (result.allocation_failed) {
           setAllocationFailed(true);
-          toast.success(`Payment of ${formatCurrency(paymentData.amount)} recorded successfully!`, {
-            description: "However, payment allocation failed. See the fix options below."
-          });
+          if (createdCreditNoteNumber) {
+            toast.success(`Payment of ${formatCurrency(paymentData.amount)} recorded successfully!`, {
+              description: `Credit note ${createdCreditNoteNumber} created for overpayment. However, payment allocation failed. See the fix options below.`
+            });
+          } else {
+            toast.success(`Payment of ${formatCurrency(paymentData.amount)} recorded successfully!`, {
+              description: "However, payment allocation failed. See the fix options below."
+            });
+          }
         } else {
-          toast.success(`Payment of ${formatCurrency(paymentData.amount)} recorded successfully!`, {
-            description: "Payment allocation may require manual setup. Check the payments list."
-          });
+          if (createdCreditNoteNumber) {
+            toast.success(`Payment of ${formatCurrency(paymentData.amount)} recorded successfully!`, {
+              description: `Credit note ${createdCreditNoteNumber} created for overpayment.`
+            });
+          } else {
+            toast.success(`Payment of ${formatCurrency(paymentData.amount)} recorded successfully!`, {
+              description: "Payment allocation may require manual setup. Check the payments list."
+            });
+          }
         }
       } else {
-        toast.success(`Payment of ${formatCurrency(paymentData.amount)} recorded successfully!`);
+        if (createdCreditNoteNumber) {
+          toast.success(`Payment of ${formatCurrency(paymentData.amount)} recorded successfully!`, {
+            description: `Credit note ${createdCreditNoteNumber} created for overpayment.`
+          });
+        } else {
+          toast.success(`Payment of ${formatCurrency(paymentData.amount)} recorded successfully!`);
+        }
         setAllocationFailed(false);
       }
       onSuccess();
