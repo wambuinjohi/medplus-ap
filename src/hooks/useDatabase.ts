@@ -1312,13 +1312,19 @@ export const useCreateOverpaymentCreditNote = () => {
         .insert([creditNoteItem]);
 
       if (itemError) {
-        console.error('Error creating credit note item:', itemError);
+        console.error('Error creating credit note item:', {
+          message: itemError.message,
+          code: itemError.code,
+          details: itemError.details,
+          hint: itemError.hint
+        });
         // Delete the credit note if item creation fails
         await supabase
           .from('credit_notes')
           .delete()
           .eq('id', createdCreditNote.id);
-        throw itemError;
+        const errorMsg = itemError.message || JSON.stringify(itemError);
+        throw new Error(`Failed to create credit note item: ${errorMsg}`);
       }
 
       return {
