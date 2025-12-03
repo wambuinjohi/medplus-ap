@@ -601,36 +601,45 @@ export function RecordPaymentModal({ open, onOpenChange, onSuccess, invoice }: R
               </div>
 
               {/* Payment Summary */}
-              {paymentData.invoice_id && (
-                <div className="border-t pt-4 bg-muted/50 p-4 rounded-lg">
-                  <h4 className="font-medium mb-2">Payment Summary</h4>
-                  <div className="space-y-1 text-sm">
-                    <div className="flex justify-between">
-                      <span>Payment Amount:</span>
-                      <span className="font-semibold">{formatCurrency(paymentData.amount)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Remaining Balance:</span>
-                      <span className="font-semibold">
-                        {formatCurrency((() => {
-                          const selectedInv = invoice || availableInvoices.find(inv => inv.id === paymentData.invoice_id);
-                          const balance = selectedInv?.balance_due || selectedInv?.total_amount || 0;
-                          return Math.max(0, balance - paymentData.amount);
-                        })())}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Payment Method:</span>
-                      <div className="flex items-center space-x-1">
-                        {getMethodIcon(paymentData.payment_method)}
-                        <span className="font-semibold capitalize">
-                          {paymentData.payment_method.replace('_', ' ')}
+              {paymentData.invoice_id && (() => {
+                const selectedInv = invoice || availableInvoices.find(inv => inv.id === paymentData.invoice_id);
+                const balance = selectedInv?.balance_due || selectedInv?.total_amount || 0;
+                const remainingBalance = Math.max(0, balance - paymentData.amount);
+                const creditNoteAmount = Math.max(0, paymentData.amount - balance);
+
+                return (
+                  <div className="border-t pt-4 bg-muted/50 p-4 rounded-lg">
+                    <h4 className="font-medium mb-2">Payment Summary</h4>
+                    <div className="space-y-1 text-sm">
+                      <div className="flex justify-between">
+                        <span>Payment Amount:</span>
+                        <span className="font-semibold">{formatCurrency(paymentData.amount)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Remaining Balance:</span>
+                        <span className={`font-semibold ${remainingBalance > 0 ? 'text-destructive' : 'text-success'}`}>
+                          {formatCurrency(remainingBalance)}
                         </span>
+                      </div>
+                      {creditNoteAmount > 0.01 && (
+                        <div className="flex justify-between pt-2 border-t">
+                          <span className="text-warning font-medium">Credit Note:</span>
+                          <span className="font-semibold text-warning">{formatCurrency(creditNoteAmount)}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between">
+                        <span>Payment Method:</span>
+                        <div className="flex items-center space-x-1">
+                          {getMethodIcon(paymentData.payment_method)}
+                          <span className="font-semibold capitalize">
+                            {paymentData.payment_method.replace('_', ' ')}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
             </CardContent>
           </Card>
         </div>
