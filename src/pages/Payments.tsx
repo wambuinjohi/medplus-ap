@@ -452,6 +452,8 @@ export default function Payments() {
         payment={selectedPayment}
         onSuccess={() => {
           setShowDeleteModal(false);
+          setShowViewModal(false);
+          setShowRecordModal(false);
           setSelectedPayment(null);
         }}
       />
