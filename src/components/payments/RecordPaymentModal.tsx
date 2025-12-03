@@ -62,11 +62,13 @@ export function RecordPaymentModal({ open, onOpenChange, onSuccess, invoice }: R
     description: ''
   });
   const [isCreatingMethod, setIsCreatingMethod] = useState(false);
+  const [createdCreditNoteNumber, setCreatedCreditNoteNumber] = useState<string | null>(null);
 
   // Reset allocation failed state when modal closes
   useEffect(() => {
     if (!open) {
       setAllocationFailed(false);
+      setCreatedCreditNoteNumber(null);
     }
   }, [open]);
 
@@ -74,6 +76,7 @@ export function RecordPaymentModal({ open, onOpenChange, onSuccess, invoice }: R
   const { currentCompany } = useCurrentCompany();
   const { data: invoices = [] } = useInvoices(currentCompany?.id);
   const createPaymentMutation = useCreatePayment();
+  const createOverpaymentCreditNoteMutation = useCreateOverpaymentCreditNote();
 
   // Fetch available payment methods
   const { data: paymentMethods = [], isLoading: methodsLoading } = usePaymentMethods(currentCompany?.id);
