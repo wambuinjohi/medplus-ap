@@ -169,6 +169,8 @@ export function DeletePaymentModal({
               • Invoice statuses will be recalculated
               <br />
               • Payment allocations will be removed
+              <br />
+              • Any overpayment credit notes will be deleted
             </p>
           </div>
         </div>
