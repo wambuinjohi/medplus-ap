@@ -1339,7 +1339,13 @@ export const useCreateOverpaymentCreditNote = () => {
       queryClient.invalidateQueries({ queryKey: ['customerCreditNotes'] });
     },
     onError: (error: any) => {
-      console.error('Error creating overpayment credit note:', error);
+      console.error('Error creating overpayment credit note:', {
+        message: error?.message,
+        code: error?.code,
+        details: error?.details,
+        hint: error?.hint,
+        fullError: error
+      });
     }
   });
 };
