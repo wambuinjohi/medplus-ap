@@ -40,13 +40,18 @@ export function DeletePaymentModal({
   const [isDeleting, setIsDeleting] = useState(false);
   const deletePaymentMutation = useDeletePayment();
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amount: any) => {
+    // Ensure amount is a valid number
+    const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+    if (!numAmount || isNaN(numAmount)) {
+      return 'N/A';
+    }
     return new Intl.NumberFormat('en-KE', {
       style: 'currency',
       currency: 'KES',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
-    }).format(amount);
+    }).format(numAmount);
   };
 
   const handleDelete = async () => {
