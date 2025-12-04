@@ -467,6 +467,18 @@ export default function Payments() {
         onSendReceipt={(payment) => toast.info(`Sending receipt for payment ${payment.payment_number}`)}
       />
 
+      {/* Edit Payment Modal */}
+      <EditPaymentModal
+        open={showEditModal}
+        onOpenChange={setShowEditModal}
+        payment={selectedPayment}
+        onSuccess={() => {
+          setShowEditModal(false);
+          setShowViewModal(false);
+          setSelectedPayment(null);
+        }}
+      />
+
       {/* Delete Payment Modal */}
       <DeletePaymentModal
         open={showDeleteModal}
@@ -476,6 +488,7 @@ export default function Payments() {
           setShowDeleteModal(false);
           setShowViewModal(false);
           setShowRecordModal(false);
+          setShowEditModal(false);
           setSelectedPayment(null);
         }}
       />
