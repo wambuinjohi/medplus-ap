@@ -479,17 +479,17 @@ BEGIN
         
         -- Create stock movement records
         INSERT INTO stock_movements (company_id, product_id, movement_type, quantity, reference_type, reference_id, reference_number, movement_date, created_by)
-        SELECT 
+        SELECT
             NEW.company_id,
             ii.product_id,
-            'out',
+            'OUT',
             -ii.quantity,
             'invoice',
             NEW.id,
             NEW.invoice_number,
             NEW.invoice_date,
             NEW.created_by
-        FROM invoice_items ii 
+        FROM invoice_items ii
         WHERE ii.invoice_id = NEW.id;
     END IF;
     
