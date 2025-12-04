@@ -598,8 +598,6 @@ export const generateCreditNotePDF = (creditNote: CreditNotePDFData, company?: C
         
         <!-- Footer -->
         <div class="footer">
-          <strong>Thank you for your business!</strong><br>
-          <strong>${companyData.name}</strong><br>
           This credit note was generated on ${new Date().toLocaleString()}<br>
           <em>This credit note can be applied against future invoices or refunded as per our terms</em>
         </div>

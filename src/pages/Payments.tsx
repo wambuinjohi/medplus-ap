@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import { parseErrorMessage } from '@/utils/errorHelpers';
 import { RecordPaymentModal } from '@/components/payments/RecordPaymentModal';
 import { ViewPaymentModal } from '@/components/payments/ViewPaymentModal';
+import { EditPaymentModal } from '@/components/payments/EditPaymentModal';
 import { DeletePaymentModal } from '@/components/payments/DeletePaymentModal';
 import { PaymentAllocationStatus } from '@/components/payments/PaymentAllocationStatus';
 import { Button } from '@/components/ui/button';
@@ -25,7 +26,8 @@ import {
   DollarSign,
   Download,
   Lock,
-  Trash2
+  Trash2,
+  Edit
 } from 'lucide-react';
 import { usePayments, useCompanies } from '@/hooks/useDatabase';
 import { useInvoicesFixed as useInvoices } from '@/hooks/useInvoicesFixed';
@@ -85,6 +87,7 @@ export default function Payments() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showRecordModal, setShowRecordModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<any>(null);
 
@@ -113,6 +116,15 @@ export default function Payments() {
     // Payment data is already in the correct format from the database
     setSelectedPayment(payment);
     setShowViewModal(true);
+  };
+
+  const handleEditPayment = (payment: Payment) => {
+    if (!canEditPayment('edit_payment')) {
+      toast.error('You do not have permission to edit payments');
+      return;
+    }
+    setSelectedPayment(payment);
+    setShowEditModal(true);
   };
 
   const handleDeletePayment = (payment: Payment) => {
@@ -176,9 +188,6 @@ export default function Payments() {
             <p className="text-destructive">Error loading payments: {parseErrorMessage(error)}</p>
           </div>
         </div>
-
-        {/* Show auto-fix if there's an error */}
-        <PaymentAllocationAutoFix />
       </div>
     );
   }
@@ -398,6 +407,16 @@ export default function Payments() {
                         <Button
                           variant="ghost"
                           size="icon"
+                          onClick={() => handleEditPayment(payment)}
+                          title="Edit payment"
+                          className="text-primary hover:text-primary hover:bg-primary/10"
+                          disabled={!canEditPayment('edit_payment')}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           onClick={() => handleDownloadReceipt(payment)}
                           title="Download receipt"
                         >
@@ -445,6 +464,18 @@ export default function Payments() {
         onSendReceipt={(payment) => toast.info(`Sending receipt for payment ${payment.payment_number}`)}
       />
 
+      {/* Edit Payment Modal */}
+      <EditPaymentModal
+        open={showEditModal}
+        onOpenChange={setShowEditModal}
+        payment={selectedPayment}
+        onSuccess={() => {
+          setShowEditModal(false);
+          setShowViewModal(false);
+          setSelectedPayment(null);
+        }}
+      />
+
       {/* Delete Payment Modal */}
       <DeletePaymentModal
         open={showDeleteModal}
@@ -454,6 +485,7 @@ export default function Payments() {
           setShowDeleteModal(false);
           setShowViewModal(false);
           setShowRecordModal(false);
+          setShowEditModal(false);
           setSelectedPayment(null);
         }}
       />

@@ -300,7 +300,7 @@ CREATE TABLE stock_movements (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
     product_id UUID REFERENCES products(id) ON DELETE CASCADE,
-    movement_type VARCHAR(50) NOT NULL, -- 'in', 'out', 'adjustment'
+    movement_type VARCHAR(50) NOT NULL, -- 'IN', 'OUT', 'ADJUSTMENT'
     quantity DECIMAL(10,3) NOT NULL,
     unit_cost DECIMAL(15,2),
     reference_type VARCHAR(50), -- 'invoice', 'delivery_note', 'adjustment', 'purchase'
@@ -479,17 +479,17 @@ BEGIN
         
         -- Create stock movement records
         INSERT INTO stock_movements (company_id, product_id, movement_type, quantity, reference_type, reference_id, reference_number, movement_date, created_by)
-        SELECT 
+        SELECT
             NEW.company_id,
             ii.product_id,
-            'out',
+            'OUT',
             -ii.quantity,
-            'invoice',
+            'INVOICE',
             NEW.id,
             NEW.invoice_number,
             NEW.invoice_date,
             NEW.created_by
-        FROM invoice_items ii 
+        FROM invoice_items ii
         WHERE ii.invoice_id = NEW.id;
     END IF;
     
