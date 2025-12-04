@@ -484,7 +484,7 @@ BEGIN
             ii.product_id,
             'OUT',
             -ii.quantity,
-            'invoice',
+            'INVOICE',
             NEW.id,
             NEW.invoice_number,
             NEW.invoice_date,
