@@ -902,7 +902,6 @@ export const generatePDF = (data: DocumentData) => {
 
         <!-- Footer -->
         <div class="footer">
-          ${data.type === 'statement' ? '' : '<strong>Thank you for your business!</strong><br><strong>' + (company?.name || '') + '</strong><br>'}
           ${data.type === 'proforma' ? '<em>This is a proforma invoice and not a request for payment</em>' : ''}
           ${data.type === 'delivery' ? '<em>This delivery note confirms the items delivered</em>' : ''}
           ${data.type === 'receipt' ? '<em>This receipt serves as proof of payment received</em>' : ''}
