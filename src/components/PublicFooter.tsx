@@ -98,14 +98,6 @@ export const PublicFooter = ({ productCategories = [] }: PublicFooterProps) => {
               <ul className="text-gray-300 space-y-3 text-sm">
                 <li>
                   <Link
-                    to="/app"
-                    className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-500 to-green-500 text-white font-semibold rounded-lg hover:from-blue-600 hover:to-green-600 hover:shadow-lg transition-all duration-300 transform hover:scale-105 active:scale-95 cursor-pointer"
-                  >
-                    🚀 Login to App
-                  </Link>
-                </li>
-                <li>
-                  <Link
                     to="/about-us"
                     className="hover:text-white hover:translate-x-1 transition-all duration-200 inline-block"
                   >
