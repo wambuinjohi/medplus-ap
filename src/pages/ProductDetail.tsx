@@ -488,7 +488,7 @@ Please provide a quotation for the above product and delivery terms.`;
             </p>
             <p className="text-gray-600 mb-6">
               Sales Email: <a href="mailto:sales@medplusafrica.com" className="text-primary hover:underline font-semibold">sales@medplusafrica.com</a><br />
-              Phone: <a href="tel:+254734785363" className="text-primary hover:underline font-semibold">+254 734 785 363</a>
+              Phone: <a href="tel:+254713416022" className="text-primary hover:underline font-semibold">+254 713 416 022</a>
             </p>
             <Link to="/contact">
               <Button className="bg-primary hover:bg-primary/90 text-white font-semibold">
