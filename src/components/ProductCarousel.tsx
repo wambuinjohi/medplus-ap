@@ -164,7 +164,7 @@ export default function ProductCarousel() {
           </p>
         </div>
 
-        <div className="relative group">
+        <div className="relative group" onMouseEnter={() => setIsHovering(true)} onMouseLeave={() => setIsHovering(false)}>
           {/* Carousel Container */}
           <div
             ref={carouselRef}
