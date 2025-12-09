@@ -83,13 +83,13 @@ export default function AboutUs() {
             <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-100">
               <h3 className="text-2xl font-bold text-primary mb-4">Mission</h3>
               <p className="text-gray-700 leading-relaxed">
-                To supply quality, affordable healthcare products and services to healthcare facilities across Africa, enabling them to deliver excellent patient care while optimizing their operational efficiency.
+                Our Mission: Driving healthcare forward with reliable, innovative, and sustainable medical supply solutions.
               </p>
             </div>
             <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-100">
               <h3 className="text-2xl font-bold text-primary mb-4">Vision</h3>
               <p className="text-gray-700 leading-relaxed">
-                To be the most trusted and innovative healthcare distributor in Africa, recognized for our commitment to quality, reliability, and the health and wellbeing of patients across the continent.
+                Our Vision: Leading the delivery of trusted healthcare solutions across Africa.
               </p>
             </div>
           </div>
