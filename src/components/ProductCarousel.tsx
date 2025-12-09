@@ -231,6 +231,28 @@ export default function ProductCarousel() {
         <p className="text-center text-gray-500 text-sm mt-6 opacity-75">
           Drag to scroll or use the arrows above
         </p>
+
+        {/* Image Modal */}
+        <Dialog open={!!selectedProduct} onOpenChange={() => setSelectedProduct(null)}>
+          <DialogContent className="max-w-4xl w-full p-4 sm:p-8 bg-black/95 border-0">
+            {selectedProduct && (
+              <div className="flex flex-col items-center gap-4">
+                <img
+                  src={selectedProduct.image}
+                  alt={selectedProduct.title}
+                  className="w-full h-auto max-h-[80vh] object-contain rounded-lg"
+                />
+                <p className="text-white text-lg font-semibold text-center mt-4">
+                  {selectedProduct.title}
+                </p>
+              </div>
+            )}
+            <DialogClose className="absolute right-4 top-4 text-white hover:bg-white/20 rounded-full p-2 transition-colors">
+              <X className="h-6 w-6" />
+              <span className="sr-only">Close</span>
+            </DialogClose>
+          </DialogContent>
+        </Dialog>
       </div>
     </section>
   );
