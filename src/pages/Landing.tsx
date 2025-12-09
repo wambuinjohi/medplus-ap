@@ -37,19 +37,15 @@ export default function Landing() {
   ];
 
   const partners = [
-    { name: 'International Rescue Committee', icon: '🌍', type: 'NGO' },
-    { name: 'Bomu Hospital', icon: '🏥', type: 'Hospital' },
-    { name: 'FAO', icon: '🌱', type: 'Government' },
-    { name: 'Gertrudes Childrens Hospital', icon: '👶', type: 'Hospital' },
-    { name: 'JHPIEGO', icon: '💊', type: 'NGO' },
-    { name: 'KEMSA', icon: '📦', type: 'Government' },
-    { name: 'Kenya Ports Authority', icon: '🚢', type: 'Government' },
-    { name: 'Kenya Red Cross Society', icon: '❤️', type: 'NGO' },
-    { name: 'MEDS', icon: '🏢', type: 'Organization' },
-    { name: 'Metro', icon: '🏪', type: 'Organization' },
-    { name: 'Stiegelmeyer Group', icon: '🛏️', type: 'Corporate' },
-    { name: 'PSI', icon: '💉', type: 'NGO' },
-    { name: 'UNHCR', icon: '🤝', type: 'NGO' },
+    { name: 'Kenya Red Cross', icon: '❤️', type: 'NGO' },
+    { name: 'USAID Kenya', icon: '🌍', type: 'Government' },
+    { name: 'Gertrudes Children\'s Hospital', icon: '👶', type: 'Hospital' },
+    { name: 'Bliss Healthcare Hospital', icon: '🏥', type: 'Hospital' },
+    { name: 'Africa Muslim Agency Hospital', icon: '🏥', type: 'Hospital' },
+    { name: 'PCEA Hospital Kikuyu', icon: '⛪', type: 'Hospital' },
+    { name: 'The Nairobi Women\'s Hospital', icon: '👩‍⚕️', type: 'Hospital' },
+    { name: 'Jacaranda Maternity', icon: '👶', type: 'Hospital' },
+    { name: 'Royal Ear and Eye Hospital', icon: '👁️', type: 'Hospital' },
   ];
 
 
