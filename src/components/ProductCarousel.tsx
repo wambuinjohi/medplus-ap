@@ -182,7 +182,10 @@ export default function ProductCarousel() {
                 key={product.id}
                 className="flex-shrink-0 w-80 sm:w-96 snap-center"
               >
-                <div className="group/card relative bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100 h-80 sm:h-96">
+                <button
+                onClick={() => setSelectedProduct(product)}
+                className="group/card relative bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100 h-80 sm:h-96 cursor-pointer w-full"
+              >
                   <img
                     src={product.image}
                     alt={product.title}
@@ -191,7 +194,16 @@ export default function ProductCarousel() {
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover/card:opacity-100 transition-opacity duration-300 flex items-end p-6">
                     <h3 className="text-white font-bold text-lg">{product.title}</h3>
                   </div>
-                </div>
+                  <div className="absolute inset-0 bg-black/0 group-hover/card:bg-black/20 transition-colors duration-300 flex items-center justify-center">
+                    <div className="opacity-0 group-hover/card:opacity-100 transition-opacity duration-300">
+                      <div className="bg-white rounded-full p-3 shadow-lg">
+                        <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7" />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+                </button>
               </div>
             ))}
           </div>
