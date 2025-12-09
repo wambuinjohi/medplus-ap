@@ -38,15 +38,15 @@ export default function Landing() {
   ];
 
   const partners = [
-    { name: 'Kenya Red Cross', icon: '❤️', type: 'NGO' },
-    { name: 'USAID Kenya', icon: '🌍', type: 'Government' },
-    { name: 'Gertrudes Children\'s Hospital', icon: '👶', type: 'Hospital' },
-    { name: 'Bliss Healthcare Hospital', icon: '🏥', type: 'Hospital' },
-    { name: 'Africa Muslim Agency Hospital', icon: '🏥', type: 'Hospital' },
-    { name: 'PCEA Hospital Kikuyu', icon: '⛪', type: 'Hospital' },
-    { name: 'The Nairobi Women\'s Hospital', icon: '👩‍⚕️', type: 'Hospital' },
-    { name: 'Jacaranda Maternity', icon: '👶', type: 'Hospital' },
-    { name: 'Royal Ear and Eye Hospital', icon: '👁️', type: 'Hospital' },
+    { name: 'Kenya Red Cross', icon: '❤️', image: '/partner-logos/kenya-red-cross.webp', type: 'NGO' },
+    { name: 'USAID Kenya', icon: '🌍', image: '/partner-logos/usaid.webp', type: 'Government' },
+    { name: 'Gertrudes Children\'s Hospital', icon: '👶', image: 'https://cdn.builder.io/api/v1/image/assets%2Fbab480d8499049228a14c82c33a4e489%2F59197c239a3447e8a469d7b1b67b51c9?format=webp&width=800', type: 'Hospital' },
+    { name: 'Bliss Healthcare Hospital', icon: '🏥', image: 'https://cdn.builder.io/api/v1/image/assets%2Fbab480d8499049228a14c82c33a4e489%2Fbbba7fb775d44121a0dfc6a2db9d419e?format=webp&width=800', type: 'Hospital' },
+    { name: 'Africa Muslim Agency Hospital', icon: '🏥', image: 'https://cdn.builder.io/api/v1/image/assets%2Fbab480d8499049228a14c82c33a4e489%2F854ebc2fe0184807af4103ce25ab792d?format=webp&width=800', type: 'Hospital' },
+    { name: 'PCEA Hospital Kikuyu', icon: '⛪', image: 'https://cdn.builder.io/api/v1/image/assets%2Fbab480d8499049228a14c82c33a4e489%2Fafbe9821adc5456c98409f602f34e779?format=webp&width=800', type: 'Hospital' },
+    { name: 'The Nairobi Women\'s Hospital', icon: '👩‍⚕️', image: 'https://cdn.builder.io/api/v1/image/assets%2Fbab480d8499049228a14c82c33a4e489%2Feeadacf1901f402cbd380aea73df1fba?format=webp&width=800', type: 'Hospital' },
+    { name: 'Jacaranda Maternity', icon: '👶', image: 'https://cdn.builder.io/api/v1/image/assets%2Fbab480d8499049228a14c82c33a4e489%2Ffc2b4838a01c41d5968ea8beb0e2fa75?format=webp&width=800', type: 'Hospital' },
+    { name: 'Royal Ear and Eye Hospital', icon: '👁️', image: 'https://cdn.builder.io/api/v1/image/assets%2Fbab480d8499049228a14c82c33a4e489%2F57b7c421157846d1828020dc16f928ca?format=webp&width=800', type: 'Hospital' },
   ];
 
 
@@ -275,28 +275,38 @@ export default function Landing() {
             {partners.map((partner) => (
               <div
                 key={partner.name}
-                className="group relative bg-white rounded-xl sm:rounded-2xl p-3 sm:p-6 flex flex-col items-center justify-center min-h-32 sm:h-40 shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100 overflow-hidden hover:-translate-y-2 hover:border-blue-400 cursor-pointer"
+                className="group relative bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 flex flex-col items-center justify-start min-h-auto shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100 hover:-translate-y-2 hover:border-blue-400 cursor-pointer"
               >
                 {/* Gradient background on hover */}
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/0 via-transparent to-green-500/0 group-hover:from-blue-500/10 group-hover:to-green-500/10 transition-all duration-300"></div>
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/0 via-transparent to-green-500/0 group-hover:from-blue-500/10 group-hover:to-green-500/10 transition-all duration-300 rounded-xl sm:rounded-2xl"></div>
 
                 {/* Gradient border accent */}
                 <div className="absolute inset-0 rounded-xl sm:rounded-2xl bg-gradient-to-r from-blue-500 to-green-500 opacity-0 group-hover:opacity-20 pointer-events-none transition-opacity duration-300"></div>
 
                 {/* Content */}
-                <div className="relative z-10 flex flex-col items-center justify-center text-center">
+                <div className="relative z-10 flex flex-col items-center justify-start text-center w-full gap-2 sm:gap-3">
                   {/* Icon */}
-                  <div className="text-2xl sm:text-4xl mb-2 sm:mb-3 group-hover:scale-125 transition-transform duration-300">
-                    {partner.icon}
+                  <div className="group-hover:scale-125 transition-transform duration-300 flex-shrink-0">
+                    {partner.image ? (
+                      <img
+                        src={partner.image}
+                        alt={partner.name}
+                        className="h-12 sm:h-20 w-auto object-contain"
+                      />
+                    ) : (
+                      <div className="text-2xl sm:text-4xl">
+                        {partner.icon}
+                      </div>
+                    )}
                   </div>
 
                   {/* Partner Name */}
-                  <p className="text-xs sm:text-sm font-bold text-gray-900 leading-tight mb-1 sm:mb-2 line-clamp-2">
+                  <p className="text-xs sm:text-sm font-bold text-gray-900 leading-snug line-clamp-3 break-words">
                     {partner.name}
                   </p>
 
                   {/* Partner Type Badge */}
-                  <span className="inline-block text-xs font-semibold px-2 py-0.5 sm:py-1 rounded-full bg-gradient-to-r from-blue-100 to-green-100 text-gray-700 group-hover:from-blue-200 group-hover:to-green-200 transition-colors duration-300 text-[10px] sm:text-xs">
+                  <span className="inline-block text-[10px] sm:text-xs font-semibold px-2 py-1 sm:py-1.5 rounded-full bg-gradient-to-r from-blue-100 to-green-100 text-gray-700 group-hover:from-blue-200 group-hover:to-green-200 transition-colors duration-300 flex-shrink-0">
                     {partner.type}
                   </span>
                 </div>
