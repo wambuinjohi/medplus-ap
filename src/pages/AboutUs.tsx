@@ -100,33 +100,24 @@ export default function AboutUs() {
       <section className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-4xl font-bold text-gray-900 mb-12 text-center">Our Core Values</h2>
-          <div className="grid md:grid-cols-4 gap-6">
+          <div className="grid md:grid-cols-2 gap-8">
             <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition">
               <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center mb-4">
                 <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Quality</h3>
-              <p className="text-gray-600">We never compromise on quality. Every product meets strict standards.</p>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Quality & Reliability</h3>
+              <p className="text-gray-600">Commitment to excellence by ensuring all products meet the highest standards of quality and safety. We deliver consistent, dependable healthcare solutions that professionals can trust.</p>
             </div>
             <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition">
               <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center mb-4">
                 <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Reliability</h3>
-              <p className="text-gray-600">On-time delivery and consistent service you can depend on.</p>
-            </div>
-            <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition">
-              <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center mb-4">
-                <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5-5l-3 3" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Innovation</h3>
-              <p className="text-gray-600">Constantly improving our offerings to serve you better.</p>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Integrity</h3>
+              <p className="text-gray-600">Conducting business with honesty, transparency, and ethical standards. We strictly adhere to all relevant regulations, laws, and industry standards in the medical and safety sectors.</p>
             </div>
             <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition">
               <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center mb-4">
@@ -134,8 +125,35 @@ export default function AboutUs() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.856-1.487M15 10a3 3 0 11-6 0 3 3 0 016 0zM5 20h10a2 2 0 002-2v-2a3 3 0 00-3-3H5a3 3 0 00-3 3v2a2 2 0 002 2z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">People-Centered</h3>
-              <p className="text-gray-600">Our success is built on the health and wellbeing of those we serve.</p>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Customer Focus</h3>
+              <p className="text-gray-600">Prioritizing the needs and satisfaction of healthcare providers and patients. We offer responsive support and provide customized solutions tailored to specific client requirements.</p>
+            </div>
+            <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition">
+              <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center mb-4">
+                <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5-5l-3 3" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Innovation & Sustainability</h3>
+              <p className="text-gray-600">Continuously seeking ways to innovate and improve products and services. We embrace modern, effective solutions and support long-term, responsible healthcare systems that advance the industry.</p>
+            </div>
+            <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition">
+              <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center mb-4">
+                <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m7 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Safety</h3>
+              <p className="text-gray-600">Ensuring all products are safe for use and protect both patient care and healthcare worker safety. We provide equipment and PPEs that prevent harm and contribute positively to healthcare environments.</p>
+            </div>
+            <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition">
+              <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center mb-4">
+                <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Collaboration & Professionalism</h3>
+              <p className="text-gray-600">Building strong, mutually beneficial partnerships with suppliers, customers, and industry partners. We maintain high levels of expertise and professionalism in all interactions, treating all stakeholders with respect.</p>
             </div>
           </div>
         </div>
