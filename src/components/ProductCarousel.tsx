@@ -4,8 +4,10 @@ import {
   Dialog,
   DialogContent,
   DialogClose,
+  DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { openWhatsAppQuotation } from '@/utils/whatsappQuotation';
 import { useToast } from '@/hooks/use-toast';
 
@@ -262,6 +264,9 @@ export default function ProductCarousel() {
         {/* Image Modal */}
         <Dialog open={!!selectedProduct} onOpenChange={() => setSelectedProduct(null)}>
           <DialogContent className="max-w-4xl w-full p-4 sm:p-8 bg-black/95 border-0">
+            <VisuallyHidden>
+              <DialogTitle>{selectedProduct?.title || 'Product'}</DialogTitle>
+            </VisuallyHidden>
             {selectedProduct && (
               <div className="flex flex-col items-center gap-4">
                 <img
