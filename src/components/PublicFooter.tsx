@@ -98,14 +98,6 @@ export const PublicFooter = ({ productCategories = [] }: PublicFooterProps) => {
               <ul className="text-gray-300 space-y-3 text-sm">
                 <li>
                   <Link
-                    to="/app"
-                    className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-500 to-green-500 text-white font-semibold rounded-lg hover:from-blue-600 hover:to-green-600 hover:shadow-lg transition-all duration-300 transform hover:scale-105 active:scale-95 cursor-pointer"
-                  >
-                    🚀 Login to App
-                  </Link>
-                </li>
-                <li>
-                  <Link
                     to="/about-us"
                     className="hover:text-white hover:translate-x-1 transition-all duration-200 inline-block"
                   >
@@ -124,6 +116,85 @@ export const PublicFooter = ({ productCategories = [] }: PublicFooterProps) => {
             </div>
           </div>
         )}
+
+        <div className="border-t border-gray-700 pt-8 mb-8">
+          <div className="grid md:grid-cols-2 gap-8 pb-8">
+            <div>
+              <h3 className="text-lg font-bold mb-4 bg-gradient-to-r from-blue-400 to-green-400 bg-clip-text text-transparent">
+                Contact Us
+              </h3>
+              <div className="text-gray-300 space-y-3 text-sm">
+                <div>
+                  <p className="font-semibold">Medplus Africa Limited</p>
+                  <p>Siens Plaza River Road</p>
+                  <p>P.O BOX 45352 - 00100, Nairobi, Kenya</p>
+                </div>
+                <div>
+                  <p className="font-semibold mb-1">Phone:</p>
+                  <p>
+                    <a href="tel:+254713416022" className="hover:text-white transition-colors">
+                      +254 713 416 022
+                    </a>
+                  </p>
+                  <p>
+                    <a href="tel:+254786830610" className="hover:text-white transition-colors">
+                      +254 786 830 610
+                    </a>
+                  </p>
+                </div>
+                <div>
+                  <p className="font-semibold mb-1">Email:</p>
+                  <p>
+                    <a href="mailto:sales@medplusafrica.com" className="hover:text-white transition-colors">
+                      sales@medplusafrica.com
+                    </a>
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div>
+              <h3 className="text-lg font-bold mb-4 bg-gradient-to-r from-blue-400 to-green-400 bg-clip-text text-transparent">
+                Quick Links
+              </h3>
+              <ul className="text-gray-300 space-y-3 text-sm">
+                <li>
+                  <Link
+                    to="/about-us"
+                    className="hover:text-white hover:translate-x-1 transition-all duration-200 inline-block"
+                  >
+                    About Us
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/contact"
+                    className="hover:text-white hover:translate-x-1 transition-all duration-200 inline-block"
+                  >
+                    Contact Us
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/products"
+                    className="hover:text-white hover:translate-x-1 transition-all duration-200 inline-block"
+                  >
+                    Our Products
+                  </Link>
+                </li>
+                <li>
+                  <a
+                    href="https://www.medplusafrica.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-white hover:translate-x-1 transition-all duration-200 inline-block"
+                  >
+                    Visit Website
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
 
         <div className="border-t border-gray-700 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
