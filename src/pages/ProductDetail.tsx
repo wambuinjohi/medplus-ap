@@ -12,6 +12,7 @@ import { MessageCircle, ArrowLeft, Check } from 'lucide-react';
 import { BreadcrumbNav } from '@/components/ui/breadcrumb-nav';
 import { useSEO } from '@/hooks/useSEO';
 import { generateProductSchema, SITE_CONFIG } from '@/utils/seoHelpers';
+import { openWhatsAppQuotation } from '@/utils/whatsappQuotation';
 
 export default function ProductDetail() {
   const { productSlug } = useParams<{ productSlug: string }>();
@@ -71,44 +72,40 @@ export default function ProductDetail() {
       return;
     }
 
-    const message = `*Product Quotation Request*
-━━━━━━━━━━━━━━━━━━━━━━
+    try {
+      openWhatsAppQuotation({
+        productName: variant?.name || category?.name || 'Product',
+        productSku: variant?.sku,
+        category: category?.name,
+        quantity: quotationForm.quantity,
+        companyName: quotationForm.companyName,
+        contactPerson: quotationForm.contactPerson,
+        email: quotationForm.email,
+        phone: quotationForm.phone,
+        additionalNotes: quotationForm.additionalNotes
+      });
 
-*Product:*
-${variant?.name || category?.name}
+      toast({
+        title: "Success!",
+        description: "Opening WhatsApp. Please complete your message and send.",
+      });
 
-*Customer Details:*
-Company: ${quotationForm.companyName}
-Contact Person: ${quotationForm.contactPerson || 'N/A'}
-Email: ${quotationForm.email}
-Phone: ${quotationForm.phone}
-
-*Order Details:*
-Quantity: ${quotationForm.quantity} units
-${quotationForm.additionalNotes ? `Additional Notes: ${quotationForm.additionalNotes}` : ''}
-
-━━━━━━━━━━━━━━━━━━━━━━
-Please provide a quotation for the above product and delivery terms.`;
-
-    const whatsappPhone = '254713416022';
-    const encodedMessage = encodeURIComponent(message);
-    const whatsappUrl = `https://api.whatsapp.com/send?phone=${whatsappPhone}&text=${encodedMessage}`;
-
-    window.open(whatsappUrl, '_blank');
-
-    toast({
-      title: "Success!",
-      description: "Opening WhatsApp. Please complete your message and send.",
-    });
-
-    setQuotationForm({
-      quantity: '',
-      companyName: '',
-      contactPerson: '',
-      email: '',
-      phone: '',
-      additionalNotes: ''
-    });
+      setQuotationForm({
+        quantity: '',
+        companyName: '',
+        contactPerson: '',
+        email: '',
+        phone: '',
+        additionalNotes: ''
+      });
+    } catch (error) {
+      console.error('Error opening WhatsApp:', error);
+      toast({
+        title: "Error",
+        description: "Failed to open WhatsApp. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   if (!variant && !isCategory) {
@@ -226,10 +223,16 @@ Please provide a quotation for the above product and delivery terms.`;
                     {/* Request Quotation Button */}
                     <button
                       onClick={() => {
-                        const message = `Hi, I'm interested in requesting a quotation for: ${variant.name} (SKU: ${variant.sku}). Could you please provide pricing and availability details?`;
-                        const encodedMessage = encodeURIComponent(message);
-                        const whatsappUrl = `https://api.whatsapp.com/send?phone=254713416022&text=${encodedMessage}`;
-                        window.open(whatsappUrl, '_blank');
+                        openWhatsAppQuotation({
+                          productName: variant.name,
+                          productSku: variant.sku,
+                          category: category?.name,
+                          quantity: '1',
+                          companyName: '',
+                          contactPerson: '',
+                          email: '',
+                          phone: ''
+                        });
                       }}
                       className="w-full bg-gradient-to-r from-blue-500 to-green-500 text-white font-bold py-2 px-4 rounded-lg hover:shadow-lg transition-all duration-300 hover:scale-105 text-sm flex items-center justify-center gap-2"
                     >
