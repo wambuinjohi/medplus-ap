@@ -102,10 +102,20 @@ export default function IntroSection() {
 
             {/* Mission Statement */}
             <div className="bg-gradient-to-br from-blue-50 to-green-50 rounded-xl sm:rounded-2xl p-6 sm:p-8 border border-blue-100">
-              <h3 className="font-bold text-gray-900 text-base sm:text-lg mb-3">Our Mission</h3>
-              <p className="text-sm sm:text-base text-gray-700 leading-relaxed">
-                To be the most reliable and accessible source of quality medical supplies and hospital equipment across Africa, improving healthcare delivery and patient outcomes one facility at a time.
-              </p>
+              <div className="space-y-4">
+                <div>
+                  <h3 className="font-bold text-gray-900 text-base sm:text-lg mb-2">Our Mission</h3>
+                  <p className="text-sm sm:text-base text-gray-700 leading-relaxed">
+                    Driving healthcare forward with reliable, innovative, and sustainable medical supply solutions.
+                  </p>
+                </div>
+                <div>
+                  <h3 className="font-bold text-gray-900 text-base sm:text-lg mb-2">Our Vision</h3>
+                  <p className="text-sm sm:text-base text-gray-700 leading-relaxed">
+                    Leading the delivery of trusted healthcare solutions across Africa.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
