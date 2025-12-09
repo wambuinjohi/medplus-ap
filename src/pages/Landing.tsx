@@ -38,8 +38,8 @@ export default function Landing() {
   ];
 
   const partners = [
-    { name: 'Kenya Red Cross', icon: '❤️', type: 'NGO' },
-    { name: 'USAID Kenya', icon: '🌍', type: 'Government' },
+    { name: 'Kenya Red Cross', icon: '❤️', image: '/partner-logos/kenya-red-cross.webp', type: 'NGO' },
+    { name: 'USAID Kenya', icon: '🌍', image: '/partner-logos/usaid.webp', type: 'Government' },
     { name: 'Gertrudes Children\'s Hospital', icon: '👶', type: 'Hospital' },
     { name: 'Bliss Healthcare Hospital', icon: '🏥', type: 'Hospital' },
     { name: 'Africa Muslim Agency Hospital', icon: '🏥', type: 'Hospital' },
