@@ -90,7 +90,7 @@ ${quotationForm.additionalNotes ? `Additional Notes: ${quotationForm.additionalN
 ━━━━━━━━━━━━━━━━━━━━━━
 Please provide a quotation for the above product and delivery terms.`;
 
-    const whatsappPhone = '+254734785363';
+    const whatsappPhone = '+254713416022';
     const encodedMessage = encodeURIComponent(message);
     const whatsappUrl = `https://wa.me/${whatsappPhone}?text=${encodedMessage}`;
 
