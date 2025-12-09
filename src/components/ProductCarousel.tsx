@@ -180,7 +180,7 @@ export default function ProductCarousel() {
                   <img
                     src={product.image}
                     alt={product.title}
-                    className="w-full h-full object-cover group-hover/card:scale-110 transition-transform duration-500"
+                    className="w-full h-full object-cover group-hover/card:scale-125 transition-transform duration-700"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover/card:opacity-100 transition-opacity duration-300 flex items-end p-6">
                     <h3 className="text-white font-bold text-lg">{product.title}</h3>
