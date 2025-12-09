@@ -228,7 +228,7 @@ Please provide a quotation for the above product and delivery terms.`;
                       onClick={() => {
                         const message = `Hi, I'm interested in requesting a quotation for: ${variant.name} (SKU: ${variant.sku}). Could you please provide pricing and availability details?`;
                         const encodedMessage = encodeURIComponent(message);
-                        const whatsappUrl = `https://wa.me/?text=${encodedMessage}`;
+                        const whatsappUrl = `https://wa.me/254713416022?text=${encodedMessage}`;
                         window.open(whatsappUrl, '_blank');
                       }}
                       className="w-full bg-gradient-to-r from-blue-500 to-green-500 text-white font-bold py-2 px-4 rounded-lg hover:shadow-lg transition-all duration-300 hover:scale-105 text-sm flex items-center justify-center gap-2"
