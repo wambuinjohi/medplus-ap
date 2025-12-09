@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { MessageCircle } from 'lucide-react';
 import { getProductBySlug } from '@/data/products';
 
 interface ProductCategory {
