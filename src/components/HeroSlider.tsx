@@ -83,16 +83,16 @@ export default function HeroSlider() {
                     <span className="inline-block bg-gradient-to-r from-blue-500 to-green-500 text-white px-3 sm:px-4 py-1 sm:py-2 rounded-full text-xs sm:text-sm font-semibold mb-3 sm:mb-4">
                       OVER 10 YEARS
                     </span>
-                    <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-3 sm:mb-4 leading-tight">
+                    <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-white mb-3 sm:mb-4 leading-tight">
                       OF TRUSTED SERVICE
                     </h1>
                   </div>
 
                   <div className="space-y-3 sm:space-y-4">
-                    <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-white font-semibold leading-relaxed">
+                    <p className="text-sm sm:text-base md:text-lg lg:text-xl text-white font-semibold leading-relaxed">
                       World Class Critical Care, Hospital Consumables and Furniture Distributors.
                     </p>
-                    <p className="text-sm sm:text-base md:text-lg text-white/90 leading-relaxed">
+                    <p className="text-xs sm:text-sm md:text-base text-white/90 leading-relaxed">
                       Bettering lives together.
                     </p>
                   </div>
