@@ -4,7 +4,7 @@ import { BiolegendLogo } from '@/components/ui/biolegend-logo';
 import { PublicFooter } from '@/components/PublicFooter';
 import { BreadcrumbNav } from '@/components/ui/breadcrumb-nav';
 import { useSEO } from '@/hooks/useSEO';
-import { generateWebPageSchema } from '@/utils/seoHelpers';
+import { generateWebPageSchema, useBreadcrumbSchema } from '@/utils/seoHelpers';
 import { useWebCategories } from '@/hooks/useWebCategories';
 
 export default function Media() {
@@ -22,6 +22,11 @@ export default function Media() {
       url: 'https://medplusafrica.com/media',
     })
   );
+
+  useBreadcrumbSchema([
+    { name: 'Home', url: '/' },
+    { name: 'Media Center', url: '/media' }
+  ]);
   const newsItems = [
     {
       id: 1,
