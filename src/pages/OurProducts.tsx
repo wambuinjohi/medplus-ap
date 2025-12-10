@@ -30,6 +30,21 @@ export default function OurProducts() {
     { name: 'Our Products', url: '/products' }
   ]);
 
+  // Add collection schema with available categories
+  React.useEffect(() => {
+    if (categories.length > 0) {
+      const collectionSchema = generateCollectionSchema(
+        categories.map((cat) => ({
+          name: cat.name,
+          description: cat.description || `${cat.name} collection`,
+          image: undefined,
+          url: `https://medplusafrica.com/products/${cat.slug}`,
+        }))
+      );
+      addStructuredData(collectionSchema);
+    }
+  }, [categories]);
+
   return (
     <div className="min-h-screen bg-white">
       <PublicHeader currentPage="products" />
