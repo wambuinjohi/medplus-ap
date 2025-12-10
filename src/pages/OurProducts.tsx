@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import React, { useEffect } from 'react';
 import { PublicHeader } from '@/components/PublicHeader';
 import { PublicFooter } from '@/components/PublicFooter';
 import { Button } from '@/components/ui/button';
@@ -6,7 +7,7 @@ import { BreadcrumbNav } from '@/components/ui/breadcrumb-nav';
 import ProductCategorySidebar from '@/components/ProductCategorySidebar';
 import { useWebCategories } from '@/hooks/useWebCategories';
 import { useSEO } from '@/hooks/useSEO';
-import { generateWebPageSchema, useBreadcrumbSchema, generateCollectionSchema } from '@/utils/seoHelpers';
+import { generateWebPageSchema, useBreadcrumbSchema, generateCollectionSchema, addStructuredData } from '@/utils/seoHelpers';
 
 export default function OurProducts() {
   const { categories } = useWebCategories();
