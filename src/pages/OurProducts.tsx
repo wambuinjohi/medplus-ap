@@ -32,7 +32,7 @@ export default function OurProducts() {
   ]);
 
   // Add collection schema with available categories
-  React.useEffect(() => {
+  useEffect(() => {
     if (categories.length > 0) {
       const collectionSchema = generateCollectionSchema(
         categories.map((cat) => ({
