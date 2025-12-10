@@ -139,13 +139,13 @@ export default function Landing() {
 
           {/* Mobile Navigation */}
           {mobileMenuOpen && (
-            <nav className="md:hidden pb-4 space-y-1 border-t border-gray-200">
+            <nav className="md:hidden pb-4 space-y-1 border-t border-gray-200" id="mobile-nav" role="navigation" aria-label="Mobile menu">
               {navigationItems.map((item) => (
                 <div key={item.label}>
                   {item.label === 'Talk to us' ? (
                     <Link
                       to="/contact"
-                      className="block w-full text-left px-4 py-3 text-gray-700 hover:bg-primary/10 rounded font-medium text-sm"
+                      className="block w-full text-left px-4 py-3 text-gray-700 hover:bg-primary/10 active:bg-primary/20 rounded font-medium text-base transition-colors"
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       {item.label}
@@ -153,7 +153,7 @@ export default function Landing() {
                   ) : item.label === 'About Us' ? (
                     <Link
                       to="/about-us"
-                      className="block w-full text-left px-4 py-3 text-gray-700 hover:bg-primary/10 rounded font-medium text-sm"
+                      className="block w-full text-left px-4 py-3 text-gray-700 hover:bg-primary/10 active:bg-primary/20 rounded font-medium text-base transition-colors"
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       {item.label}
@@ -161,7 +161,7 @@ export default function Landing() {
                   ) : item.label === 'Home' ? (
                     <Link
                       to="/"
-                      className="block w-full text-left px-4 py-3 text-gray-700 hover:bg-primary/10 rounded font-medium text-sm"
+                      className="block w-full text-left px-4 py-3 text-gray-700 hover:bg-primary/10 active:bg-primary/20 rounded font-medium text-base transition-colors"
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       {item.label}
@@ -172,23 +172,26 @@ export default function Landing() {
                         onClick={() =>
                           item.submenu && setProductsDropdownOpen(!productsDropdownOpen)
                         }
-                        className="w-full text-left px-4 py-3 text-gray-700 hover:bg-primary/10 rounded flex justify-between items-center font-medium text-sm"
+                        className="w-full text-left px-4 py-3 text-gray-700 hover:bg-primary/10 active:bg-primary/20 rounded flex justify-between items-center font-medium text-base transition-colors"
+                        aria-expanded={productsDropdownOpen}
+                        aria-controls="mobile-products-submenu"
                       >
                         {item.label}
                         {item.submenu && item.submenu.length > 0 && (
                           <ChevronDown
                             size={16}
                             className={`transition-transform ${productsDropdownOpen ? 'rotate-180' : ''}`}
+                            aria-hidden="true"
                           />
                         )}
                       </button>
                       {item.submenu && productsDropdownOpen && (
-                        <div className="bg-gray-50 pl-4 py-1">
+                        <div className="bg-gray-50 pl-4 py-2 space-y-1" id="mobile-products-submenu">
                           {item.submenu.map((sub) => (
                             <Link
                               key={sub.slug}
                               to={`/products/${sub.slug}`}
-                              className="block px-4 py-2 text-xs text-gray-700 hover:text-primary transition-colors"
+                              className="block px-4 py-2 text-sm text-gray-700 hover:text-primary hover:bg-primary/5 active:bg-primary/10 rounded transition-colors"
                               onClick={() => setMobileMenuOpen(false)}
                             >
                               {sub.name}
