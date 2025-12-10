@@ -14,6 +14,7 @@ import ProductDetail from "./pages/ProductDetail";
 import Contact from "./pages/Contact";
 import Media from "./pages/Media";
 import Offers from "./pages/Offers";
+import Sitemap from "./pages/Sitemap";
 import Index from "./pages/Index";
 import Quotations from "./pages/Quotations";
 import Invoices from "./pages/Invoices";
