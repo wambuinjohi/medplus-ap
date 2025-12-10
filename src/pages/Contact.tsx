@@ -26,6 +26,11 @@ export default function Contact() {
     generateContactPageSchema()
   );
 
+  useBreadcrumbSchema([
+    { name: 'Home', url: '/' },
+    { name: 'Contact Us', url: '/contact' }
+  ]);
+
   // Initialize EmailJS
   emailjs.init('dK906nDGwBHoPvOsr');
 
