@@ -4,7 +4,7 @@ import { PublicHeader } from '@/components/PublicHeader';
 import { PublicFooter } from '@/components/PublicFooter';
 import { BreadcrumbNav } from '@/components/ui/breadcrumb-nav';
 import { useSEO } from '@/hooks/useSEO';
-import { generateWebPageSchema } from '@/utils/seoHelpers';
+import { generateWebPageSchema, useBreadcrumbSchema } from '@/utils/seoHelpers';
 import { useWebCategories } from '@/hooks/useWebCategories';
 
 export default function AboutUs() {
@@ -22,6 +22,11 @@ export default function AboutUs() {
       url: 'https://medplusafrica.com/about-us',
     })
   );
+
+  useBreadcrumbSchema([
+    { name: 'Home', url: '/' },
+    { name: 'About Us', url: '/about-us' }
+  ]);
   return (
     <div className="min-h-screen bg-white">
       <PublicHeader currentPage="about" />
