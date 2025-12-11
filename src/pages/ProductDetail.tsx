@@ -230,17 +230,23 @@ export default function ProductDetail() {
 
                 {/* Variants Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {variants.map((variant) => (
+              {variants.map((v) => (
                 <div
-                  key={variant.id}
+                  key={v.id}
                   className="group relative bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-300"
                 >
-                  {/* Variant Image */}
+                  {/* Variant Images */}
                   <div className="relative h-48 bg-gray-200 overflow-hidden">
-                    {variant.image_path ? (
+                    {categoryVariantImages[v.id] && categoryVariantImages[v.id].length > 0 ? (
                       <img
-                        src={variant.image_path}
-                        alt={variant.name}
+                        src={categoryVariantImages[v.id][0].url}
+                        alt={categoryVariantImages[v.id][0].altText || v.name}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                      />
+                    ) : v.image_path ? (
+                      <img
+                        src={v.image_path}
+                        alt={v.name}
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                       />
                     ) : (
@@ -248,24 +254,29 @@ export default function ProductDetail() {
                         <span className="text-4xl">📦</span>
                       </div>
                     )}
+                    {categoryVariantImages[v.id] && categoryVariantImages[v.id].length > 1 && (
+                      <div className="absolute bottom-2 right-2 bg-black/60 text-white px-2 py-1 rounded text-xs font-medium">
+                        +{categoryVariantImages[v.id].length - 1}
+                      </div>
+                    )}
                   </div>
 
                   {/* Variant Info */}
                   <div className="p-4">
                     {/* SKU */}
-                    <p className="text-xs text-gray-500 font-semibold mb-2">SKU: {variant.sku}</p>
+                    <p className="text-xs text-gray-500 font-semibold mb-2">SKU: {v.sku}</p>
 
                     {/* Variant Name */}
                     <h3 className="text-base font-bold text-gray-900 mb-4 line-clamp-2">
-                      {variant.name}
+                      {v.name}
                     </h3>
 
                     {/* Request Quotation Button */}
                     <button
                       onClick={() => {
                         openWhatsAppQuotation({
-                          productName: variant.name,
-                          productSku: variant.sku,
+                          productName: v.name,
+                          productSku: v.sku,
                           category: category?.name,
                           quantity: '1',
                           companyName: '',
