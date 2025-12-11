@@ -112,46 +112,15 @@ export const MultiImageUploadField = ({
 
   return (
     <div className="space-y-4">
-      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
-        <div className="flex flex-col items-center justify-center gap-3">
-          <Upload className="h-8 w-8 text-muted-foreground" />
-          <div className="text-center">
-            <p className="text-sm font-medium">Click to upload images</p>
-            <p className="text-xs text-muted-foreground">PNG, JPG, GIF up to 5MB each</p>
-          </div>
-        </div>
-        <Input
-          type="file"
-          accept="image/*"
-          onChange={handleFileChange}
-          disabled={uploading}
-          className="hidden"
-          id="multi-image-upload"
-        />
-        <label htmlFor="multi-image-upload">
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full mt-4 cursor-pointer"
-            disabled={uploading}
-            asChild
-          >
-            <span className="flex items-center justify-center gap-2">
-              {uploading && <Loader2 size={16} className="animate-spin" />}
-              {uploading ? 'Uploading...' : 'Upload Image'}
-            </span>
-          </Button>
-        </label>
-      </div>
-
+      {/* Existing Images Section - Show First */}
       {images.length > 0 && (
-        <div className="space-y-3">
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-3">
           <div className="flex items-center justify-between">
-            <h4 className="font-medium text-sm">
-              Uploaded Images ({images.length})
+            <h4 className="font-medium text-sm text-blue-900">
+              Current Images ({images.length})
             </h4>
             {images.length > 1 && (
-              <p className="text-xs text-muted-foreground">Drag to reorder</p>
+              <p className="text-xs text-blue-600">💡 Drag to reorder</p>
             )}
           </div>
           <div className="space-y-2">
