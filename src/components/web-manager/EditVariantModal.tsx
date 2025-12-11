@@ -45,11 +45,13 @@ export const EditVariantModal = ({
     image_path: '',
     display_order: 0,
     is_active: true,
+    images: [],
   });
-  const { updateVariant, loading } = useWebManager();
+  const [variantImages, setVariantImages] = useState<VariantImage[]>([]);
+  const { updateVariant, fetchVariantImages, saveVariantImages, loading } = useWebManager();
 
   useEffect(() => {
-    if (variant) {
+    if (variant && open) {
       setFormData({
         category_id: variant.category_id,
         name: variant.name,
@@ -59,9 +61,18 @@ export const EditVariantModal = ({
         image_path: variant.image_path || '',
         display_order: variant.display_order,
         is_active: variant.is_active,
+        images: [],
       });
+
+      // Load existing variant images
+      loadVariantImages(variant.id);
     }
   }, [variant, open]);
+
+  const loadVariantImages = async (variantId: string) => {
+    const images = await fetchVariantImages(variantId);
+    setVariantImages(images);
+  };
 
   const handleImagePathChange = (path: string) => {
     setFormData((prev) => ({ ...prev, image_path: path }));
