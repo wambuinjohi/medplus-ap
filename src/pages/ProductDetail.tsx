@@ -27,6 +27,7 @@ export default function ProductDetail() {
   const { variant } = useWebVariantBySlug(productSlug || '');
 
   const [variantImages, setVariantImages] = useState<VariantImage[]>([]);
+  const [categoryVariantImages, setCategoryVariantImages] = useState<Record<string, VariantImage[]>>({});
 
   const isCategory = !!category && variants.length > 0;
   const isVariant = !!variant && !isCategory;
@@ -38,9 +39,25 @@ export default function ProductDetail() {
     }
   }, [variant?.id]);
 
+  // Fetch images for all category variants
+  useEffect(() => {
+    if (isCategory && variants.length > 0) {
+      loadCategoryVariantImages(variants);
+    }
+  }, [isCategory, variants]);
+
   const loadVariantImages = async (variantId: string) => {
     const images = await fetchVariantImages(variantId);
     setVariantImages(images);
+  };
+
+  const loadCategoryVariantImages = async (categoryVariants: typeof variants) => {
+    const imagesMap: Record<string, VariantImage[]> = {};
+    for (const v of categoryVariants) {
+      const images = await fetchVariantImages(v.id);
+      imagesMap[v.id] = images;
+    }
+    setCategoryVariantImages(imagesMap);
   };
 
   // Set SEO for product
