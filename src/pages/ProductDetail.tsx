@@ -20,13 +20,28 @@ export default function ProductDetail() {
   const { productSlug } = useParams<{ productSlug: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { fetchVariantImages } = useWebManager();
 
   // Try to fetch as category first, then as variant
   const { category, variants } = useWebCategoryBySlug(productSlug || '');
   const { variant } = useWebVariantBySlug(productSlug || '');
 
+  const [variantImages, setVariantImages] = useState<VariantImage[]>([]);
+
   const isCategory = !!category && variants.length > 0;
   const isVariant = !!variant && !isCategory;
+
+  // Fetch variant images when variant loads
+  useEffect(() => {
+    if (variant?.id) {
+      loadVariantImages(variant.id);
+    }
+  }, [variant?.id]);
+
+  const loadVariantImages = async (variantId: string) => {
+    const images = await fetchVariantImages(variantId);
+    setVariantImages(images);
+  };
 
   // Set SEO for product
   useSEO(
