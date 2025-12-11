@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useWebManager, VariantFormData, WebVariant, WebCategory } from '@/hooks/useWebManager';
+import { useWebManager, VariantFormData, WebVariant, WebCategory, VariantImage } from '@/hooks/useWebManager';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -19,7 +19,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Loader2 } from 'lucide-react';
-import { ImageUploadField } from './ImageUploadField';
+import { MultiImageUploadField } from './MultiImageUploadField';
 
 interface EditVariantModalProps {
   open: boolean;
