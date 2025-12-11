@@ -38,6 +38,13 @@ export interface CategoryFormData {
   is_active: boolean;
 }
 
+export interface VariantImage {
+  id?: string;
+  url: string;
+  altText?: string;
+  displayOrder: number;
+}
+
 export interface VariantFormData {
   category_id: string;
   name: string;
@@ -47,6 +54,11 @@ export interface VariantFormData {
   image_path?: string;
   display_order: number;
   is_active: boolean;
+  images?: VariantImage[];
+}
+
+export interface WebVariantWithImages extends WebVariant {
+  images?: VariantImage[];
 }
 
 export const useWebManager = () => {
@@ -306,6 +318,90 @@ export const useWebManager = () => {
     }
   }, []);
 
+  // Variant Images
+  const fetchVariantImages = useCallback(async (variantId: string) => {
+    try {
+      setError(null);
+
+      const { data, error: err } = await supabase
+        .from('variant_images')
+        .select('*')
+        .eq('variant_id', variantId)
+        .order('display_order', { ascending: true });
+
+      if (err) throw err;
+      return (data || []).map((img) => ({
+        id: img.id,
+        url: img.image_url,
+        altText: img.alt_text || '',
+        displayOrder: img.display_order,
+      })) as VariantImage[];
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to fetch variant images';
+      setError(message);
+      return [];
+    }
+  }, []);
+
+  const saveVariantImages = useCallback(
+    async (variantId: string, images: VariantImage[]) => {
+      try {
+        setError(null);
+
+        // Delete existing images for this variant
+        const { error: deleteErr } = await supabase
+          .from('variant_images')
+          .delete()
+          .eq('variant_id', variantId);
+
+        if (deleteErr) throw deleteErr;
+
+        // Insert new images if any
+        if (images.length > 0) {
+          const imagesToInsert = images.map((img) => ({
+            variant_id: variantId,
+            image_url: img.url,
+            alt_text: img.altText || '',
+            display_order: img.displayOrder,
+          }));
+
+          const { error: insertErr } = await supabase
+            .from('variant_images')
+            .insert(imagesToInsert);
+
+          if (insertErr) throw insertErr;
+        }
+
+        return true;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to save variant images';
+        setError(message);
+        toast.error(message);
+        throw err;
+      }
+    },
+    []
+  );
+
+  const deleteVariantImage = useCallback(async (imageId: string) => {
+    try {
+      setError(null);
+
+      const { error: err } = await supabase
+        .from('variant_images')
+        .delete()
+        .eq('id', imageId);
+
+      if (err) throw err;
+      return true;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to delete image';
+      setError(message);
+      toast.error(message);
+      return false;
+    }
+  }, []);
+
   return {
     loading,
     error,
@@ -321,5 +417,9 @@ export const useWebManager = () => {
     updateVariant,
     deleteVariant,
     toggleVariantStatus,
+    // Variant Images
+    fetchVariantImages,
+    saveVariantImages,
+    deleteVariantImage,
   };
 };

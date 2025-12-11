@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useWebManager, VariantFormData, WebCategory } from '@/hooks/useWebManager';
+import { useWebManager, VariantFormData, WebCategory, VariantImage } from '@/hooks/useWebManager';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -19,7 +19,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Loader2 } from 'lucide-react';
-import { ImageUploadField } from './ImageUploadField';
+import { MultiImageUploadField } from './MultiImageUploadField';
 
 interface CreateVariantModalProps {
   open: boolean;
@@ -43,8 +43,10 @@ export const CreateVariantModal = ({
     image_path: '',
     display_order: 0,
     is_active: true,
+    images: [],
   });
-  const { createVariant, loading } = useWebManager();
+  const [variantImages, setVariantImages] = useState<VariantImage[]>([]);
+  const { createVariant, saveVariantImages, loading } = useWebManager();
 
   const generateSlug = (name: string) => {
     return name
@@ -62,14 +64,20 @@ export const CreateVariantModal = ({
     }));
   };
 
-  const handleImagePathChange = (path: string) => {
-    setFormData((prev) => ({ ...prev, image_path: path }));
+  const handleImagesChange = (images: VariantImage[]) => {
+    setVariantImages(images);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await createVariant(formData);
+      const newVariant = await createVariant(formData);
+
+      // Save images if any were uploaded
+      if (variantImages.length > 0 && newVariant) {
+        await saveVariantImages(newVariant.id, variantImages);
+      }
+
       setFormData({
         category_id: '',
         name: '',
@@ -79,7 +87,9 @@ export const CreateVariantModal = ({
         image_path: '',
         display_order: 0,
         is_active: true,
+        images: [],
       });
+      setVariantImages([]);
       onOpenChange(false);
       onSuccess();
     } catch (error) {
@@ -165,10 +175,10 @@ export const CreateVariantModal = ({
           </div>
 
           <div className="space-y-2">
-            <Label>Product Image</Label>
-            <ImageUploadField
-              value={formData.image_path}
-              onChange={handleImagePathChange}
+            <Label>Product Images</Label>
+            <MultiImageUploadField
+              value={variantImages}
+              onChange={handleImagesChange}
               variantName={formData.name}
             />
           </div>

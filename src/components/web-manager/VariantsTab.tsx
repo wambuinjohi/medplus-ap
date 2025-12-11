@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useWebManager, WebVariant, WebCategory } from '@/hooks/useWebManager';
+import { useWebManager, WebVariant, WebCategory, VariantImage } from '@/hooks/useWebManager';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -33,6 +33,7 @@ import { EditVariantModal } from './EditVariantModal';
 export const VariantsTab = () => {
   const [variants, setVariants] = useState<WebVariant[]>([]);
   const [categories, setCategories] = useState<WebCategory[]>([]);
+  const [variantImages, setVariantImages] = useState<Record<string, VariantImage[]>>({});
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedVariant, setSelectedVariant] = useState<WebVariant | null>(null);
@@ -41,6 +42,7 @@ export const VariantsTab = () => {
   const {
     fetchVariants,
     fetchCategories,
+    fetchVariantImages,
     deleteVariant,
     toggleVariantStatus,
     loading,
@@ -55,12 +57,23 @@ export const VariantsTab = () => {
     setCategories(cats);
     const vars = await fetchVariants();
     setVariants(vars);
+    await loadImagesForVariants(vars);
   };
 
   const loadVariants = async () => {
     const categoryId = selectedCategory && selectedCategory !== 'all' ? selectedCategory : undefined;
     const data = await fetchVariants(categoryId, search || undefined);
     setVariants(data);
+    await loadImagesForVariants(data);
+  };
+
+  const loadImagesForVariants = async (vars: WebVariant[]) => {
+    const imagesMap: Record<string, VariantImage[]> = {};
+    for (const variant of vars) {
+      const images = await fetchVariantImages(variant.id);
+      imagesMap[variant.id] = images;
+    }
+    setVariantImages(imagesMap);
   };
 
   const handleSearch = (value: string) => {
@@ -171,7 +184,24 @@ export const VariantsTab = () => {
                   <TableCell>{getCategoryName(variant.category_id)}</TableCell>
                   <TableCell>{variant.display_order}</TableCell>
                   <TableCell>
-                    {variant.image_path ? (
+                    {variantImages[variant.id] && variantImages[variant.id].length > 0 ? (
+                      <div className="flex gap-2">
+                        {variantImages[variant.id].slice(0, 3).map((img, idx) => (
+                          <img
+                            key={idx}
+                            src={img.url}
+                            alt={img.altText || `Image ${idx + 1}`}
+                            className="h-8 w-8 object-cover rounded"
+                            title={img.altText || `Image ${idx + 1}`}
+                          />
+                        ))}
+                        {variantImages[variant.id].length > 3 && (
+                          <span className="text-xs text-muted-foreground flex items-center px-1">
+                            +{variantImages[variant.id].length - 3}
+                          </span>
+                        )}
+                      </div>
+                    ) : variant.image_path ? (
                       <img
                         src={variant.image_path}
                         alt={variant.name}

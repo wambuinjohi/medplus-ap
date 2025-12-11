@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useWebManager, VariantFormData, WebVariant, WebCategory } from '@/hooks/useWebManager';
+import { useWebManager, VariantFormData, WebVariant, WebCategory, VariantImage } from '@/hooks/useWebManager';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -19,7 +19,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Loader2 } from 'lucide-react';
-import { ImageUploadField } from './ImageUploadField';
+import { MultiImageUploadField } from './MultiImageUploadField';
 
 interface EditVariantModalProps {
   open: boolean;
@@ -45,11 +45,13 @@ export const EditVariantModal = ({
     image_path: '',
     display_order: 0,
     is_active: true,
+    images: [],
   });
-  const { updateVariant, loading } = useWebManager();
+  const [variantImages, setVariantImages] = useState<VariantImage[]>([]);
+  const { updateVariant, fetchVariantImages, saveVariantImages, loading } = useWebManager();
 
   useEffect(() => {
-    if (variant) {
+    if (variant && open) {
       setFormData({
         category_id: variant.category_id,
         name: variant.name,
@@ -59,18 +61,31 @@ export const EditVariantModal = ({
         image_path: variant.image_path || '',
         display_order: variant.display_order,
         is_active: variant.is_active,
+        images: [],
       });
+
+      // Load existing variant images
+      loadVariantImages(variant.id);
     }
   }, [variant, open]);
 
-  const handleImagePathChange = (path: string) => {
-    setFormData((prev) => ({ ...prev, image_path: path }));
+  const loadVariantImages = async (variantId: string) => {
+    const images = await fetchVariantImages(variantId);
+    setVariantImages(images);
+  };
+
+  const handleImagesChange = (images: VariantImage[]) => {
+    setVariantImages(images);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       await updateVariant(variant.id, formData);
+
+      // Save images
+      await saveVariantImages(variant.id, variantImages);
+
       onOpenChange(false);
       onSuccess();
     } catch (error) {
@@ -151,10 +166,10 @@ export const EditVariantModal = ({
           </div>
 
           <div className="space-y-2">
-            <Label>Product Image</Label>
-            <ImageUploadField
-              value={formData.image_path}
-              onChange={handleImagePathChange}
+            <Label>Product Images</Label>
+            <MultiImageUploadField
+              value={variantImages}
+              onChange={handleImagesChange}
               variantName={formData.name}
             />
           </div>

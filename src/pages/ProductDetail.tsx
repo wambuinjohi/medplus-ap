@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,8 +6,10 @@ import { Label } from '@/components/ui/label';
 import { BiolegendLogo } from '@/components/ui/biolegend-logo';
 import { PublicFooter } from '@/components/PublicFooter';
 import ProductCategorySidebar from '@/components/ProductCategorySidebar';
+import { ImageGallery } from '@/components/ImageGallery';
 import { useToast } from '@/hooks/use-toast';
 import { useWebCategoryBySlug, useWebVariantBySlug } from '@/hooks/useWebCategories';
+import { useWebManager, VariantImage } from '@/hooks/useWebManager';
 import { MessageCircle, ArrowLeft, Check } from 'lucide-react';
 import { BreadcrumbNav } from '@/components/ui/breadcrumb-nav';
 import { useSEO } from '@/hooks/useSEO';
@@ -18,13 +20,45 @@ export default function ProductDetail() {
   const { productSlug } = useParams<{ productSlug: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { fetchVariantImages } = useWebManager();
 
   // Try to fetch as category first, then as variant
   const { category, variants } = useWebCategoryBySlug(productSlug || '');
   const { variant } = useWebVariantBySlug(productSlug || '');
 
+  const [variantImages, setVariantImages] = useState<VariantImage[]>([]);
+  const [categoryVariantImages, setCategoryVariantImages] = useState<Record<string, VariantImage[]>>({});
+
   const isCategory = !!category && variants.length > 0;
   const isVariant = !!variant && !isCategory;
+
+  // Fetch variant images when variant loads
+  useEffect(() => {
+    if (variant?.id) {
+      loadVariantImages(variant.id);
+    }
+  }, [variant?.id]);
+
+  // Fetch images for all category variants
+  useEffect(() => {
+    if (isCategory && variants.length > 0) {
+      loadCategoryVariantImages(variants);
+    }
+  }, [isCategory, variants]);
+
+  const loadVariantImages = async (variantId: string) => {
+    const images = await fetchVariantImages(variantId);
+    setVariantImages(images);
+  };
+
+  const loadCategoryVariantImages = async (categoryVariants: typeof variants) => {
+    const imagesMap: Record<string, VariantImage[]> = {};
+    for (const v of categoryVariants) {
+      const images = await fetchVariantImages(v.id);
+      imagesMap[v.id] = images;
+    }
+    setCategoryVariantImages(imagesMap);
+  };
 
   // Set SEO for product
   useSEO(
@@ -196,17 +230,23 @@ export default function ProductDetail() {
 
                 {/* Variants Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {variants.map((variant) => (
+              {variants.map((v) => (
                 <div
-                  key={variant.id}
+                  key={v.id}
                   className="group relative bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-300"
                 >
-                  {/* Variant Image */}
+                  {/* Variant Images */}
                   <div className="relative h-48 bg-gray-200 overflow-hidden">
-                    {variant.image_path ? (
+                    {categoryVariantImages[v.id] && categoryVariantImages[v.id].length > 0 ? (
                       <img
-                        src={variant.image_path}
-                        alt={variant.name}
+                        src={categoryVariantImages[v.id][0].url}
+                        alt={categoryVariantImages[v.id][0].altText || v.name}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                      />
+                    ) : v.image_path ? (
+                      <img
+                        src={v.image_path}
+                        alt={v.name}
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                       />
                     ) : (
@@ -214,24 +254,29 @@ export default function ProductDetail() {
                         <span className="text-4xl">📦</span>
                       </div>
                     )}
+                    {categoryVariantImages[v.id] && categoryVariantImages[v.id].length > 1 && (
+                      <div className="absolute bottom-2 right-2 bg-black/60 text-white px-2 py-1 rounded text-xs font-medium">
+                        +{categoryVariantImages[v.id].length - 1}
+                      </div>
+                    )}
                   </div>
 
                   {/* Variant Info */}
                   <div className="p-4">
                     {/* SKU */}
-                    <p className="text-xs text-gray-500 font-semibold mb-2">SKU: {variant.sku}</p>
+                    <p className="text-xs text-gray-500 font-semibold mb-2">SKU: {v.sku}</p>
 
                     {/* Variant Name */}
                     <h3 className="text-base font-bold text-gray-900 mb-4 line-clamp-2">
-                      {variant.name}
+                      {v.name}
                     </h3>
 
                     {/* Request Quotation Button */}
                     <button
                       onClick={() => {
                         openWhatsAppQuotation({
-                          productName: variant.name,
-                          productSku: variant.sku,
+                          productName: v.name,
+                          productSku: v.sku,
                           category: category?.name,
                           quantity: '1',
                           companyName: '',
@@ -307,21 +352,13 @@ export default function ProductDetail() {
             {/* Main Content */}
             <div className="flex-1">
               <div className="grid md:grid-cols-2 gap-12">
-                {/* Variant Image */}
+                {/* Variant Images Gallery */}
                 <div>
-                  <div className="bg-white rounded-lg overflow-hidden shadow-sm border border-gray-200">
-                    {variant?.image_path ? (
-                      <img
-                        src={variant.image_path}
-                        alt={variant.name}
-                        className="w-full h-96 object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-96 flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 text-gray-400">
-                        <span className="text-6xl">📦</span>
-                      </div>
-                    )}
-                  </div>
+                  <ImageGallery
+                    images={variantImages}
+                    fallbackImage={variant?.image_path}
+                    fallbackAlt={variant?.name}
+                  />
                 </div>
 
                 {/* Variant Info */}
