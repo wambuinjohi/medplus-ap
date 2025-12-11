@@ -184,7 +184,24 @@ export const VariantsTab = () => {
                   <TableCell>{getCategoryName(variant.category_id)}</TableCell>
                   <TableCell>{variant.display_order}</TableCell>
                   <TableCell>
-                    {variant.image_path ? (
+                    {variantImages[variant.id] && variantImages[variant.id].length > 0 ? (
+                      <div className="flex gap-2">
+                        {variantImages[variant.id].slice(0, 3).map((img, idx) => (
+                          <img
+                            key={idx}
+                            src={img.url}
+                            alt={img.altText || `Image ${idx + 1}`}
+                            className="h-8 w-8 object-cover rounded"
+                            title={img.altText || `Image ${idx + 1}`}
+                          />
+                        ))}
+                        {variantImages[variant.id].length > 3 && (
+                          <span className="text-xs text-muted-foreground flex items-center px-1">
+                            +{variantImages[variant.id].length - 3}
+                          </span>
+                        )}
+                      </div>
+                    ) : variant.image_path ? (
                       <img
                         src={variant.image_path}
                         alt={variant.name}
