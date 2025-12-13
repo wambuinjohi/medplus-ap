@@ -87,7 +87,25 @@ export const EditVariantModal = ({
       onOpenChange(false);
       onSuccess();
     } catch (error) {
-      // Error is handled by the hook
+      let errorMessage = 'Failed to update variant';
+
+      if (error && typeof error === 'object') {
+        if ('message' in error && typeof error.message === 'string') {
+          errorMessage = error.message;
+        } else {
+          try {
+            errorMessage = JSON.stringify(error);
+          } catch {
+            errorMessage = String(error);
+          }
+        }
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+
+      console.error('Failed to update variant:', errorMessage, error);
+      // Error is already handled by the hooks (updateVariant, saveVariantImages)
+      // which show toast notifications
     }
   };
 
