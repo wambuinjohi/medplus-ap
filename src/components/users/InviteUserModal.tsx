@@ -131,19 +131,12 @@ export function InviteUserModal({
     }
   };
 
-  const handleRoleChange = (role: UserRole) => {
+  const handleRoleChange = (role: string) => {
     setFormData(prev => ({ ...prev, role }));
     if (formErrors.role) {
       setFormErrors(prev => ({ ...prev, role: '' }));
     }
   };
-
-  const roleOptions = [
-    { value: 'user', label: 'User', description: 'Basic access to view and create quotations' },
-    { value: 'stock_manager', label: 'Stock Manager', description: 'Manage inventory and stock movements' },
-    { value: 'accountant', label: 'Accountant', description: 'Access to financial reports and records' },
-    { value: 'admin', label: 'Administrator', description: 'Full access to all system features' },
-  ];
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -177,19 +170,27 @@ export function InviteUserModal({
 
           <div className="space-y-2">
             <Label htmlFor="role">Role *</Label>
-            <Select value={formData.role} onValueChange={handleRoleChange} disabled={loading}>
+            <Select value={formData.role} onValueChange={handleRoleChange} disabled={loading || rolesLoading || roles.length === 0}>
               <SelectTrigger className={formErrors.role ? 'border-destructive' : ''}>
-                <SelectValue placeholder="Select a role" />
+                <SelectValue placeholder={rolesLoading ? 'Loading roles...' : 'Select a role'} />
               </SelectTrigger>
               <SelectContent>
-                {roleOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    <div className="flex flex-col">
-                      <span className="font-medium">{option.label}</span>
-                      <span className="text-xs text-muted-foreground">{option.description}</span>
-                    </div>
-                  </SelectItem>
-                ))}
+                {rolesLoading ? (
+                  <div className="px-2 py-2 text-sm text-muted-foreground">Loading roles...</div>
+                ) : roles.length === 0 ? (
+                  <div className="px-2 py-2 text-sm text-muted-foreground">No roles available</div>
+                ) : (
+                  roles.map((role) => (
+                    <SelectItem key={role.id} value={role.name}>
+                      <div className="flex flex-col">
+                        <span className="font-medium">{role.name}</span>
+                        {role.description && (
+                          <span className="text-xs text-muted-foreground">{role.description}</span>
+                        )}
+                      </div>
+                    </SelectItem>
+                  ))
+                )}
               </SelectContent>
             </Select>
             {formErrors.role && (
