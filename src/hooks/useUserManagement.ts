@@ -323,7 +323,7 @@ export const useUserManagement = () => {
         .from('profiles')
         .select('id')
         .eq('email', email)
-        .single();
+        .maybeSingle();
 
       if (existingUser) {
         return { success: false, error: 'User with this email already exists' };
@@ -335,7 +335,7 @@ export const useUserManagement = () => {
         .eq('email', email)
         .eq('company_id', currentUser.company_id)
         .eq('status', 'pending')
-        .single();
+        .maybeSingle();
 
       if (existingInvitation) {
         return { success: false, error: 'Invitation already sent to this email' };
@@ -349,6 +349,9 @@ export const useUserManagement = () => {
           role,
           company_id: currentUser.company_id,
           invited_by: currentUser.id,
+          is_approved: true,
+          approved_by: currentUser.id,
+          approved_at: new Date().toISOString(),
         })
         .select()
         .single();
@@ -367,15 +370,13 @@ export const useUserManagement = () => {
         // Don't fail the operation if audit logging fails
       }
 
-      // TODO: Send invitation email (would integrate with your email service)
-
-      toast.success('User invitation sent successfully');
+      toast.success('User invitation created and approved');
       await fetchInvitations();
       return { success: true };
     } catch (err) {
       const errorMessage = parseErrorMessageWithCodes(err, 'invitation');
-      console.error('Error sending invitation:', err);
-      toast.error(`Failed to send invitation: ${errorMessage}`);
+      console.error('Error creating invitation:', err);
+      toast.error(`Failed to create invitation: ${errorMessage}`);
       return { success: false, error: errorMessage };
     } finally {
       setLoading(false);
@@ -613,7 +614,7 @@ export const useUserManagement = () => {
     const stockManagerUsers = users.filter(u => u.role === 'stock_manager').length;
     const basicUsers = users.filter(u => u.role === 'user').length;
 
-    const pendingInvitations = invitations.filter(i => i.status === 'pending').length;
+    const pendingInvitations = invitations.filter(i => !i.is_approved).length;
 
     return {
       totalUsers,

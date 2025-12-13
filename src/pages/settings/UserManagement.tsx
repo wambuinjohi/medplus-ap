@@ -424,8 +424,8 @@ export default function UserManagement() {
             </CardContent>
           </Card>
 
-          {/* Pending Invitations */}
-          {invitations.length > 0 && (
+          {/* Pending Invitations - Awaiting Approval */}
+          {invitations.some(inv => !inv.is_approved) && (
             <Card className="shadow-card">
               <CardHeader>
                 <div className="flex items-start justify-between">
@@ -452,12 +452,11 @@ export default function UserManagement() {
                       <TableHead>Invited</TableHead>
                       <TableHead>Expires</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead>Approval Status</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {invitations.map((invitation) => (
+                    {invitations.filter(inv => !inv.is_approved).map((invitation) => (
                       <TableRow key={invitation.id}>
                         <TableCell>{invitation.email}</TableCell>
                         <TableCell>
@@ -472,56 +471,22 @@ export default function UserManagement() {
                           {new Date(invitation.expires_at).toLocaleDateString()}
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline" className={getStatusColor(invitation.status)}>
-                            {invitation.status}
+                          <Badge variant="outline" className="bg-warning-light text-warning border-warning/20">
+                            <Clock className="h-3 w-3 mr-1" />
+                            Pending Approval
                           </Badge>
                         </TableCell>
-                        <TableCell>
-                          <div className="space-y-1">
-                            {invitation.is_approved ? (
-                              <div className="flex items-center space-x-2">
-                                <Badge variant="outline" className="bg-success-light text-success border-success/20">
-                                  <UserCheck className="h-3 w-3 mr-1" />
-                                  Approved
-                                </Badge>
-                              </div>
-                            ) : (
-                              <Badge variant="outline" className="bg-warning-light text-warning border-warning/20">
-                                <Clock className="h-3 w-3 mr-1" />
-                                Pending Approval
-                              </Badge>
-                            )}
-                            {invitation.approved_at && (
-                              <p className="text-xs text-muted-foreground">
-                                Approved on {new Date(invitation.approved_at).toLocaleDateString()}
-                              </p>
-                            )}
-                          </div>
-                        </TableCell>
                         <TableCell className="text-right">
-                          {invitation.status === 'pending' && !invitation.is_approved && (
-                            <div className="flex items-center justify-end space-x-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleApproveInvitation(invitation.id)}
-                                className="text-success hover:text-success"
-                              >
-                                <UserCheck className="h-4 w-4 mr-2" />
-                                Approve
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleRevokeInvitation(invitation.id)}
-                                className="text-destructive hover:text-destructive"
-                              >
-                                <UserX className="h-4 w-4 mr-2" />
-                                Revoke
-                              </Button>
-                            </div>
-                          )}
-                          {invitation.status === 'pending' && invitation.is_approved && (
+                          <div className="flex items-center justify-end space-x-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleApproveInvitation(invitation.id)}
+                              className="text-success hover:text-success"
+                            >
+                              <UserCheck className="h-4 w-4 mr-2" />
+                              Approve
+                            </Button>
                             <Button
                               variant="ghost"
                               size="sm"
@@ -531,7 +496,77 @@ export default function UserManagement() {
                               <UserX className="h-4 w-4 mr-2" />
                               Revoke
                             </Button>
-                          )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {invitations.filter(inv => !inv.is_approved).length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center py-8">
+                          <UserCheck className="h-8 w-8 text-success mx-auto mb-2" />
+                          <p className="text-muted-foreground">All invitations approved</p>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Approved Invitations - Awaiting User Signup */}
+          {invitations.some(inv => inv.is_approved && inv.status === 'pending') && (
+            <Card className="shadow-card">
+              <CardHeader>
+                <div className="flex items-start justify-between">
+                  <div>
+                    <CardTitle>Approved Invitations</CardTitle>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Invitations approved and waiting for users to create their accounts
+                    </p>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Role</TableHead>
+                      <TableHead>Invited</TableHead>
+                      <TableHead>Approved On</TableHead>
+                      <TableHead>Expires</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {invitations.filter(inv => inv.is_approved && inv.status === 'pending').map((invitation) => (
+                      <TableRow key={invitation.id}>
+                        <TableCell>{invitation.email}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className={getRoleColor(invitation.role)}>
+                            {invitation.role.replace('_', ' ')}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {new Date(invitation.invited_at).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell>
+                          {invitation.approved_at ? new Date(invitation.approved_at).toLocaleDateString() : '-'}
+                        </TableCell>
+                        <TableCell>
+                          {new Date(invitation.expires_at).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRevokeInvitation(invitation.id)}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <UserX className="h-4 w-4 mr-2" />
+                            Revoke
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))}
