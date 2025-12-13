@@ -106,8 +106,8 @@ export function InviteUserModal({
       return;
     }
 
-    const result = await onInviteUser(formData.email, formData.role);
-    
+    const result = await onInviteUser(formData.email, formData.role as UserRole);
+
     if (result.success) {
       handleClose();
     }
@@ -117,7 +117,7 @@ export function InviteUserModal({
     onOpenChange(false);
     setFormData({
       email: '',
-      role: 'user',
+      role: roles.length > 0 ? roles[0].name : '',
     });
     setFormErrors({});
   };
