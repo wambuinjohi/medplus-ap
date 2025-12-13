@@ -296,6 +296,15 @@ export const VariantsTab = () => {
           onSuccess={handleEditComplete}
         />
       )}
+
+      {selectedVariantForImages && (
+        <VariantImagesModal
+          open={showImagesModal}
+          onOpenChange={setShowImagesModal}
+          variant={selectedVariantForImages}
+          images={variantImages[selectedVariantForImages.id] || []}
+        />
+      )}
     </div>
   );
 };
