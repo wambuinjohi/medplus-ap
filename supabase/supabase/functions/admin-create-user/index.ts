@@ -187,7 +187,6 @@ Deno.serve(async (req) => {
             role: body.role,
             status: 'active',
             is_active: true,
-            password: body.password, // Will be hashed by DB trigger
             updated_at: new Date().toISOString(),
           })
           .eq('email', body.email);
