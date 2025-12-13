@@ -50,6 +50,7 @@ export default function Landing() {
     { name: 'Gender Violence Recovery Centre', icon: '🤝', image: 'https://cdn.builder.io/api/v1/image/assets%2F5a5bd023d65e45b4900fe9cb8582cda5%2F08500b8328484bea9812da820c34447c?format=webp&width=800', type: 'NGO' },
     { name: 'Tibu Health Africa', icon: '💚', image: 'https://cdn.builder.io/api/v1/image/assets%2F5a5bd023d65e45b4900fe9cb8582cda5%2Fb4e6bc8d57574887ab50ad5ef326074c?format=webp&width=800', type: 'Healthcare' },
     { name: 'Thika Sam\'s Annex Hospital', icon: '🏥', image: 'https://cdn.builder.io/api/v1/image/assets%2F5a5bd023d65e45b4900fe9cb8582cda5%2Fd9c0f3f602474874af1bec105042471a?format=webp&width=800', type: 'Hospital' },
+    { name: 'Oak Tree Centre for Kidney and Chronic Diseases', icon: '🌳', image: 'https://cdn.builder.io/api/v1/image/assets%2F5a5bd023d65e45b4900fe9cb8582cda5%2F3a8bd4f3e1524e22a4185b81c8ac06fc?format=webp&width=800', type: 'Specialty Centre' },
   ];
 
 
