@@ -649,7 +649,7 @@ export const useUserManagement = () => {
         // Create new auth user and profile
         userId = crypto.randomUUID();
 
-        // Insert profile (password will be handled via RLS or separate mechanism)
+        // Insert profile (password will be handled via DB trigger)
         const { error: profileError } = await supabase
           .from('profiles')
           .insert({
@@ -662,7 +662,6 @@ export const useUserManagement = () => {
             company_id: invitationData.company_id,
             role: invitationData.role,
             status: 'active',
-            is_active: true,
             password: userData.password, // Will be hashed by DB trigger
             invited_by: invitationData.invited_by,
             invited_at: invitationData.invited_at,
