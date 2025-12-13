@@ -692,6 +692,7 @@ export const useUserManagement = () => {
     deleteUser,
     inviteUser,
     revokeInvitation,
+    deleteInvitation,
     approveInvitation,
     acceptInvitation,
     resetUserPassword,
