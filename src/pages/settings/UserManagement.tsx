@@ -97,6 +97,7 @@ export default function UserManagement() {
     deleteUser,
     inviteUser,
     revokeInvitation,
+    deleteInvitation,
     approveInvitation,
     resetUserPassword,
     getUserStats,

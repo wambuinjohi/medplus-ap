@@ -149,7 +149,7 @@ export const useUserManagement = () => {
     }
   };
 
-  // Create a new user (admin only) - Admin sets password; no public signup/email verify
+  // Create a new user (admin only) - Creates profile with auto-approval
   const createUser = async (userData: CreateUserData): Promise<{ success: boolean; password?: string; error?: string }> => {
     if (!isAdmin) {
       return { success: false, error: 'Unauthorized: Only administrators can create users' };
@@ -162,7 +162,7 @@ export const useUserManagement = () => {
     setLoading(true);
 
     try {
-      // Check if user already exists
+      // Check if user already exists in profiles
       const { data: existingUser } = await supabase
         .from('profiles')
         .select('id')
@@ -195,31 +195,44 @@ export const useUserManagement = () => {
         return { success: false, error: 'You can only create users for your own company' };
       }
 
-      // Call Edge Function (admin-create-user) to create auth user + profile (service role)
-      const { data: fnData, error: fnError } = await supabase.functions.invoke('admin-create-user', {
-        body: {
+      // Generate a new UUID for the user
+      const userId = crypto.randomUUID();
+
+      // Create the profile record (auto-approved and immediately active)
+      // The password will be hashed by a database trigger
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert({
+          id: userId,
           email: userData.email,
-          password: userData.password,
-          full_name: userData.full_name,
-          role: userData.role,
+          full_name: userData.full_name || null,
+          phone: userData.phone || null,
+          department: userData.department || null,
+          position: userData.position || null,
           company_id: finalCompanyId,
-          invited_by: currentUser?.id,
-          phone: userData.phone,
-          department: userData.department,
-          position: userData.position,
-        },
-      });
+          role: userData.role,
+          status: 'active', // Auto-approve: immediately active
+          is_active: true, // User can login immediately
+          password: userData.password, // Will be hashed by DB trigger
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
 
-      if (fnError) {
-        const fnErrorMessage = parseErrorMessageWithCodes(fnError, 'user creation');
-        return { success: false, error: fnErrorMessage || 'Failed to create user' };
+      if (profileError) {
+        const profileErrorMsg = parseErrorMessageWithCodes(profileError, 'profile creation');
+        console.error('Profile creation error:', profileError);
+        return { success: false, error: profileErrorMsg };
       }
 
-      if (!fnData || !fnData.success || !fnData.user_id) {
-        return { success: false, error: fnData?.error || 'Failed to create user' };
+      // Log user creation in audit trail
+      try {
+        await logUserCreation(userId, userData.email, userData.role as UserRole, finalCompanyId);
+      } catch (auditError) {
+        console.error('Failed to log user creation:', auditError);
+        // Don't fail the operation if audit logging fails
       }
 
-      toast.success('User created successfully');
+      toast.success(`User "${userData.full_name}" created successfully! Status: Active (Auto-approved)`);
       await fetchUsers();
 
       return { success: true, password: userData.password };
@@ -273,11 +286,14 @@ export const useUserManagement = () => {
     setLoading(true);
 
     try {
-      // Delete from auth (this will cascade to profiles due to foreign key)
-      const { error: authError } = await supabase.auth.admin.deleteUser(userId);
+      // Delete from profiles table - this will cascade to auth.users if foreign key is set
+      const { error: deleteError } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', userId);
 
-      if (authError) {
-        throw authError;
+      if (deleteError) {
+        throw deleteError;
       }
 
       toast.success('User deleted successfully');
@@ -391,6 +407,37 @@ export const useUserManagement = () => {
       const errorMessage = parseErrorMessageWithCodes(err, 'invitation revocation');
       console.error('Error revoking invitation:', err);
       toast.error(`Failed to revoke invitation: ${errorMessage}`);
+      return { success: false, error: errorMessage };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Delete invitation permanently
+  const deleteInvitation = async (invitationId: string): Promise<{ success: boolean; error?: string }> => {
+    if (!isAdmin) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
+    setLoading(true);
+
+    try {
+      const { error } = await supabase
+        .from('user_invitations')
+        .delete()
+        .eq('id', invitationId);
+
+      if (error) {
+        throw error;
+      }
+
+      toast.success('Invitation deleted successfully');
+      await fetchInvitations();
+      return { success: true };
+    } catch (err) {
+      const errorMessage = parseErrorMessageWithCodes(err, 'invitation deletion');
+      console.error('Error deleting invitation:', err);
+      toast.error(`Failed to delete invitation: ${errorMessage}`);
       return { success: false, error: errorMessage };
     } finally {
       setLoading(false);
@@ -645,6 +692,7 @@ export const useUserManagement = () => {
     deleteUser,
     inviteUser,
     revokeInvitation,
+    deleteInvitation,
     approveInvitation,
     acceptInvitation,
     resetUserPassword,

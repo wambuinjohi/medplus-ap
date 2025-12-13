@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -20,6 +20,10 @@ import {
 import { Loader2, Mail, Send } from 'lucide-react';
 import { UserRole } from '@/contexts/AuthContext';
 import { validateEmail } from '@/utils/validation';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { RoleDefinition } from '@/types/permissions';
+import { toast } from 'sonner';
 
 interface InviteUserModalProps {
   open: boolean;
@@ -34,11 +38,49 @@ export function InviteUserModal({
   onInviteUser,
   loading = false,
 }: InviteUserModalProps) {
+  const { profile: currentUser } = useAuth();
+  const [roles, setRoles] = useState<RoleDefinition[]>([]);
+  const [rolesLoading, setRolesLoading] = useState(false);
+
   const [formData, setFormData] = useState({
     email: '',
-    role: 'user' as UserRole,
+    role: '',
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
+  // Fetch roles from database when modal opens
+  useEffect(() => {
+    if (open && currentUser?.company_id) {
+      fetchRoles();
+    }
+  }, [open, currentUser?.company_id]);
+
+  const fetchRoles = async () => {
+    if (!currentUser?.company_id) return;
+
+    setRolesLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('roles')
+        .select('*')
+        .eq('company_id', currentUser.company_id)
+        .order('is_default', { ascending: false })
+        .order('name', { ascending: true });
+
+      if (error) throw error;
+
+      setRoles(data || []);
+      // Set first role as default if available
+      if (data && data.length > 0) {
+        setFormData(prev => ({ ...prev, role: data[0].name }));
+      }
+    } catch (err) {
+      console.error('Error fetching roles:', err);
+      toast.error('Failed to load roles');
+    } finally {
+      setRolesLoading(false);
+    }
+  };
 
   const validateForm = () => {
     const errors: Record<string, string> = {};
@@ -64,8 +106,8 @@ export function InviteUserModal({
       return;
     }
 
-    const result = await onInviteUser(formData.email, formData.role);
-    
+    const result = await onInviteUser(formData.email, formData.role as UserRole);
+
     if (result.success) {
       handleClose();
     }
@@ -75,7 +117,7 @@ export function InviteUserModal({
     onOpenChange(false);
     setFormData({
       email: '',
-      role: 'user',
+      role: roles.length > 0 ? roles[0].name : '',
     });
     setFormErrors({});
   };
@@ -89,19 +131,12 @@ export function InviteUserModal({
     }
   };
 
-  const handleRoleChange = (role: UserRole) => {
+  const handleRoleChange = (role: string) => {
     setFormData(prev => ({ ...prev, role }));
     if (formErrors.role) {
       setFormErrors(prev => ({ ...prev, role: '' }));
     }
   };
-
-  const roleOptions = [
-    { value: 'user', label: 'User', description: 'Basic access to view and create quotations' },
-    { value: 'stock_manager', label: 'Stock Manager', description: 'Manage inventory and stock movements' },
-    { value: 'accountant', label: 'Accountant', description: 'Access to financial reports and records' },
-    { value: 'admin', label: 'Administrator', description: 'Full access to all system features' },
-  ];
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -135,19 +170,27 @@ export function InviteUserModal({
 
           <div className="space-y-2">
             <Label htmlFor="role">Role *</Label>
-            <Select value={formData.role} onValueChange={handleRoleChange} disabled={loading}>
+            <Select value={formData.role} onValueChange={handleRoleChange} disabled={loading || rolesLoading || roles.length === 0}>
               <SelectTrigger className={formErrors.role ? 'border-destructive' : ''}>
-                <SelectValue placeholder="Select a role" />
+                <SelectValue placeholder={rolesLoading ? 'Loading roles...' : 'Select a role'} />
               </SelectTrigger>
               <SelectContent>
-                {roleOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    <div className="flex flex-col">
-                      <span className="font-medium">{option.label}</span>
-                      <span className="text-xs text-muted-foreground">{option.description}</span>
-                    </div>
-                  </SelectItem>
-                ))}
+                {rolesLoading ? (
+                  <div className="px-2 py-2 text-sm text-muted-foreground">Loading roles...</div>
+                ) : roles.length === 0 ? (
+                  <div className="px-2 py-2 text-sm text-muted-foreground">No roles available</div>
+                ) : (
+                  roles.map((role) => (
+                    <SelectItem key={role.id} value={role.name}>
+                      <div className="flex flex-col">
+                        <span className="font-medium">{role.name}</span>
+                        {role.description && (
+                          <span className="text-xs text-muted-foreground">{role.description}</span>
+                        )}
+                      </div>
+                    </SelectItem>
+                  ))
+                )}
               </SelectContent>
             </Select>
             {formErrors.role && (

@@ -73,9 +73,8 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Validate role
-    const validRoles = ['user', 'admin', 'accountant', 'stock_manager'];
-    if (!validRoles.includes(body.role)) {
+    // Validate role format (non-empty string)
+    if (!body.role || typeof body.role !== 'string' || body.role.trim().length === 0) {
       return new Response(
         JSON.stringify({ success: false, error: 'Invalid role' }),
         { status: 400, headers: corsHeaders }

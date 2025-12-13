@@ -22,12 +22,14 @@ import {
   Globe
 } from 'lucide-react';
 import { BiolegendLogo } from '@/components/ui/biolegend-logo';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface SidebarItem {
   title: string;
   icon: React.ComponentType<{ className?: string }>;
   href?: string;
   children?: SidebarItem[];
+  allowedRoles?: string[]; // Roles that can see this item
 }
 
 const sidebarItems: SidebarItem[] = [
@@ -49,6 +51,7 @@ const sidebarItems: SidebarItem[] = [
   {
     title: 'Payments',
     icon: DollarSign,
+    allowedRoles: ['admin', 'accountant', 'Accounts Audit', 'stock_manager'],
     children: [
       { title: 'Payments', icon: DollarSign, href: '/app/payments' },
       { title: 'Remittance Advice', icon: CreditCard, href: '/app/remittance' }
@@ -57,12 +60,15 @@ const sidebarItems: SidebarItem[] = [
   {
     title: 'Inventory',
     icon: Package,
+    allowedRoles: ['admin', 'stock_manager'],
     href: '/app/inventory'
   },
   {
     title: 'Delivery Notes',
     icon: Truck,
-    href: '/app/delivery-notes'
+    children: [
+      { title: 'Delivery Notes', icon: Truck, href: '/app/delivery-notes' }
+    ]
   },
   {
     title: 'Customers',
@@ -79,18 +85,20 @@ const sidebarItems: SidebarItem[] = [
     icon: BarChart3,
     children: [
       { title: 'Sales Reports', icon: BarChart3, href: '/app/reports/sales' },
-      { title: 'Inventory Reports', icon: Package, href: '/app/reports/inventory' },
+      { title: 'Inventory Reports', icon: Package, href: '/app/reports/inventory', allowedRoles: ['admin', 'stock_manager'] },
       { title: 'Customer Statements', icon: FileSpreadsheet, href: '/app/reports/statements' }
     ]
   },
   {
     title: 'Web Manager',
     icon: Globe,
+    allowedRoles: ['admin'],
     href: '/app/web-manager'
   },
   {
     title: 'Settings',
     icon: Settings,
+    allowedRoles: ['admin'],
     children: [
       { title: 'Company Settings', icon: Building2, href: '/app/settings/company' },
       { title: 'User Management', icon: Users, href: '/app/settings/users' },
@@ -101,14 +109,24 @@ const sidebarItems: SidebarItem[] = [
 
 export function Sidebar() {
   const location = useLocation();
+  const { profile } = useAuth();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
   const toggleExpanded = (title: string) => {
-    setExpandedItems(prev => 
-      prev.includes(title) 
+    setExpandedItems(prev =>
+      prev.includes(title)
         ? prev.filter(item => item !== title)
         : [...prev, title]
     );
+  };
+
+  const isItemVisible = (item: SidebarItem): boolean => {
+    // If no allowed roles specified, item is visible to everyone
+    if (!item.allowedRoles || item.allowedRoles.length === 0) {
+      return true;
+    }
+    // Check if user's role is in allowed roles
+    return item.allowedRoles.includes(profile?.role || '');
   };
 
   const isItemActive = (href?: string) => {
@@ -122,10 +140,18 @@ export function Sidebar() {
   };
 
   const renderSidebarItem = (item: SidebarItem) => {
+    // Don't render if not visible to current user
+    if (!isItemVisible(item)) {
+      return null;
+    }
+
     const hasChildren = item.children && item.children.length > 0;
     const isExpanded = expandedItems.includes(item.title);
     const isActive = isItemActive(item.href);
     const isChildActive = isParentActive(item.children);
+
+    // Filter children based on visibility
+    const visibleChildren = item.children?.filter(isItemVisible) || [];
 
     if (hasChildren) {
       return (
@@ -150,9 +176,9 @@ export function Sidebar() {
             )}
           </button>
           
-          {isExpanded && (
+          {isExpanded && visibleChildren.length > 0 && (
             <div className="pl-4 space-y-1">
-              {item.children?.map(child => (
+              {visibleChildren.map(child => (
                 <Link
                   key={child.title}
                   to={child.href!}
@@ -199,7 +225,7 @@ export function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 space-y-2 p-4 custom-scrollbar overflow-y-auto">
-        {sidebarItems.map(renderSidebarItem)}
+        {sidebarItems.map(item => renderSidebarItem(item)).filter(Boolean)}
       </nav>
 
       {/* Company Info */}
