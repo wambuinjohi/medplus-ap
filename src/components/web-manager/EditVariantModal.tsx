@@ -82,7 +82,14 @@ export const EditVariantModal = ({
       await updateVariant(variant.id, formData);
 
       // Save images
-      await saveVariantImages(variant.id, variantImages);
+      try {
+        await saveVariantImages(variant.id, variantImages);
+      } catch (imageError) {
+        console.error('Failed to save variant images:', imageError);
+        // Images save error is already handled by saveVariantImages which shows a toast
+        // Don't fail the entire operation - variant was updated successfully
+        // The user will see a warning toast about the images
+      }
 
       onOpenChange(false);
       onSuccess();
