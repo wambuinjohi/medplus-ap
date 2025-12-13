@@ -574,15 +574,26 @@ export default function UserManagement() {
                           {new Date(invitation.expires_at).toLocaleDateString()}
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleRevokeInvitation(invitation.id)}
-                            className="text-destructive hover:text-destructive"
-                          >
-                            <UserX className="h-4 w-4 mr-2" />
-                            Revoke
-                          </Button>
+                          <div className="flex items-center justify-end space-x-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setModalState({ type: 'complete', invitation })}
+                              className="text-success hover:text-success"
+                            >
+                              <KeyRound className="h-4 w-4 mr-2" />
+                              Complete
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleRevokeInvitation(invitation.id)}
+                              className="text-destructive hover:text-destructive"
+                            >
+                              <UserX className="h-4 w-4 mr-2" />
+                              Revoke
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
