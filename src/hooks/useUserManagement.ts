@@ -209,66 +209,49 @@ export const useUserManagement = () => {
         return { success: false, error: 'You can only create users for your own company' };
       }
 
-      // If password is provided, create the user directly
+      // If password is provided, create the user directly using the edge function
       if (userData.password) {
         try {
-          // Step 1: Create auth user using service role
-          const adminAuthClient = supabase.auth.admin;
-          const { data: authData, error: authError } = await adminAuthClient.createUser({
-            email: userData.email,
-            password: userData.password,
-            email_confirm: true,
-            user_metadata: {
+          const { data: { session } } = await supabase.auth.getSession();
+          const token = session?.access_token;
+
+          if (!token) {
+            return { success: false, error: 'Authentication token not found. Please log in again.' };
+          }
+
+          const response = await fetch(`${SUPABASE_URL}/functions/v1/admin-create-user`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              email: userData.email,
+              password: userData.password,
               full_name: userData.full_name,
               role: userData.role,
               company_id: finalCompanyId,
-            },
+              invited_by: currentUser?.id,
+              phone: userData.phone,
+              department: userData.department,
+              position: userData.position,
+            }),
           });
 
-          if (authError) {
-            console.error('Auth creation error:', authError);
-            return { success: false, error: `Failed to create user account: ${authError.message}` };
+          const result = await response.json();
+
+          if (!response.ok) {
+            console.error('Edge function error:', result);
+            return { success: false, error: result.error || 'Failed to create user' };
           }
 
-          if (!authData.user?.id) {
-            return { success: false, error: 'Failed to create user account' };
-          }
-
-          const userId = authData.user.id;
-
-          // Step 2: Create profile record
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .insert({
-              id: userId,
-              auth_user_id: userId,
-              email: userData.email,
-              full_name: userData.full_name || null,
-              phone: userData.phone || null,
-              department: userData.department || null,
-              position: userData.position || null,
-              company_id: finalCompanyId,
-              role: userData.role,
-              status: 'active',
-              is_active: true,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            });
-
-          if (profileError) {
-            console.error('Profile creation error:', profileError);
-            // Try to clean up auth user
-            try {
-              await adminAuthClient.deleteUser(userId);
-            } catch (cleanupErr) {
-              console.error('Failed to cleanup auth user:', cleanupErr);
-            }
-            return { success: false, error: `Failed to create user profile: ${profileError.message}` };
+          if (!result.success) {
+            return { success: false, error: result.error || 'Failed to create user' };
           }
 
           // Log user creation in audit trail
           try {
-            await logUserCreation(userId, userData.email, userData.role as UserRole, finalCompanyId);
+            await logUserCreation(result.user_id, userData.email, userData.role as UserRole, finalCompanyId);
           } catch (auditError) {
             console.error('Failed to log user creation:', auditError);
           }
@@ -277,7 +260,7 @@ export const useUserManagement = () => {
           await fetchUsers();
           return { success: true, password: userData.password };
         } catch (err) {
-          console.error('Error creating user:', err);
+          console.error('Error calling admin-create-user function:', err);
           return { success: false, error: `Failed to create user: ${err instanceof Error ? err.message : String(err)}` };
         }
       }
