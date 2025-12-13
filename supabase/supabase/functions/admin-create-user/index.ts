@@ -158,7 +158,7 @@ Deno.serve(async (req) => {
           message: profileError.message,
           details: profileError.details
         });
-        
+
         // If profile fails but user was just created, clean up
         if (userCreatedNow) {
           try {
@@ -167,15 +167,38 @@ Deno.serve(async (req) => {
             console.error('Cleanup failed:', cleanup);
           }
         }
-        
+
         return new Response(
-          JSON.stringify({ 
-            success: false, 
+          JSON.stringify({
+            success: false,
             error: `Database error: ${profileError.message}`,
-            code: profileError.code 
+            code: profileError.code
           }),
           { status: 400, headers: corsHeaders }
         );
+      }
+
+      // Assign permissions based on role
+      try {
+        if (body.role === 'admin' || body.role === 'super_admin') {
+          // Grant dashboard permission to admin and super_admin roles
+          const { error: permissionError } = await supabase
+            .from('user_permissions')
+            .insert({
+              user_id: userId,
+              permission_name: 'view_dashboard_summary',
+              granted: true,
+            })
+            .select()
+            .single();
+
+          if (permissionError && !permissionError.message?.includes('duplicate')) {
+            console.error('Permission assignment error:', permissionError);
+          }
+        }
+      } catch (permErr) {
+        console.error('Error assigning permissions:', permErr);
+        // Don't fail the user creation if permission assignment fails
       }
     } catch (err) {
       console.error('Profile error:', err);
