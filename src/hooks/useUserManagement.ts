@@ -563,6 +563,156 @@ export const useUserManagement = () => {
     }
   };
 
+  // Complete invitation by creating user account (admin only)
+  const completeInvitation = async (
+    invitationId: string,
+    userData: {
+      password: string;
+      full_name?: string;
+      phone?: string;
+      department?: string;
+      position?: string;
+    }
+  ): Promise<{ success: boolean; error?: string }> => {
+    if (!isAdmin) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
+    if (!userData.password || userData.password.length < 8) {
+      return { success: false, error: 'Password must be at least 8 characters' };
+    }
+
+    setLoading(true);
+
+    try {
+      // Get invitation details first
+      const { data: invitationData, error: inviteError } = await supabase
+        .from('user_invitations')
+        .select('*')
+        .eq('id', invitationId)
+        .single();
+
+      if (inviteError || !invitationData) {
+        return { success: false, error: 'Invitation not found' };
+      }
+
+      if (invitationData.status !== 'pending') {
+        return { success: false, error: `Invitation is already ${invitationData.status}` };
+      }
+
+      // Validate that the company still exists
+      const { data: companyExists } = await supabase
+        .from('companies')
+        .select('id')
+        .eq('id', invitationData.company_id)
+        .maybeSingle();
+
+      if (!companyExists) {
+        return { success: false, error: 'The associated company no longer exists' };
+      }
+
+      // Check if a profile already exists for this email
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', invitationData.email)
+        .maybeSingle();
+
+      let userId: string;
+
+      // If profile already exists, just activate it
+      if (existingProfile) {
+        userId = existingProfile.id;
+
+        // Update existing profile with invitation details
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({
+            status: 'active',
+            role: invitationData.role,
+            company_id: invitationData.company_id,
+            invited_by: invitationData.invited_by,
+            invited_at: invitationData.invited_at,
+            full_name: userData.full_name || undefined,
+            phone: userData.phone || undefined,
+            department: userData.department || undefined,
+            position: userData.position || undefined,
+          })
+          .eq('id', userId);
+
+        if (updateError) {
+          const errorMsg = parseErrorMessageWithCodes(updateError, 'profile update');
+          console.error('Profile update error:', updateError);
+          return { success: false, error: errorMsg };
+        }
+      } else {
+        // Create new auth user and profile
+        userId = crypto.randomUUID();
+
+        // Insert profile (password will be handled via RLS or separate mechanism)
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert({
+            id: userId,
+            email: invitationData.email,
+            full_name: userData.full_name || null,
+            phone: userData.phone || null,
+            department: userData.department || null,
+            position: userData.position || null,
+            company_id: invitationData.company_id,
+            role: invitationData.role,
+            status: 'active',
+            is_active: true,
+            password: userData.password, // Will be hashed by DB trigger
+            invited_by: invitationData.invited_by,
+            invited_at: invitationData.invited_at,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          });
+
+        if (profileError) {
+          const errorMsg = parseErrorMessageWithCodes(profileError, 'profile creation');
+          console.error('Profile creation error:', profileError);
+          return { success: false, error: errorMsg };
+        }
+      }
+
+      // Mark invitation as accepted
+      const { error: acceptError } = await supabase
+        .from('user_invitations')
+        .update({
+          status: 'accepted',
+          accepted_at: new Date().toISOString()
+        })
+        .eq('id', invitationId);
+
+      if (acceptError) {
+        console.error('Error marking invitation as accepted:', acceptError);
+        // Don't fail the operation if marking as accepted fails - user is already created
+      }
+
+      // Log user creation in audit trail
+      try {
+        await logUserCreation(userId, invitationData.email, invitationData.role, invitationData.company_id);
+      } catch (auditError) {
+        console.error('Failed to log user creation:', auditError);
+        // Don't fail the operation if audit logging fails
+      }
+
+      toast.success(`User account created for ${invitationData.email}`);
+      await fetchInvitations();
+      await fetchUsers();
+      return { success: true };
+    } catch (err) {
+      const errorMessage = parseErrorMessageWithCodes(err, 'invitation completion');
+      console.error('Error completing invitation:', err);
+      toast.error(`Failed to complete invitation: ${errorMessage}`);
+      return { success: false, error: errorMessage };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Approve invitation (admin only)
   const approveInvitation = async (invitationId: string): Promise<{ success: boolean; error?: string }> => {
     if (!isAdmin) {
