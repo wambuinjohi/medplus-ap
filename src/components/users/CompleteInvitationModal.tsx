@@ -125,7 +125,8 @@ export function CompleteInvitationModal({
         <DialogHeader>
           <DialogTitle>Complete User Registration</DialogTitle>
           <DialogDescription>
-            Set up the user account for {invitation.email}. They will be able to log in with the password you set.
+            Activate the account for {invitation.email} by setting their password.
+            They will be able to log in immediately after completion.
           </DialogDescription>
         </DialogHeader>
 
