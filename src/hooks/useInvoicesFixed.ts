@@ -121,13 +121,17 @@ export const useInvoicesFixed = (companyId?: string) => {
           }
         }
 
-        // Step 6: Group invoice items by invoice_id
+        // Step 6: Group invoice items by invoice_id and attach product data
         const itemsMap = new Map();
         (invoiceItems || []).forEach(item => {
           if (!itemsMap.has(item.invoice_id)) {
             itemsMap.set(item.invoice_id, []);
           }
-          itemsMap.get(item.invoice_id).push(item);
+          const itemWithProduct = {
+            ...item,
+            products: productsMap.get(item.product_id) || null
+          };
+          itemsMap.get(item.invoice_id).push(itemWithProduct);
         });
 
         // Step 7: Fetch creators (profiles) for created_by mapping
