@@ -252,6 +252,129 @@ export function EnhancedLogin() {
 
               </TabsContent>
 
+              <TabsContent value="signup">
+                <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5 mt-4 sm:mt-6">
+                  {/* Full Name Field */}
+                  <div className="space-y-2 group">
+                    <Label htmlFor="fullName" className="text-sm sm:text-base text-gray-700 font-semibold flex items-center gap-2">
+                      <span className="text-base sm:text-lg">👤</span> Full Name
+                    </Label>
+                    <div className="relative">
+                      <Input
+                        id="fullName"
+                        type="text"
+                        placeholder="John Doe"
+                        value={formData.fullName}
+                        onChange={(e) => {
+                          setFormData(prev => ({ ...prev, fullName: e.target.value }));
+                          if (formErrors.fullName) {
+                            setFormErrors(prev => ({ ...prev, fullName: '' }));
+                          }
+                        }}
+                        className={`py-2 sm:py-3 text-sm sm:text-base border-2 rounded-lg transition-all duration-300 hover:border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 ${
+                          formErrors.fullName ? 'border-red-500 focus:border-red-500 focus:ring-red-200' : 'border-gray-200'
+                        }`}
+                        disabled={submitting}
+                      />
+                    </div>
+                    {formErrors.fullName && (
+                      <p className="text-xs sm:text-sm text-red-500 font-medium flex items-center gap-1">
+                        <span>⚠️</span> {formErrors.fullName}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Email Field */}
+                  <div className="space-y-2 group">
+                    <Label htmlFor="signup-email" className="text-sm sm:text-base text-gray-700 font-semibold flex items-center gap-2">
+                      <span className="text-base sm:text-lg">📧</span> Email Address
+                    </Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 sm:left-4 top-1/2 h-4 w-4 sm:h-5 sm:w-5 -translate-y-1/2 text-blue-500 group-focus-within:text-green-500 transition-colors" />
+                      <Input
+                        id="signup-email"
+                        type="email"
+                        placeholder="your@email.com"
+                        value={formData.email}
+                        onChange={handleInputChange('email')}
+                        className={`pl-10 sm:pl-12 py-2 sm:py-3 text-sm sm:text-base border-2 rounded-lg transition-all duration-300 hover:border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 ${
+                          formErrors.email ? 'border-red-500 focus:border-red-500 focus:ring-red-200' : 'border-gray-200'
+                        }`}
+                        disabled={submitting}
+                      />
+                    </div>
+                    {formErrors.email && (
+                      <p className="text-xs sm:text-sm text-red-500 font-medium flex items-center gap-1">
+                        <span>⚠️</span> {formErrors.email}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Password Field */}
+                  <div className="space-y-2 group">
+                    <Label htmlFor="signup-password" className="text-sm sm:text-base text-gray-700 font-semibold flex items-center gap-2">
+                      <span className="text-base sm:text-lg">🔐</span> Password
+                    </Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 sm:left-4 top-1/2 h-4 w-4 sm:h-5 sm:w-5 -translate-y-1/2 text-blue-500 group-focus-within:text-green-500 transition-colors" />
+                      <Input
+                        id="signup-password"
+                        type={showPassword ? 'text' : 'password'}
+                        placeholder="••••••••"
+                        value={formData.password}
+                        onChange={handleInputChange('password')}
+                        className={`pl-10 sm:pl-12 pr-10 sm:pr-12 py-2 sm:py-3 text-sm sm:text-base border-2 rounded-lg transition-all duration-300 hover:border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 ${
+                          formErrors.password ? 'border-red-500 focus:border-red-500 focus:ring-red-200' : 'border-gray-200'
+                        }`}
+                        disabled={submitting}
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-2 top-1/2 h-8 w-8 sm:h-9 sm:w-9 -translate-y-1/2 hover:bg-blue-100 text-gray-600 hover:text-blue-600 transition-colors"
+                        onClick={() => setShowPassword(!showPassword)}
+                        disabled={submitting}
+                      >
+                        {showPassword ? (
+                          <Eye className="h-4 w-4 sm:h-5 sm:w-5" />
+                        ) : (
+                          <EyeOff className="h-4 w-4 sm:h-5 sm:w-5" />
+                        )}
+                      </Button>
+                    </div>
+                    <p className="text-xs text-gray-500">At least 8 characters</p>
+                    {formErrors.password && (
+                      <p className="text-xs sm:text-sm text-red-500 font-medium flex items-center gap-1">
+                        <span>⚠️</span> {formErrors.password}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Sign Up Button */}
+                  <div className="space-y-2 sm:space-y-3 pt-3 sm:pt-4">
+                    <Button
+                      type="submit"
+                      className="w-full py-2 sm:py-3 text-base sm:text-lg font-bold bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600 text-white shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105 active:scale-95 rounded-lg"
+                      disabled={submitting}
+                    >
+                      {submitting ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
+                          Creating account...
+                        </>
+                      ) : (
+                        <>
+                          <span>✨</span>
+                          <span className="ml-2">Create Account</span>
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </form>
+
+              </TabsContent>
+
             </Tabs>
 
             {/* Footer Message */}
