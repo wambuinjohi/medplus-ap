@@ -491,7 +491,48 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           .maybeSingle();
 
         if (invitation) {
-          await supabase
+          // Validate that referenced records exist before updating
+          let validationError: string | null = null;
+
+          // Check if company exists
+          if (invitation.company_id) {
+            const { data: companyExists } = await supabase
+              .from('companies')
+              .select('id')
+              .eq('id', invitation.company_id)
+              .maybeSingle();
+
+            if (!companyExists) {
+              validationError = 'The company associated with this invitation no longer exists. Please contact your administrator.';
+            }
+          }
+
+          // Check if inviting user exists
+          if (!validationError && invitation.invited_by) {
+            const { data: invitingUser } = await supabase
+              .from('profiles')
+              .select('id')
+              .eq('id', invitation.invited_by)
+              .maybeSingle();
+
+            if (!invitingUser) {
+              validationError = 'The user who invited you no longer exists in the system. Please contact your administrator.';
+            }
+          }
+
+          if (validationError) {
+            logError('Invitation validation failed:', new Error(validationError), {
+              email,
+              invitationId: invitation.id,
+              context: 'signUpValidation'
+            });
+            setTimeout(() => toast.error(validationError), 0);
+            setLoading(false);
+            return { error: { name: 'ValidationError', message: validationError } as unknown as AuthError };
+          }
+
+          // Update profile with invitation details
+          const { error: updateError } = await supabase
             .from('profiles')
             .update({
               status: 'active',
@@ -502,6 +543,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             })
             .eq('id', newUser.id);
 
+          if (updateError) {
+            const friendlyMessage = getUserFriendlyErrorMessage(updateError);
+            logError('Profile update failed after signup:', updateError, {
+              email,
+              newUserId: newUser.id,
+              invitationId: invitation.id,
+              context: 'signUpProfileUpdate'
+            });
+            setTimeout(() => toast.error(`Failed to activate account: ${friendlyMessage}`), 0);
+            setLoading(false);
+            return { error: { name: 'ProfileError', message: friendlyMessage } as unknown as AuthError };
+          }
+
           // Mark invitation as accepted
           await supabase
             .from('user_invitations')
@@ -510,7 +564,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
       }
     } catch (postSignupErr) {
-      console.warn('Post-signup activation step failed:', postSignupErr);
+      logError('Post-signup activation step failed:', postSignupErr, {
+        email,
+        context: 'signUpPostActivation'
+      });
+      setTimeout(() => toast.error('Account created but activation failed. Please contact your administrator.'), 0);
+      setLoading(false);
+      return { error: { name: 'PostSignupError', message: 'Account activation failed' } as unknown as AuthError };
     }
 
     setTimeout(() => toast.success('Account created successfully'), 0);
