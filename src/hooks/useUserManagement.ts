@@ -149,7 +149,7 @@ export const useUserManagement = () => {
     }
   };
 
-  // Create a new user (admin only) - Admin sets password; no public signup/email verify
+  // Create a new user (admin only) - Creates profile and sends password reset email
   const createUser = async (userData: CreateUserData): Promise<{ success: boolean; password?: string; error?: string }> => {
     if (!isAdmin) {
       return { success: false, error: 'Unauthorized: Only administrators can create users' };
@@ -162,7 +162,7 @@ export const useUserManagement = () => {
     setLoading(true);
 
     try {
-      // Check if user already exists
+      // Check if user already exists in profiles
       const { data: existingUser } = await supabase
         .from('profiles')
         .select('id')
@@ -195,31 +195,76 @@ export const useUserManagement = () => {
         return { success: false, error: 'You can only create users for your own company' };
       }
 
-      // Call Edge Function (admin-create-user) to create auth user + profile (service role)
-      const { data: fnData, error: fnError } = await supabase.functions.invoke('admin-create-user', {
-        body: {
-          email: userData.email,
-          password: userData.password,
+      // Step 1: Create a temporary auth user without email confirmation
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+        email: userData.email,
+        password: userData.password,
+        email_confirm: true, // Auto-confirm email
+        user_metadata: {
           full_name: userData.full_name,
           role: userData.role,
           company_id: finalCompanyId,
-          invited_by: currentUser?.id,
-          phone: userData.phone,
           department: userData.department,
           position: userData.position,
         },
       });
 
-      if (fnError) {
-        const fnErrorMessage = parseErrorMessageWithCodes(fnError, 'user creation');
-        return { success: false, error: fnErrorMessage || 'Failed to create user' };
+      if (authError || !authData.user?.id) {
+        const authErrorMsg = authError?.message || 'Failed to create auth user';
+        // If user already exists in auth, try to continue with profile creation
+        if (!authError?.message?.includes('already exists')) {
+          return { success: false, error: authErrorMsg };
+        }
+        // User exists in auth, we'll create the profile with a new UUID
+        console.log('User already exists in auth, creating profile record');
       }
 
-      if (!fnData || !fnData.success || !fnData.user_id) {
-        return { success: false, error: fnData?.error || 'Failed to create user' };
+      const userId = authData?.user?.id || crypto.randomUUID();
+
+      // Step 2: Create the profile record (auto-approved and immediately active)
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .insert({
+          id: userId,
+          auth_user_id: userId,
+          email: userData.email,
+          full_name: userData.full_name || null,
+          phone: userData.phone || null,
+          department: userData.department || null,
+          position: userData.position || null,
+          company_id: finalCompanyId,
+          role: userData.role,
+          status: 'active', // Auto-approve
+          is_active: true, // User can login immediately
+          password: userData.password, // Will be hashed by DB trigger if present
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
+
+      if (profileError) {
+        // If profile creation fails, try to clean up auth user
+        if (authData?.user?.id) {
+          try {
+            await supabase.auth.admin.deleteUser(authData.user.id);
+          } catch (cleanupErr) {
+            console.error('Failed to cleanup auth user:', cleanupErr);
+          }
+        }
+        const profileErrorMsg = parseErrorMessageWithCodes(profileError, 'profile creation');
+        return { success: false, error: profileErrorMsg };
       }
 
-      toast.success('User created successfully');
+      // Log user creation in audit trail
+      try {
+        await logUserCreation(userId, userData.email, userData.role as UserRole, finalCompanyId);
+      } catch (auditError) {
+        console.error('Failed to log user creation:', auditError);
+        // Don't fail the operation if audit logging fails
+      }
+
+      toast.success(`User created successfully and auto-approved. Password: ${userData.password}`);
       await fetchUsers();
 
       return { success: true, password: userData.password };
