@@ -126,7 +126,7 @@ Deno.serve(async (req) => {
     // Handle profile - using upsert to avoid conflicts
     try {
       const now = new Date().toISOString();
-      
+
       // Use upsert which handles both insert and update cases
       const { error: profileError } = await supabase
         .from('profiles')
@@ -140,9 +140,8 @@ Deno.serve(async (req) => {
           company_id: body.company_id,
           role: body.role,
           status: 'active',
-          is_active: true,
-          invited_by: body.invited_by,
-          auth_user_id: userId,
+          invited_by: body.invited_by || null,
+          invited_at: body.invited_by ? now : null,
           created_at: now,
           updated_at: now,
         }, {
