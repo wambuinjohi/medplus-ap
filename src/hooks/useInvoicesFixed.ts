@@ -251,8 +251,7 @@ export const useCustomerInvoicesFixed = (customerId?: string, companyId?: string
             tax_amount,
             tax_inclusive,
             line_total,
-            sort_order,
-            products(id, name, product_code, unit_of_measure)
+            sort_order
           `)
           .in('invoice_id', invoiceIds) : { data: [], error: null };
 
@@ -260,13 +259,37 @@ export const useCustomerInvoicesFixed = (customerId?: string, companyId?: string
           console.error('Error fetching invoice items:', (itemsError as any)?.message || itemsError);
         }
 
-        // Group items by invoice
+        // Get product details separately if items exist
+        let productsMap = new Map();
+        if (invoiceItems && invoiceItems.length > 0) {
+          const productIds = [...new Set(invoiceItems.map(item => item.product_id).filter(id => id))];
+          if (productIds.length > 0) {
+            const { data: products, error: productsError } = await supabase
+              .from('products')
+              .select('id, name, product_code, unit_of_measure')
+              .in('id', productIds);
+
+            if (!productsError && products) {
+              products.forEach(product => {
+                productsMap.set(product.id, product);
+              });
+            } else if (productsError) {
+              console.warn('Could not fetch product details (non-fatal):', productsError);
+            }
+          }
+        }
+
+        // Group items by invoice and attach product data
         const itemsMap = new Map();
         (invoiceItems || []).forEach(item => {
           if (!itemsMap.has(item.invoice_id)) {
             itemsMap.set(item.invoice_id, []);
           }
-          itemsMap.get(item.invoice_id).push(item);
+          const itemWithProduct = {
+            ...item,
+            products: productsMap.get(item.product_id) || null
+          };
+          itemsMap.get(item.invoice_id).push(itemWithProduct);
         });
 
         // Combine data
