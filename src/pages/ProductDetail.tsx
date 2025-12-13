@@ -15,6 +15,7 @@ import { BreadcrumbNav } from '@/components/ui/breadcrumb-nav';
 import { useSEO } from '@/hooks/useSEO';
 import { generateProductSchema, SITE_CONFIG, useBreadcrumbSchema } from '@/utils/seoHelpers';
 import { openWhatsAppQuotation } from '@/utils/whatsappQuotation';
+import { VariantImagesModal } from '@/components/web-manager/VariantImagesModal';
 
 export default function ProductDetail() {
   const { productSlug } = useParams<{ productSlug: string }>();
@@ -29,6 +30,8 @@ export default function ProductDetail() {
   const [variantImages, setVariantImages] = useState<VariantImage[]>([]);
   const [categoryVariantImages, setCategoryVariantImages] = useState<Record<string, VariantImage[]>>({});
   const [variantImageIndex, setVariantImageIndex] = useState<Record<string, number>>({});
+  const [selectedVariantForImages, setSelectedVariantForImages] = useState<typeof variants[0] | null>(null);
+  const [showImagesModal, setShowImagesModal] = useState(false);
 
   const isCategory = !!category && variants.length > 0;
   const isVariant = !!variant && !isCategory;
@@ -256,9 +259,17 @@ export default function ProductDetail() {
                       </div>
                     )}
                     {categoryVariantImages[v.id] && categoryVariantImages[v.id].length > 1 && (
-                      <div className="absolute bottom-2 right-2 bg-black/60 text-white px-2 py-1 rounded text-xs font-medium">
-                        +{categoryVariantImages[v.id].length - 1}
-                      </div>
+                      <button
+                        onClick={() => {
+                          setSelectedVariantForImages(v);
+                          setShowImagesModal(true);
+                        }}
+                        className="absolute bottom-2 right-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer hover:shadow-lg hover:scale-110 border-2 border-white shadow-md flex items-center gap-1"
+                        title="Click to view all images"
+                      >
+                        <span>+{categoryVariantImages[v.id].length - 1}</span>
+                        <span>👁️</span>
+                      </button>
                     )}
                   </div>
 
@@ -309,6 +320,15 @@ export default function ProductDetail() {
             </div>
           </div>
         </section>
+
+        {selectedVariantForImages && (
+          <VariantImagesModal
+            open={showImagesModal}
+            onOpenChange={setShowImagesModal}
+            variant={selectedVariantForImages}
+            images={categoryVariantImages[selectedVariantForImages.id] || []}
+          />
+        )}
 
         <PublicFooter />
       </div>
