@@ -130,6 +130,14 @@ export function CompleteInvitationModal({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Error Alert */}
+          {submitError && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{submitError}</AlertDescription>
+            </Alert>
+          )}
+
           {/* Display-only fields */}
           <div className="rounded-lg bg-muted p-3 space-y-2">
             <div>
