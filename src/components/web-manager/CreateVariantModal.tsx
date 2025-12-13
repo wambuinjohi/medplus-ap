@@ -100,7 +100,23 @@ export const CreateVariantModal = ({
       onOpenChange(false);
       onSuccess();
     } catch (error) {
-      console.error('Failed to create variant:', error);
+      let errorMessage = 'Failed to create variant';
+
+      if (error && typeof error === 'object') {
+        if ('message' in error && typeof error.message === 'string') {
+          errorMessage = error.message;
+        } else {
+          try {
+            errorMessage = JSON.stringify(error);
+          } catch {
+            errorMessage = String(error);
+          }
+        }
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+
+      console.error('Failed to create variant:', errorMessage, error);
       // Error is already handled by the hooks (createVariant, saveVariantImages)
       // which show toast notifications
     }
