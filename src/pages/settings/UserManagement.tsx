@@ -586,6 +586,24 @@ export default function UserManagement() {
                             <Button
                               variant="outline"
                               size="sm"
+                              onClick={() => {
+                                if (!can('create_user')) {
+                                  toast.error("You don't have permission to create users directly");
+                                  return;
+                                }
+                                setModalState({
+                                  type: 'create',
+                                  invitation
+                                });
+                              }}
+                              className="text-primary hover:text-primary"
+                            >
+                              <UserPlus className="h-4 w-4 mr-2" />
+                              Create User
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
                               onClick={() => setModalState({ type: 'complete', invitation })}
                               className="text-success hover:text-success"
                             >
