@@ -206,55 +206,10 @@ export const useUserManagement = () => {
         return { success: false, error: 'You can only create users for your own company' };
       }
 
-      // Create a placeholder profile record that the user will complete during signup
-      const userId = crypto.randomUUID();
-
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert({
-          id: userId,
-          email: userData.email,
-          full_name: userData.full_name || null,
-          phone: userData.phone || null,
-          department: userData.department || null,
-          position: userData.position || null,
-          company_id: finalCompanyId,
-          role: userData.role,
-          status: 'pending', // Waiting for user to sign up
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        });
-
-      if (profileError) {
-        const profileErrorMsg = parseErrorMessageWithCodes(profileError, 'profile creation');
-        console.error('Profile creation error:', profileError);
-        return { success: false, error: profileErrorMsg };
-      }
-
-      // Send signup email
-      try {
-        const { error: signupError } = await supabase.auth.signInWithOtp({
-          email: userData.email,
-          options: {
-            shouldCreateUser: true,
-            emailRedirectTo: `${window.location.origin}/auth/callback`,
-            data: {
-              full_name: userData.full_name,
-              role: userData.role,
-              company_id: finalCompanyId,
-              invited_by: currentUser?.id,
-            },
-          },
-        });
-
-        if (signupError) {
-          console.warn('Signup email error:', signupError);
-          // Don't fail - profile is created, user can signup manually
-        }
-      } catch (err) {
-        console.warn('Error sending signup email:', err);
-        // Don't fail - profile is created
-      }
+      return {
+        success: false,
+        error: 'Direct user creation requires an Edge Function. Please use "Invite User" instead:\n\n1. Click "Invite User"\n2. User signs up at login page\n3. Click "Complete" in "Approved Invitations"\n4. Set password to finish'
+      };
 
       // Log user creation in audit trail
       try {
