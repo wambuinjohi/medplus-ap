@@ -22,12 +22,14 @@ import {
   Globe
 } from 'lucide-react';
 import { BiolegendLogo } from '@/components/ui/biolegend-logo';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface SidebarItem {
   title: string;
   icon: React.ComponentType<{ className?: string }>;
   href?: string;
   children?: SidebarItem[];
+  allowedRoles?: string[]; // Roles that can see this item
 }
 
 const sidebarItems: SidebarItem[] = [
@@ -49,6 +51,7 @@ const sidebarItems: SidebarItem[] = [
   {
     title: 'Payments',
     icon: DollarSign,
+    allowedRoles: ['admin', 'accountant', 'Accounts Audit', 'stock_manager'],
     children: [
       { title: 'Payments', icon: DollarSign, href: '/app/payments' },
       { title: 'Remittance Advice', icon: CreditCard, href: '/app/remittance' }
@@ -57,12 +60,15 @@ const sidebarItems: SidebarItem[] = [
   {
     title: 'Inventory',
     icon: Package,
+    allowedRoles: ['admin', 'stock_manager'],
     href: '/app/inventory'
   },
   {
     title: 'Delivery Notes',
     icon: Truck,
-    href: '/app/delivery-notes'
+    children: [
+      { title: 'Delivery Notes', icon: Truck, href: '/app/delivery-notes' }
+    ]
   },
   {
     title: 'Customers',
@@ -79,18 +85,20 @@ const sidebarItems: SidebarItem[] = [
     icon: BarChart3,
     children: [
       { title: 'Sales Reports', icon: BarChart3, href: '/app/reports/sales' },
-      { title: 'Inventory Reports', icon: Package, href: '/app/reports/inventory' },
+      { title: 'Inventory Reports', icon: Package, href: '/app/reports/inventory', allowedRoles: ['admin', 'stock_manager'] },
       { title: 'Customer Statements', icon: FileSpreadsheet, href: '/app/reports/statements' }
     ]
   },
   {
     title: 'Web Manager',
     icon: Globe,
+    allowedRoles: ['admin'],
     href: '/app/web-manager'
   },
   {
     title: 'Settings',
     icon: Settings,
+    allowedRoles: ['admin'],
     children: [
       { title: 'Company Settings', icon: Building2, href: '/app/settings/company' },
       { title: 'User Management', icon: Users, href: '/app/settings/users' },
