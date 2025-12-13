@@ -609,14 +609,14 @@ export default function UserManagement() {
           {/* Modals */}
           <CreateUserModal
             open={modalState.type === 'create'}
-            onOpenChange={(open) => !open && setModalState({ type: null })}
+            onOpenChange={(open) => !open && setModalState({ type: null, user: null, invitation: null })}
             onCreateUser={handleCreateUser}
             loading={loading}
           />
 
           <EditUserModal
             open={modalState.type === 'edit'}
-            onOpenChange={(open) => !open && setModalState({ type: null })}
+            onOpenChange={(open) => !open && setModalState({ type: null, user: null, invitation: null })}
             user={modalState.user}
             onUpdateUser={handleUpdateUser}
             loading={loading}
