@@ -49,6 +49,7 @@ import useUserManagement from '@/hooks/useUserManagement';
 import { CreateUserModal } from '@/components/users/CreateUserModal';
 import { EditUserModal } from '@/components/users/EditUserModal';
 import { InviteUserModal } from '@/components/users/InviteUserModal';
+import { CompleteInvitationModal } from '@/components/users/CompleteInvitationModal';
 import { UserAuditLog } from '@/components/users/UserAuditLog';
 import { RoleManagement } from '@/components/settings/RoleManagement';
 import { toast } from 'sonner';
