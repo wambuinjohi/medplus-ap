@@ -4,17 +4,11 @@ import { Input } from '@/components/ui/input';
 import { Upload, X, Loader2, GripVertical } from 'lucide-react';
 import { toast } from 'sonner';
 import { uploadProductImage } from '@/utils/imageUploadService';
-
-export interface UploadedImage {
-  id?: string;
-  url: string;
-  altText?: string;
-  displayOrder: number;
-}
+import { VariantImage } from '@/hooks/useWebManager';
 
 interface MultiImageUploadFieldProps {
-  value: UploadedImage[];
-  onChange: (images: UploadedImage[]) => void;
+  value: VariantImage[];
+  onChange: (images: VariantImage[]) => void;
   variantName: string;
 }
 
