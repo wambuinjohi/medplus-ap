@@ -141,13 +141,22 @@ export function EnhancedLogin() {
           </CardHeader>
 
           <CardContent className="space-y-4 sm:space-y-6 pt-6 sm:pt-8 p-6 sm:p-8">
-            <Tabs value={'login'}>
-              <TabsList className="w-full bg-gradient-to-r from-blue-100 to-green-100">
+            <Tabs value={currentTab} onValueChange={(value) => {
+              setCurrentTab(value as 'login' | 'signup');
+              setFormErrors({});
+            }}>
+              <TabsList className="w-full bg-gradient-to-r from-blue-100 to-green-100 grid grid-cols-2">
                 <TabsTrigger
                   value="login"
-                  className="flex-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-green-500 data-[state=active]:text-white transition-all duration-300 text-sm sm:text-base"
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-green-500 data-[state=active]:text-white transition-all duration-300 text-sm sm:text-base"
                 >
                   🚀 Sign In
+                </TabsTrigger>
+                <TabsTrigger
+                  value="signup"
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-green-500 data-[state=active]:text-white transition-all duration-300 text-sm sm:text-base"
+                >
+                  ✨ Sign Up
                 </TabsTrigger>
               </TabsList>
 
