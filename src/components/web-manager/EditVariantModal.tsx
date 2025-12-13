@@ -45,7 +45,6 @@ export const EditVariantModal = ({
     image_path: '',
     display_order: 0,
     is_active: true,
-    images: [],
   });
   const [variantImages, setVariantImages] = useState<VariantImage[]>([]);
   const { updateVariant, fetchVariantImages, saveVariantImages, loading } = useWebManager();
@@ -61,7 +60,6 @@ export const EditVariantModal = ({
         image_path: variant.image_path || '',
         display_order: variant.display_order,
         is_active: variant.is_active,
-        images: [],
       });
 
       // Load existing variant images
@@ -84,12 +82,37 @@ export const EditVariantModal = ({
       await updateVariant(variant.id, formData);
 
       // Save images
-      await saveVariantImages(variant.id, variantImages);
+      try {
+        await saveVariantImages(variant.id, variantImages);
+      } catch (imageError) {
+        console.error('Failed to save variant images:', imageError);
+        // Images save error is already handled by saveVariantImages which shows a toast
+        // Don't fail the entire operation - variant was updated successfully
+        // The user will see a warning toast about the images
+      }
 
       onOpenChange(false);
       onSuccess();
     } catch (error) {
-      // Error is handled by the hook
+      let errorMessage = 'Failed to update variant';
+
+      if (error && typeof error === 'object') {
+        if ('message' in error && typeof error.message === 'string') {
+          errorMessage = error.message;
+        } else {
+          try {
+            errorMessage = JSON.stringify(error);
+          } catch {
+            errorMessage = String(error);
+          }
+        }
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+
+      console.error('Failed to update variant:', errorMessage, error);
+      // Error is already handled by the hooks (updateVariant, saveVariantImages)
+      // which show toast notifications
     }
   };
 

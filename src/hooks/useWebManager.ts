@@ -54,7 +54,6 @@ export interface VariantFormData {
   image_path?: string;
   display_order: number;
   is_active: boolean;
-  images?: VariantImage[];
 }
 
 export interface WebVariantWithImages extends WebVariant {
@@ -231,17 +230,63 @@ export const useWebManager = () => {
       setLoading(true);
       setError(null);
 
+      console.log('Creating variant with data:', data);
+
       const { data: newVariant, error: err } = await supabase
         .from('web_variants')
         .insert(data)
         .select()
         .single();
 
-      if (err) throw err;
+      if (err) {
+        console.error('Supabase error creating variant:', err);
+        throw err;
+      }
+
+      console.log('Variant created successfully:', newVariant);
       toast.success('Variant created successfully');
       return newVariant as WebVariant;
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to create variant';
+      let message = 'Failed to create variant';
+
+      // Handle Supabase errors with specific error codes
+      if (err && typeof err === 'object') {
+        if ('code' in err) {
+          const code = err.code;
+          if (code === '23505') {
+            // Unique constraint violation
+            message = 'A variant with this SKU already exists. Please use a unique SKU.';
+          } else if (code === '23503') {
+            // Foreign key constraint violation
+            message = 'The selected category does not exist. Please select a valid category.';
+          } else if (code === '42P01') {
+            // Table does not exist
+            message = 'Database table not found. Please contact support.';
+          } else if ('message' in err && typeof err.message === 'string') {
+            message = err.message;
+          } else {
+            message = `Database Error (${code}): Check your input and try again.`;
+          }
+        } else if ('message' in err && typeof err.message === 'string') {
+          message = err.message;
+        } else {
+          try {
+            message = JSON.stringify(err);
+          } catch {
+            message = String(err);
+          }
+        }
+      } else if (err instanceof Error) {
+        message = err.message;
+      } else {
+        try {
+          message = String(err);
+        } catch {
+          message = 'Failed to create variant';
+        }
+      }
+
+      console.error('Create variant error:', message, err);
       setError(message);
       toast.error(message);
       throw err;
@@ -348,33 +393,110 @@ export const useWebManager = () => {
       try {
         setError(null);
 
+        // Skip if no images to save
+        if (images.length === 0) {
+          return true;
+        }
+
         // Delete existing images for this variant
         const { error: deleteErr } = await supabase
           .from('variant_images')
           .delete()
           .eq('variant_id', variantId);
 
-        if (deleteErr) throw deleteErr;
+        if (deleteErr) {
+          // Check if it's a "table not found" error
+          const deleteErrorStr = String(deleteErr);
+          if (deleteErrorStr.includes('variant_images') && deleteErrorStr.includes('schema cache')) {
+            console.warn('variant_images table not found - images will not be saved. Run the migration first.');
+            toast.warning(
+              'Images table not set up yet. Please run the database migration and try again.'
+            );
+            // Don't throw - allow variant to be created without images
+            return false;
+          }
+          console.error('Error deleting existing variant images:', deleteErr);
+          throw deleteErr;
+        }
 
         // Insert new images if any
         if (images.length > 0) {
-          const imagesToInsert = images.map((img) => ({
-            variant_id: variantId,
-            image_url: img.url,
-            alt_text: img.altText || '',
-            display_order: img.displayOrder,
-          }));
+          const imagesToInsert = images.map((img, index) => {
+            const data = {
+              variant_id: variantId,
+              image_url: img.url,
+              alt_text: img.altText || '',
+              display_order: img.displayOrder ?? index,
+            };
+            console.log(`Preparing to insert image ${index}:`, data);
+            return data;
+          });
 
-          const { error: insertErr } = await supabase
+          console.log('Inserting variant images:', imagesToInsert);
+          const { data: insertedData, error: insertErr } = await supabase
             .from('variant_images')
-            .insert(imagesToInsert);
+            .insert(imagesToInsert)
+            .select();
 
-          if (insertErr) throw insertErr;
+          if (insertErr) {
+            // Check if it's a "table not found" error
+            const insertErrorStr = String(insertErr);
+            if (insertErrorStr.includes('variant_images') && insertErrorStr.includes('schema cache')) {
+              console.warn('variant_images table not found - images will not be saved. Run the migration first.');
+              toast.warning(
+                'Images table not set up yet. Variant created but images could not be saved.'
+              );
+              // Don't throw - variant was created successfully
+              return false;
+            }
+            console.error('Error inserting variant images:', insertErr);
+            console.error('Attempted to insert:', imagesToInsert);
+            throw insertErr;
+          }
+
+          console.log('Successfully inserted variant images:', insertedData);
         }
 
+        toast.success('Variant images saved successfully');
         return true;
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to save variant images';
+        let message = 'Failed to save variant images';
+
+        // Handle Supabase errors with specific error codes
+        if (err && typeof err === 'object') {
+          if ('code' in err) {
+            const code = err.code;
+            if (code === '23503') {
+              // Foreign key constraint violation
+              message = 'Variant not found. Please create the variant first.';
+            } else if (code === '42P01') {
+              // Table does not exist
+              message = 'Database table not found. Please run the migration.';
+            } else if ('message' in err && typeof err.message === 'string') {
+              message = err.message;
+            } else {
+              message = `Database Error (${code})`;
+            }
+          } else if ('message' in err && typeof err.message === 'string') {
+            message = err.message;
+          } else {
+            try {
+              message = JSON.stringify(err);
+            } catch {
+              message = String(err);
+            }
+          }
+        } else if (err instanceof Error) {
+          message = err.message;
+        } else {
+          try {
+            message = String(err);
+          } catch {
+            message = 'Failed to save variant images';
+          }
+        }
+
+        console.error('saveVariantImages error:', message, err);
         setError(message);
         toast.error(message);
         throw err;

@@ -4,17 +4,11 @@ import { Input } from '@/components/ui/input';
 import { Upload, X, Loader2, GripVertical } from 'lucide-react';
 import { toast } from 'sonner';
 import { uploadProductImage } from '@/utils/imageUploadService';
-
-export interface UploadedImage {
-  id?: string;
-  url: string;
-  altText?: string;
-  displayOrder: number;
-}
+import { VariantImage } from '@/hooks/useWebManager';
 
 interface MultiImageUploadFieldProps {
-  value: UploadedImage[];
-  onChange: (images: UploadedImage[]) => void;
+  value: VariantImage[];
+  onChange: (images: VariantImage[]) => void;
   variantName: string;
 }
 
@@ -25,7 +19,7 @@ export const MultiImageUploadField = ({
 }: MultiImageUploadFieldProps) => {
   const [uploading, setUploading] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
-  const [images, setImages] = useState<UploadedImage[]>(value || []);
+  const [images, setImages] = useState<VariantImage[]>(value || []);
 
   useEffect(() => {
     setImages(value || []);
@@ -50,7 +44,7 @@ export const MultiImageUploadField = ({
         return;
       }
 
-      const newImage: UploadedImage = {
+      const newImage: VariantImage = {
         url: result.url,
         altText: '',
         displayOrder: images.length,
@@ -62,9 +56,12 @@ export const MultiImageUploadField = ({
       toast.success('Image uploaded successfully');
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to upload image';
+      console.error('Image upload error:', error);
       toast.error(message);
     } finally {
       setUploading(false);
+      // Reset the input so the same file can be uploaded again if needed
+      e.target.value = '';
     }
   };
 

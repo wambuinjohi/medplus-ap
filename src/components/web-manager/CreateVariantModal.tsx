@@ -43,7 +43,6 @@ export const CreateVariantModal = ({
     image_path: '',
     display_order: 0,
     is_active: true,
-    images: [],
   });
   const [variantImages, setVariantImages] = useState<VariantImage[]>([]);
   const { createVariant, saveVariantImages, loading } = useWebManager();
@@ -75,7 +74,14 @@ export const CreateVariantModal = ({
 
       // Save images if any were uploaded
       if (variantImages.length > 0 && newVariant) {
-        await saveVariantImages(newVariant.id, variantImages);
+        try {
+          await saveVariantImages(newVariant.id, variantImages);
+        } catch (imageError) {
+          console.error('Failed to save variant images:', imageError);
+          // Images save error is already handled by saveVariantImages which shows a toast
+          // Don't fail the entire operation - variant was created successfully
+          // The user will see a warning toast about the images
+        }
       }
 
       setFormData({
@@ -87,13 +93,30 @@ export const CreateVariantModal = ({
         image_path: '',
         display_order: 0,
         is_active: true,
-        images: [],
       });
       setVariantImages([]);
       onOpenChange(false);
       onSuccess();
     } catch (error) {
-      // Error is handled by the hook
+      let errorMessage = 'Failed to create variant';
+
+      if (error && typeof error === 'object') {
+        if ('message' in error && typeof error.message === 'string') {
+          errorMessage = error.message;
+        } else {
+          try {
+            errorMessage = JSON.stringify(error);
+          } catch {
+            errorMessage = String(error);
+          }
+        }
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+
+      console.error('Failed to create variant:', errorMessage, error);
+      // Error is already handled by the hooks (createVariant, saveVariantImages)
+      // which show toast notifications
     }
   };
 

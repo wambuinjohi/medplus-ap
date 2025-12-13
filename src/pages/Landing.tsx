@@ -42,11 +42,15 @@ export default function Landing() {
     { name: 'USAID Kenya', icon: '🌍', image: '/partner-logos/usaid.webp', type: 'Government' },
     { name: 'Gertrudes Children\'s Hospital', icon: '👶', image: 'https://cdn.builder.io/api/v1/image/assets%2Fbab480d8499049228a14c82c33a4e489%2F59197c239a3447e8a469d7b1b67b51c9?format=webp&width=800', type: 'Hospital' },
     { name: 'Bliss Healthcare Hospital', icon: '🏥', image: 'https://cdn.builder.io/api/v1/image/assets%2Fbab480d8499049228a14c82c33a4e489%2Fbbba7fb775d44121a0dfc6a2db9d419e?format=webp&width=800', type: 'Hospital' },
-    { name: 'Africa Muslim Agency Hospital', icon: '🏥', image: 'https://cdn.builder.io/api/v1/image/assets%2Fbab480d8499049228a14c82c33a4e489%2F854ebc2fe0184807af4103ce25ab792d?format=webp&width=800', type: 'Hospital' },
+    { name: 'Africa Muslim Agency Hospital', icon: '🏥', image: 'https://cdn.builder.io/api/v1/image/assets%2F5a5bd023d65e45b4900fe9cb8582cda5%2Fdd56f2ece30540d1bf5889255b116422?format=webp&width=800', type: 'Hospital' },
     { name: 'PCEA Hospital Kikuyu', icon: '⛪', image: 'https://cdn.builder.io/api/v1/image/assets%2Fbab480d8499049228a14c82c33a4e489%2Fafbe9821adc5456c98409f602f34e779?format=webp&width=800', type: 'Hospital' },
     { name: 'The Nairobi Women\'s Hospital', icon: '👩‍⚕️', image: 'https://cdn.builder.io/api/v1/image/assets%2Fbab480d8499049228a14c82c33a4e489%2Feeadacf1901f402cbd380aea73df1fba?format=webp&width=800', type: 'Hospital' },
     { name: 'Jacaranda Maternity', icon: '👶', image: 'https://cdn.builder.io/api/v1/image/assets%2Fbab480d8499049228a14c82c33a4e489%2Ffc2b4838a01c41d5968ea8beb0e2fa75?format=webp&width=800', type: 'Hospital' },
     { name: 'Royal Ear and Eye Hospital', icon: '👁️', image: 'https://cdn.builder.io/api/v1/image/assets%2Fbab480d8499049228a14c82c33a4e489%2F57b7c421157846d1828020dc16f928ca?format=webp&width=800', type: 'Hospital' },
+    { name: 'Gender Violence Recovery Centre', icon: '🤝', image: 'https://cdn.builder.io/api/v1/image/assets%2F5a5bd023d65e45b4900fe9cb8582cda5%2F08500b8328484bea9812da820c34447c?format=webp&width=800', type: 'NGO' },
+    { name: 'Tibu Health Africa', icon: '💚', image: 'https://cdn.builder.io/api/v1/image/assets%2F5a5bd023d65e45b4900fe9cb8582cda5%2Fb4e6bc8d57574887ab50ad5ef326074c?format=webp&width=800', type: 'Healthcare' },
+    { name: 'Thika Sam\'s Annex Hospital', icon: '🏥', image: 'https://cdn.builder.io/api/v1/image/assets%2F5a5bd023d65e45b4900fe9cb8582cda5%2Fd9c0f3f602474874af1bec105042471a?format=webp&width=800', type: 'Hospital' },
+    { name: 'Oak Tree Centre for Kidney and Chronic Diseases', icon: '🌳', image: 'https://cdn.builder.io/api/v1/image/assets%2F5a5bd023d65e45b4900fe9cb8582cda5%2F3a8bd4f3e1524e22a4185b81c8ac06fc?format=webp&width=800', type: 'Specialty Centre' },
   ];
 
 
