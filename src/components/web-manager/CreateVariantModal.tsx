@@ -79,8 +79,8 @@ export const CreateVariantModal = ({
         } catch (imageError) {
           console.error('Failed to save variant images:', imageError);
           // Images save error is already handled by saveVariantImages which shows a toast
-          // Continue to close the modal since variant was created successfully
-          throw imageError;
+          // Don't fail the entire operation - variant was created successfully
+          // The user will see a warning toast about the images
         }
       }
 
