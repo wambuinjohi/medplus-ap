@@ -28,6 +28,7 @@ export default function ProductDetail() {
 
   const [variantImages, setVariantImages] = useState<VariantImage[]>([]);
   const [categoryVariantImages, setCategoryVariantImages] = useState<Record<string, VariantImage[]>>({});
+  const [variantImageIndex, setVariantImageIndex] = useState<Record<string, number>>({});
 
   const isCategory = !!category && variants.length > 0;
   const isVariant = !!variant && !isCategory;
