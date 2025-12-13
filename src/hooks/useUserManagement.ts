@@ -206,9 +206,10 @@ export const useUserManagement = () => {
         return { success: false, error: 'You can only create users for your own company' };
       }
 
+      // Use the proper invite + complete workflow instead
       return {
         success: false,
-        error: 'Direct user creation requires an Edge Function. Please use "Invite User" instead:\n\n1. Click "Invite User"\n2. User signs up at login page\n3. Click "Complete" in "Approved Invitations"\n4. Set password to finish'
+        error: 'Please use "Invite User" button instead for a simpler workflow'
       };
 
       // Log user creation in audit trail
