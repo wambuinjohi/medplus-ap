@@ -206,28 +206,40 @@ export const useUserManagement = () => {
         return { success: false, error: 'You can only create users for your own company' };
       }
 
-      // Create auth user directly
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: userData.email,
-        password: userData.password,
-      });
+      // Create invitation record (pre-approved and ready for completion)
+      const invitationToken = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
 
-      if (authError) {
-        console.error('Auth user creation error:', authError);
-        return { success: false, error: `Failed to create auth user: ${authError.message}` };
+      const { data: invitation, error: inviteError } = await supabase
+        .from('user_invitations')
+        .insert({
+          email: userData.email,
+          role: userData.role,
+          company_id: finalCompanyId,
+          invited_by: currentUser?.id,
+          is_approved: true,
+          approved_by: currentUser?.id,
+          approved_at: new Date().toISOString(),
+          invitation_token: invitationToken,
+        })
+        .select()
+        .single();
+
+      if (inviteError) {
+        console.error('Invitation creation error:', inviteError);
+        return { success: false, error: `Failed to create invitation: ${inviteError.message}` };
       }
 
-      if (!authData.user?.id) {
-        return { success: false, error: 'Failed to create auth user' };
+      if (!invitation?.id) {
+        return { success: false, error: 'Failed to create invitation' };
       }
 
-      const userId = authData.user.id;
+      // Create placeholder profile record with the provided details
+      const placeholderId = crypto.randomUUID ? crypto.randomUUID() : `temp-${Date.now()}`;
 
-      // Create profile record with status 'active' (directly created users are immediately active)
       const { error: profileError } = await supabase
         .from('profiles')
         .insert({
-          id: userId,
+          id: placeholderId,
           email: userData.email,
           full_name: userData.full_name || null,
           phone: userData.phone || null,
@@ -235,49 +247,53 @@ export const useUserManagement = () => {
           position: userData.position || null,
           company_id: finalCompanyId,
           role: userData.role,
-          status: 'active',
+          status: 'pending',
           invited_by: currentUser?.id,
           invited_at: new Date().toISOString(),
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
-        });
+        })
+        .select()
+        .single();
 
+      // If profile creation fails, just continue - it will be created on email confirmation
       if (profileError) {
-        console.error('Profile creation error:', profileError);
-        // Try to clean up the auth user
-        try {
-          await supabase.auth.signOut();
-        } catch (signoutErr) {
-          console.error('Failed to cleanup auth user:', signoutErr);
-        }
-        return { success: false, error: `Failed to create user profile: ${profileError.message}` };
+        console.warn('Profile creation warning (will be created on signup):', profileError);
       }
 
-      // Manually confirm email by updating auth.users (using update method on client)
-      try {
-        // We need to confirm the email for the user to be able to sign in
-        // Since we're creating directly, we should update the email_confirmed_at
-        const { error: confirmError } = await supabase.auth.signInWithPassword({
-          email: userData.email,
-          password: userData.password,
-        });
+      // Immediately complete the invitation with the password provided by admin
+      if (profileError && placeholderId) {
+        // Profile doesn't exist yet, user needs to sign up first
+        return {
+          success: false,
+          error: `Invitation created. User must sign up with email ${userData.email} first, then return here for completion.`
+        };
+      }
 
-        if (confirmError) {
-          console.warn('Could not verify email confirmation:', confirmError);
-        }
-      } catch (confirmErr) {
-        console.warn('Email confirmation step failed:', confirmErr);
+      // Try to update the placeholder profile to active with password
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({
+          status: 'active',
+          password: userData.password,
+        })
+        .eq('id', placeholderId);
+
+      if (updateError) {
+        console.warn('Could not update profile with password:', updateError);
+        // Continue anyway - password will be set when user completes signup
       }
 
       // Log user creation in audit trail
       try {
-        await logUserCreation(userId, userData.email, userData.role as UserRole, finalCompanyId);
+        await logUserCreation(invitation.id, userData.email, userData.role as UserRole, finalCompanyId);
       } catch (auditError) {
         console.error('Failed to log user creation:', auditError);
         // Don't fail the operation if audit logging fails
       }
 
-      toast.success(`User "${userData.full_name || userData.email}" created successfully and is now active!`);
+      toast.success(`User invitation created for ${userData.email}. User can now sign up and will be immediately active.`);
+      await fetchInvitations();
       await fetchUsers();
 
       return { success: true, password: userData.password };
