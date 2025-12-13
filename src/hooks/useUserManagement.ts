@@ -617,39 +617,72 @@ export const useUserManagement = () => {
         .eq('email', invitationData.email)
         .maybeSingle();
 
+      let userId: string;
+
       if (!existingProfile) {
-        return {
-          success: false,
-          error: 'User profile not found. Please ask the user to sign up first, or use the "Add User" button to create a complete user account directly.'
-        };
-      }
+        // Create new user via Edge Function
+        try {
+          const { data: fnData, error: fnError } = await supabase.functions.invoke('admin-create-user', {
+            body: {
+              email: invitationData.email,
+              password: userData.password,
+              full_name: userData.full_name || undefined,
+              phone: userData.phone || undefined,
+              department: userData.department || undefined,
+              position: userData.position || undefined,
+              role: invitationData.role,
+              company_id: invitationData.company_id,
+              invited_by: currentUser?.id || invitationData.invited_by,
+            }
+          });
 
-      const userId = existingProfile.id;
+          if (fnError) {
+            const errorMsg = fnError instanceof Error ? fnError.message : 'Failed to create user account';
+            console.error('Edge Function error:', fnError);
+            return { success: false, error: errorMsg };
+          }
 
-      // Update existing profile
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({
-          status: 'active',
-          role: invitationData.role,
-          company_id: invitationData.company_id,
-          invited_by: invitationData.invited_by,
-          invited_at: invitationData.invited_at,
-          full_name: userData.full_name || undefined,
-          phone: userData.phone || undefined,
-          department: userData.department || undefined,
-          position: userData.position || undefined,
-          password: userData.password, // Will be hashed by DB trigger
-        })
-        .eq('id', userId);
+          if (!fnData?.success || !fnData?.user_id) {
+            const errorMsg = fnData?.error || 'Failed to create user account';
+            console.error('Edge Function returned error:', fnData);
+            return { success: false, error: errorMsg };
+          }
 
-      if (updateError) {
-        const errorMsg = parseErrorMessageWithCodes(updateError, 'profile update');
-        const errorDetails = updateError && typeof updateError === 'object'
-          ? JSON.stringify(updateError)
-          : String(updateError);
-        console.error('Profile update error:', errorDetails);
-        return { success: false, error: errorMsg };
+          userId = fnData.user_id;
+          console.log('User created via Edge Function:', userId);
+        } catch (err) {
+          const errorMsg = err instanceof Error ? err.message : 'Failed to create user account';
+          console.error('Error calling admin-create-user function:', err);
+          return { success: false, error: errorMsg };
+        }
+      } else {
+        // Update existing profile
+        userId = existingProfile.id;
+
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({
+            status: 'active',
+            role: invitationData.role,
+            company_id: invitationData.company_id,
+            invited_by: invitationData.invited_by,
+            invited_at: invitationData.invited_at,
+            full_name: userData.full_name || undefined,
+            phone: userData.phone || undefined,
+            department: userData.department || undefined,
+            position: userData.position || undefined,
+            password: userData.password, // Will be hashed by DB trigger
+          })
+          .eq('id', userId);
+
+        if (updateError) {
+          const errorMsg = parseErrorMessageWithCodes(updateError, 'profile update');
+          const errorDetails = updateError && typeof updateError === 'object'
+            ? JSON.stringify(updateError)
+            : String(updateError);
+          console.error('Profile update error:', errorDetails);
+          return { success: false, error: errorMsg };
+        }
       }
 
       // Mark invitation as accepted
