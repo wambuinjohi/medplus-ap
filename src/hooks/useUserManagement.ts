@@ -223,7 +223,6 @@ export const useUserManagement = () => {
           company_id: finalCompanyId,
           role: userData.role,
           status: 'active', // Auto-approve: immediately active
-          is_active: true, // User can login immediately
           password: userData.password, // Will be hashed by DB trigger
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
