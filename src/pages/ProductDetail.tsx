@@ -320,6 +320,15 @@ export default function ProductDetail() {
           </div>
         </section>
 
+        {selectedVariantForImages && (
+          <VariantImagesModal
+            open={showImagesModal}
+            onOpenChange={setShowImagesModal}
+            variant={selectedVariantForImages}
+            images={categoryVariantImages[selectedVariantForImages.id] || []}
+          />
+        )}
+
         <PublicFooter />
       </div>
     );
