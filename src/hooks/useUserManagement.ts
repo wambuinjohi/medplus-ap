@@ -206,9 +206,7 @@ export const useUserManagement = () => {
         return { success: false, error: 'You can only create users for your own company' };
       }
 
-      // Create invitation record (pre-approved and ready for completion)
-      const invitationToken = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
-
+      // Create approved invitation for the user
       const { data: invitation, error: inviteError } = await supabase
         .from('user_invitations')
         .insert({
@@ -219,7 +217,6 @@ export const useUserManagement = () => {
           is_approved: true,
           approved_by: currentUser?.id,
           approved_at: new Date().toISOString(),
-          invitation_token: invitationToken,
         })
         .select()
         .single();
@@ -233,68 +230,15 @@ export const useUserManagement = () => {
         return { success: false, error: 'Failed to create invitation' };
       }
 
-      // Create placeholder profile record with the provided details
-      const placeholderId = crypto.randomUUID ? crypto.randomUUID() : `temp-${Date.now()}`;
-
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert({
-          id: placeholderId,
-          email: userData.email,
-          full_name: userData.full_name || null,
-          phone: userData.phone || null,
-          department: userData.department || null,
-          position: userData.position || null,
-          company_id: finalCompanyId,
-          role: userData.role,
-          status: 'pending',
-          invited_by: currentUser?.id,
-          invited_at: new Date().toISOString(),
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
-        .select()
-        .single();
-
-      // If profile creation fails, just continue - it will be created on email confirmation
-      if (profileError) {
-        console.warn('Profile creation warning (will be created on signup):', profileError);
-      }
-
-      // Immediately complete the invitation with the password provided by admin
-      if (profileError && placeholderId) {
-        // Profile doesn't exist yet, user needs to sign up first
-        return {
-          success: false,
-          error: `Invitation created. User must sign up with email ${userData.email} first, then return here for completion.`
-        };
-      }
-
-      // Try to update the placeholder profile to active with password
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({
-          status: 'active',
-          password: userData.password,
-        })
-        .eq('id', placeholderId);
-
-      if (updateError) {
-        console.warn('Could not update profile with password:', updateError);
-        // Continue anyway - password will be set when user completes signup
-      }
-
       // Log user creation in audit trail
       try {
         await logUserCreation(invitation.id, userData.email, userData.role as UserRole, finalCompanyId);
       } catch (auditError) {
         console.error('Failed to log user creation:', auditError);
-        // Don't fail the operation if audit logging fails
       }
 
-      toast.success(`User invitation created for ${userData.email}. User can now sign up and will be immediately active.`);
+      toast.success(`Pre-approved invitation created for ${userData.email}. User can sign up and will be immediately active.`);
       await fetchInvitations();
-      await fetchUsers();
 
       return { success: true, password: userData.password };
     } catch (err) {
