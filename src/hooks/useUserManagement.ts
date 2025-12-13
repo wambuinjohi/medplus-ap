@@ -620,31 +620,32 @@ export const useUserManagement = () => {
       let userId: string;
 
       if (!existingProfile) {
-        // Create profile if it doesn't exist
-        userId = crypto.randomUUID();
-
-        const { error: createError } = await supabase
-          .from('profiles')
-          .insert({
-            id: userId,
-            email: invitationData.email,
-            full_name: userData.full_name || null,
-            phone: userData.phone || null,
-            department: userData.department || null,
-            position: userData.position || null,
-            company_id: invitationData.company_id,
-            role: invitationData.role,
-            status: 'active',
-            password: userData.password,
-            invited_by: invitationData.invited_by,
-            invited_at: invitationData.invited_at,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
+        // Create auth user first via Edge Function, then profile will be created automatically
+        try {
+          const { data: fnData, error: fnError } = await supabase.functions.invoke('admin-create-user', {
+            body: {
+              email: invitationData.email,
+              password: userData.password,
+              full_name: userData.full_name || undefined,
+              phone: userData.phone || undefined,
+              department: userData.department || undefined,
+              position: userData.position || undefined,
+              role: invitationData.role,
+              company_id: invitationData.company_id,
+              invited_by: currentUser?.id || invitationData.invited_by,
+            }
           });
 
-        if (createError) {
-          const errorMsg = parseErrorMessageWithCodes(createError, 'profile creation');
-          console.error('Profile creation error:', createError);
+          if (fnError || !fnData?.success) {
+            const errorMsg = fnData?.error || (fnError instanceof Error ? fnError.message : 'Failed to create user');
+            console.error('Admin create user error:', errorMsg);
+            return { success: false, error: errorMsg };
+          }
+
+          userId = fnData.user_id;
+        } catch (err) {
+          const errorMsg = err instanceof Error ? err.message : 'Failed to create user account';
+          console.error('Error invoking admin-create-user:', err);
           return { success: false, error: errorMsg };
         }
       } else {
