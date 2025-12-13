@@ -48,6 +48,7 @@ export default function Landing() {
     { name: 'Jacaranda Maternity', icon: '👶', image: 'https://cdn.builder.io/api/v1/image/assets%2Fbab480d8499049228a14c82c33a4e489%2Ffc2b4838a01c41d5968ea8beb0e2fa75?format=webp&width=800', type: 'Hospital' },
     { name: 'Royal Ear and Eye Hospital', icon: '👁️', image: 'https://cdn.builder.io/api/v1/image/assets%2Fbab480d8499049228a14c82c33a4e489%2F57b7c421157846d1828020dc16f928ca?format=webp&width=800', type: 'Hospital' },
     { name: 'Gender Violence Recovery Centre', icon: '🤝', image: 'https://cdn.builder.io/api/v1/image/assets%2F5a5bd023d65e45b4900fe9cb8582cda5%2F08500b8328484bea9812da820c34447c?format=webp&width=800', type: 'NGO' },
+    { name: 'Tibu Health Africa', icon: '💚', image: 'https://cdn.builder.io/api/v1/image/assets%2F5a5bd023d65e45b4900fe9cb8582cda5%2Fb4e6bc8d57574887ab50ad5ef326074c?format=webp&width=800', type: 'Healthcare' },
   ];
 
 
