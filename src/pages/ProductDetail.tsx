@@ -259,9 +259,16 @@ export default function ProductDetail() {
                       </div>
                     )}
                     {categoryVariantImages[v.id] && categoryVariantImages[v.id].length > 1 && (
-                      <div className="absolute bottom-2 right-2 bg-black/60 text-white px-2 py-1 rounded text-xs font-medium">
+                      <button
+                        onClick={() => {
+                          setSelectedVariantForImages(v);
+                          setShowImagesModal(true);
+                        }}
+                        className="absolute bottom-2 right-2 bg-black/60 hover:bg-black/80 text-white px-2 py-1 rounded text-xs font-medium transition-colors cursor-pointer hover:shadow-lg"
+                        title="Click to view all images"
+                      >
                         +{categoryVariantImages[v.id].length - 1}
-                      </div>
+                      </button>
                     )}
                   </div>
 
