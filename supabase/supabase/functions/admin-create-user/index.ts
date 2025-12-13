@@ -60,7 +60,7 @@ Deno.serve(async (req) => {
     let userId: string;
     let userCreatedNow = false;
 
-    // Try to create auth user
+    // Try to create auth user with minimal data to avoid trigger issues
     try {
       const { data: authData, error: authError } = await supabase.auth.admin.createUser({
         email: body.email,
@@ -72,28 +72,27 @@ Deno.serve(async (req) => {
         // If user already exists, try to get them
         if (authError.message?.includes('already exists') || authError.message?.includes('already registered')) {
           console.log('User already exists, retrieving existing user');
-          
-          // Get existing user via query
-          const { data: { users }, error: listError } = await supabase.auth.admin.listUsers();
-          
-          if (listError || !users) {
-            console.error('Could not retrieve existing user:', listError);
+
+          try {
+            const { data: { user: existingUser }, error: getUserError } = await supabase.auth.admin.getUserById(body.email);
+
+            if (getUserError || !existingUser?.id) {
+              console.error('Could not retrieve existing user:', getUserError);
+              return new Response(
+                JSON.stringify({ success: false, error: 'User exists but could not be retrieved' }),
+                { status: 400, headers: corsHeaders }
+              );
+            }
+
+            userId = existingUser.id;
+            userCreatedNow = false;
+          } catch (retrieveErr) {
+            console.error('Error retrieving existing user:', retrieveErr);
             return new Response(
               JSON.stringify({ success: false, error: 'User exists but could not be retrieved' }),
               { status: 400, headers: corsHeaders }
             );
           }
-
-          const existingUser = users.find(u => u.email === body.email);
-          if (!existingUser?.id) {
-            return new Response(
-              JSON.stringify({ success: false, error: 'User exists but has no ID' }),
-              { status: 400, headers: corsHeaders }
-            );
-          }
-
-          userId = existingUser.id;
-          userCreatedNow = false;
         } else {
           console.error('Auth creation error:', authError);
           return new Response(
