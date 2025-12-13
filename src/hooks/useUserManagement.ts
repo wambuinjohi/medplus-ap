@@ -565,7 +565,24 @@ export const useUserManagement = () => {
             .maybeSingle();
 
           if (profileExists?.id) {
-            await supabase
+            // Validate that the company still exists before updating
+            if (invitationData.company_id) {
+              const { data: companyExists } = await supabase
+                .from('companies')
+                .select('id')
+                .eq('id', invitationData.company_id)
+                .maybeSingle();
+
+              if (!companyExists) {
+                console.warn('Cannot activate profile: company no longer exists', {
+                  profileId: profileExists.id,
+                  companyId: invitationData.company_id
+                });
+                return;
+              }
+            }
+
+            const { error: updateErr } = await supabase
               .from('profiles')
               .update({
                 status: 'active',
@@ -573,6 +590,14 @@ export const useUserManagement = () => {
                 company_id: invitationData.company_id
               })
               .eq('id', profileExists.id);
+
+            if (updateErr) {
+              console.warn('Could not auto-activate existing profile on approval:', {
+                error: updateErr,
+                profileId: profileExists.id,
+                invitationId: invitationId
+              });
+            }
           }
         }
       } catch (profileActivateErr) {
