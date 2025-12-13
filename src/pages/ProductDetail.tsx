@@ -15,6 +15,7 @@ import { BreadcrumbNav } from '@/components/ui/breadcrumb-nav';
 import { useSEO } from '@/hooks/useSEO';
 import { generateProductSchema, SITE_CONFIG, useBreadcrumbSchema } from '@/utils/seoHelpers';
 import { openWhatsAppQuotation } from '@/utils/whatsappQuotation';
+import { VariantImagesModal } from '@/components/web-manager/VariantImagesModal';
 
 export default function ProductDetail() {
   const { productSlug } = useParams<{ productSlug: string }>();
