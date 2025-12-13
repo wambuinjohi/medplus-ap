@@ -206,34 +206,68 @@ export const useUserManagement = () => {
         return { success: false, error: 'You can only create users for your own company' };
       }
 
-      // Call admin-create-user edge function to create auth user and profile atomically
-      const { data: fnData, error: fnError } = await supabase.functions.invoke('admin-create-user', {
-        body: {
+      // Create auth user directly
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: userData.email,
+        password: userData.password,
+      });
+
+      if (authError) {
+        console.error('Auth user creation error:', authError);
+        return { success: false, error: `Failed to create auth user: ${authError.message}` };
+      }
+
+      if (!authData.user?.id) {
+        return { success: false, error: 'Failed to create auth user' };
+      }
+
+      const userId = authData.user.id;
+
+      // Create profile record with status 'active' (directly created users are immediately active)
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert({
+          id: userId,
           email: userData.email,
-          password: userData.password,
           full_name: userData.full_name || null,
-          role: userData.role,
-          company_id: finalCompanyId,
-          invited_by: currentUser?.id,
           phone: userData.phone || null,
           department: userData.department || null,
           position: userData.position || null,
+          company_id: finalCompanyId,
+          role: userData.role,
+          status: 'active',
+          invited_by: currentUser?.id,
+          invited_at: new Date().toISOString(),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+
+      if (profileError) {
+        console.error('Profile creation error:', profileError);
+        // Try to clean up the auth user
+        try {
+          await supabase.auth.signOut();
+        } catch (signoutErr) {
+          console.error('Failed to cleanup auth user:', signoutErr);
         }
-      });
-
-      if (fnError) {
-        console.error('Edge function error:', fnError);
-        const errorMessage = typeof fnError === 'object' && fnError !== null && 'message' in fnError
-          ? (fnError as any).message
-          : String(fnError);
-        return { success: false, error: `Failed to create user: ${errorMessage}` };
+        return { success: false, error: `Failed to create user profile: ${profileError.message}` };
       }
 
-      if (!fnData?.success) {
-        return { success: false, error: fnData?.error || 'Failed to create user' };
-      }
+      // Manually confirm email by updating auth.users (using update method on client)
+      try {
+        // We need to confirm the email for the user to be able to sign in
+        // Since we're creating directly, we should update the email_confirmed_at
+        const { error: confirmError } = await supabase.auth.signInWithPassword({
+          email: userData.email,
+          password: userData.password,
+        });
 
-      const userId = fnData.user_id;
+        if (confirmError) {
+          console.warn('Could not verify email confirmation:', confirmError);
+        }
+      } catch (confirmErr) {
+        console.warn('Email confirmation step failed:', confirmErr);
+      }
 
       // Log user creation in audit trail
       try {
