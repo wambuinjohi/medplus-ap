@@ -237,11 +237,29 @@ export const useWebManager = () => {
         .select()
         .single();
 
-      if (err) throw err;
+      if (err) {
+        console.error('Supabase error creating variant:', err);
+        throw err;
+      }
       toast.success('Variant created successfully');
       return newVariant as WebVariant;
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to create variant';
+      let message = 'Failed to create variant';
+
+      // Handle Supabase errors
+      if (err && typeof err === 'object') {
+        if ('message' in err && typeof err.message === 'string') {
+          message = err.message;
+        } else if ('code' in err && typeof err.code === 'string') {
+          message = `Error: ${err.code}`;
+        } else {
+          message = JSON.stringify(err);
+        }
+      } else if (err instanceof Error) {
+        message = err.message;
+      }
+
+      console.error('Create variant error:', message, err);
       setError(message);
       toast.error(message);
       throw err;
