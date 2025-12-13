@@ -45,7 +45,6 @@ export const EditVariantModal = ({
     image_path: '',
     display_order: 0,
     is_active: true,
-    images: [],
   });
   const [variantImages, setVariantImages] = useState<VariantImage[]>([]);
   const { updateVariant, fetchVariantImages, saveVariantImages, loading } = useWebManager();
