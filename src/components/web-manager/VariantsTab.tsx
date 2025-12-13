@@ -29,6 +29,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { CreateVariantModal } from './CreateVariantModal';
 import { EditVariantModal } from './EditVariantModal';
+import { VariantImagesModal } from './VariantImagesModal';
 
 export const VariantsTab = () => {
   const [variants, setVariants] = useState<WebVariant[]>([]);
