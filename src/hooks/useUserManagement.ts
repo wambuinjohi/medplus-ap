@@ -4,6 +4,7 @@ import { useAuth, UserProfile, UserRole, UserStatus } from '@/contexts/AuthConte
 import { toast } from 'sonner';
 import { parseErrorMessage, parseErrorMessageWithCodes } from '@/utils/errorHelpers';
 import { logUserCreation, logUserApproval } from '@/utils/auditLogger';
+import emailjs from 'emailjs-com';
 
 export interface UserInvitation {
   id: string;
