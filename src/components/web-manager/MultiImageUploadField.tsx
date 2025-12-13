@@ -44,7 +44,7 @@ export const MultiImageUploadField = ({
         return;
       }
 
-      const newImage: UploadedImage = {
+      const newImage: VariantImage = {
         url: result.url,
         altText: '',
         displayOrder: images.length,
