@@ -245,13 +245,23 @@ export function CompleteInvitationModal({
             </div>
           </div>
 
+          <div className="rounded-lg bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 p-4 mb-4">
+            <h4 className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2">ℹ️ How this works</h4>
+            <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
+              <li>• User must have signed up first to complete registration</li>
+              <li>• Setting a password here activates their account immediately</li>
+              <li>• They can log in with their email and the password you set</li>
+              <li>• Their role will be set to {invitation.role.replace('_', ' ')}</li>
+            </ul>
+          </div>
+
           <div className="rounded-lg bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 p-4">
-            <h4 className="text-sm font-medium text-green-900 dark:text-green-100 mb-2">What happens next?</h4>
+            <h4 className="text-sm font-medium text-green-900 dark:text-green-100 mb-2">✓ After completion</h4>
             <ul className="text-sm text-green-800 dark:text-green-200 space-y-1">
-              <li>✓ User account will be created immediately</li>
-              <li>✓ They can log in with their email and password</li>
-              <li>✓ Their account will have the {invitation.role.replace('_', ' ')} role</li>
-              <li>✓ No further action needed from the user</li>
+              <li>✓ Account activated and ready to use</li>
+              <li>✓ Invitation marked as accepted</li>
+              <li>✓ User can log in immediately</li>
+              <li>✓ No further action needed</li>
             </ul>
           </div>
 
