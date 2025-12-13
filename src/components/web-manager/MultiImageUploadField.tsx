@@ -19,7 +19,7 @@ export const MultiImageUploadField = ({
 }: MultiImageUploadFieldProps) => {
   const [uploading, setUploading] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
-  const [images, setImages] = useState<UploadedImage[]>(value || []);
+  const [images, setImages] = useState<VariantImage[]>(value || []);
 
   useEffect(() => {
     setImages(value || []);
