@@ -475,16 +475,15 @@ export const generatePDF = (data: DocumentData) => {
         
         .notes-section {
           margin-top: 30px;
-          display: flex;
-          gap: 20px;
+          display: block;
         }
-        
+
         .notes, .terms {
-          flex: 1;
-          padding: 15px;
-          background: #f8f9fa;
-          border-radius: 8px;
-          border: 1px solid #e9ecef;
+          margin-bottom: 20px;
+          padding: 0;
+          background: transparent;
+          border-radius: 0;
+          border: none;
         }
         
         .section-subtitle {
