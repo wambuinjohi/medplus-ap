@@ -356,13 +356,14 @@ export const generatePDF = (data: DocumentData) => {
           border: 2px solid #2BB673;
           border-radius: 8px;
           overflow: hidden;
+          table-layout: auto;
         }
-        
+
         .items-table thead {
           background: #2BB673;
           color: white;
         }
-        
+
         .items-table th {
           padding: 12px 8px;
           text-align: center;
@@ -371,45 +372,51 @@ export const generatePDF = (data: DocumentData) => {
           text-transform: uppercase;
           letter-spacing: 0.5px;
           border-right: 1px solid rgba(255,255,255,0.2);
+          word-break: break-word;
         }
-        
+
         .items-table th:last-child {
           border-right: none;
         }
-        
+
         .items-table td {
           padding: 10px 8px;
           border-bottom: 1px solid #e9ecef;
           border-right: 1px solid #e9ecef;
           text-align: center;
-          vertical-align: top;
+          vertical-align: middle;
+          word-wrap: break-word;
+          overflow-wrap: break-word;
+          hyphens: auto;
         }
-        
+
         .items-table td:last-child {
           border-right: none;
         }
-        
+
         .items-table tbody tr:last-child td {
           border-bottom: none;
         }
-        
+
         .items-table tbody tr:nth-child(even) {
           background: #f8f9fa;
         }
-        
+
         .items-table tbody tr:hover {
           background: #e3f2fd;
         }
-        
+
         .description-cell {
           text-align: left !important;
-          max-width: 200px;
           word-wrap: break-word;
+          overflow-wrap: break-word;
+          hyphens: auto;
         }
-        
+
         .amount-cell {
           text-align: right !important;
           font-weight: 500;
+          white-space: nowrap;
         }
 
         .center {
