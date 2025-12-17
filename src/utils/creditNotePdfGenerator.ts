@@ -49,11 +49,10 @@ const DEFAULT_COMPANY: CompanyData = {
   phone: '',
   email: 'info@medplusafrica.com',
   tax_number: '',
-  logo_url: 'https://cdn.builder.io/api/v1/image/assets%2Ffd1c9d5781fc4f20b6ad16683f5b85b3%2F274fc62c033e464584b0f50713695127?format=webp&width=800' // Will use company settings or fallback gracefully
+  logo_url: 'https://cdn.builder.io/api/v1/image/assets%2Ffd1c9d5781fc4f20b6ad16683f5b85b3%2F274fc62c033e464584b0f50713695127?format=webp&width=800'
 };
 
 export const generateCreditNotePDF = (creditNote: CreditNotePDFData, company?: CompanyData) => {
-  // Use company details from parameter or fall back to defaults
   const companyData = company || DEFAULT_COMPANY;
   
   const formatCurrency = (amount: number) => {
@@ -73,7 +72,6 @@ export const generateCreditNotePDF = (creditNote: CreditNotePDFData, company?: C
     });
   };
 
-  // Create a new window with the document content
   const printWindow = window.open('', '_blank');
   if (!printWindow) {
     throw new Error('Could not open print window. Please allow popups.');
@@ -116,24 +114,41 @@ export const generateCreditNotePDF = (creditNote: CreditNotePDFData, company?: C
         }
         
         .header {
-          display: flex;
-          justify-content: space-between;
-          align-items: flex-start;
+          display: grid;
+          grid-template-columns: 1fr;
+          grid-template-rows: auto auto;
           margin-bottom: 30px;
+          gap: 20px;
+        }
+        
+        .header-row-1 {
+          display: grid;
+          grid-template-columns: 1fr 2fr;
+          gap: 20px;
+          align-items: flex-start;
           padding-bottom: 20px;
-          border-bottom: 2px solid #DC3545;
+          border-bottom: 2px solid #2BB673;
+        }
+        
+        .header-row-2 {
+          display: grid;
+          grid-template-columns: 50% 50%;
+          gap: 20px;
         }
         
         .company-info {
-          flex: 1;
+          display: contents;
         }
         
         .logo {
-          width: 120px;
-          height: 60px;
-          margin-bottom: 15px;
+          width: 100%;
+          height: 120px;
           border-radius: 8px;
           overflow: hidden;
+          grid-column: 1;
+          grid-row: 1;
+          justify-self: start;
+          align-self: start;
         }
         
         .logo img {
@@ -142,15 +157,20 @@ export const generateCreditNotePDF = (creditNote: CreditNotePDFData, company?: C
           object-fit: contain;
         }
         
+        .company-details-block {
+          grid-column: 2;
+          grid-row: 1;
+        }
+        
         .company-name {
-          font-size: 24px;
+          font-size: 20px;
           font-weight: bold;
-          margin-bottom: 5px;
-          color: #DC3545;
+          margin-bottom: 8px;
+          color: #2BB673;
         }
         
         .company-details {
-          font-size: 11px;
+          font-size: 10px;
           line-height: 1.6;
           color: #666;
           margin-bottom: 0;
@@ -158,81 +178,80 @@ export const generateCreditNotePDF = (creditNote: CreditNotePDFData, company?: C
         
         .document-info {
           text-align: right;
-          flex: 1;
-          max-width: 300px;
+          width: 100%;
+        }
+        
+        .customer-info-block {
+          text-align: left;
+          width: 100%;
         }
         
         .document-title {
-          font-size: 28px;
+          font-size: 22px;
           font-weight: bold;
-          margin: 0 0 15px 0;
-          color: #DC3545;
+          margin: 0 0 12px 0;
+          color: #2DAAE1;
           text-transform: uppercase;
           letter-spacing: 1px;
+          text-align: right;
         }
         
         .document-details {
-          background: #f8f9fa;
-          padding: 15px;
-          border-radius: 8px;
-          border: 1px solid #e9ecef;
+          background: transparent;
+          padding: 0;
+          border-radius: 0;
+          border: none;
+          text-align: right;
         }
         
         .document-details table {
           width: 100%;
           border-collapse: collapse;
+          line-height: 1.4;
         }
         
         .document-details td {
-          padding: 5px 0;
+          padding: 2px 0;
           border: none;
+          font-size: 10px;
         }
         
         .document-details .label {
           font-weight: bold;
-          color: #495057;
-          width: 40%;
+          color: #666;
+          text-align: right;
+          padding-right: 10px;
+          width: auto;
         }
         
         .document-details .value {
           text-align: right;
           color: #212529;
-        }
-        
-        .customer-section {
-          margin: 30px 0;
-          display: flex;
-          justify-content: space-between;
-          gap: 30px;
-        }
-        
-        .bill-to, .related-info {
-          flex: 1;
-          padding: 20px;
-          background: #f8f9fa;
-          border-radius: 8px;
-          border: 1px solid #e9ecef;
+          font-weight: normal;
         }
         
         .section-title {
-          font-size: 14px;
+          font-size: 11px;
           font-weight: bold;
-          color: #DC3545;
-          margin: 0 0 15px 0;
+          color: #2DAAE1;
+          margin: 0 0 8px 0;
           text-transform: uppercase;
           letter-spacing: 0.5px;
         }
         
         .customer-name {
-          font-size: 16px;
+          font-size: 13px;
           font-weight: bold;
-          margin-bottom: 8px;
+          margin-bottom: 4px;
           color: #212529;
         }
         
         .customer-details, .related-details {
+          font-size: 10px;
           color: #666;
-          line-height: 1.6;
+          line-height: 1.4;
+          word-wrap: break-word;
+          overflow-wrap: break-word;
         }
         
         .items-section {
@@ -244,24 +263,26 @@ export const generateCreditNotePDF = (creditNote: CreditNotePDFData, company?: C
           border-collapse: collapse;
           margin: 20px 0;
           font-size: 11px;
-          border: 2px solid #DC3545;
+          border: 2px solid #2BB673;
           border-radius: 8px;
           overflow: hidden;
+          table-layout: auto;
         }
         
         .items-table thead {
-          background: #DC3545;
+          background: #2BB673;
           color: white;
         }
         
         .items-table th {
-          padding: 12px 8px;
+          padding: 8px 8px;
           text-align: center;
           font-weight: bold;
           font-size: 10px;
           text-transform: uppercase;
           letter-spacing: 0.5px;
           border-right: 1px solid rgba(255,255,255,0.2);
+          word-break: break-word;
         }
         
         .items-table th:last-child {
@@ -269,11 +290,14 @@ export const generateCreditNotePDF = (creditNote: CreditNotePDFData, company?: C
         }
         
         .items-table td {
-          padding: 10px 8px;
+          padding: 6px 8px;
           border-bottom: 1px solid #e9ecef;
           border-right: 1px solid #e9ecef;
           text-align: center;
-          vertical-align: top;
+          vertical-align: middle;
+          word-wrap: break-word;
+          overflow-wrap: break-word;
+          hyphens: auto;
         }
         
         .items-table td:last-child {
@@ -289,18 +313,19 @@ export const generateCreditNotePDF = (creditNote: CreditNotePDFData, company?: C
         }
         
         .items-table tbody tr:hover {
-          background: #ffebeb;
+          background: #e3f2fd;
         }
         
         .description-cell {
           text-align: left !important;
-          max-width: 200px;
           word-wrap: break-word;
+          overflow-wrap: break-word;
         }
         
         .amount-cell {
           text-align: right !important;
           font-weight: 500;
+          white-space: nowrap;
         }
 
         .center {
@@ -341,64 +366,20 @@ export const generateCreditNotePDF = (creditNote: CreditNotePDFData, company?: C
         }
         
         .totals-table .total-row {
-          border-top: 2px solid #DC3545;
+          border-top: 2px solid #2BB673;
           background: #f8f9fa;
         }
         
         .totals-table .total-row .label {
           font-size: 14px;
           font-weight: bold;
-          color: #DC3545;
+          color: #2BB673;
         }
         
         .totals-table .total-row .amount {
           font-size: 16px;
           font-weight: bold;
-          color: #DC3545;
-        }
-
-        .totals-table .balance-row {
-          border-top: 1px solid #DC3545;
-          background: #ffebeb;
-        }
-
-        .totals-table .balance-row .label {
-          font-weight: bold;
-          color: #DC3545;
-        }
-
-        .totals-table .balance-row .amount {
-          font-weight: bold;
-          color: #DC3545;
-        }
-        
-        .notes-section {
-          margin-top: 30px;
-          display: flex;
-          gap: 20px;
-        }
-        
-        .notes, .terms {
-          flex: 1;
-          padding: 15px;
-          background: #f8f9fa;
-          border-radius: 8px;
-          border: 1px solid #e9ecef;
-        }
-        
-        .section-subtitle {
-          font-size: 12px;
-          font-weight: bold;
-          color: #DC3545;
-          margin: 0 0 10px 0;
-          text-transform: uppercase;
-        }
-        
-        .notes-content, .terms-content {
-          font-size: 10px;
-          line-height: 1.6;
-          color: #666;
-          white-space: pre-wrap;
+          color: #2BB673;
         }
         
         .footer {
@@ -410,7 +391,7 @@ export const generateCreditNotePDF = (creditNote: CreditNotePDFData, company?: C
           font-size: 10px;
           color: #666;
           border-top: 1px solid #e9ecef;
-          padding-top: 15px;
+          padding-top: 10px;
         }
         
         .watermark {
@@ -419,7 +400,7 @@ export const generateCreditNotePDF = (creditNote: CreditNotePDFData, company?: C
           left: 50%;
           transform: translate(-50%, -50%) rotate(-45deg);
           font-size: 72px;
-          color: rgba(220, 53, 69, 0.1);
+          color: rgba(43, 182, 115, 0.1);
           font-weight: bold;
           z-index: -1;
           pointer-events: none;
@@ -449,72 +430,67 @@ export const generateCreditNotePDF = (creditNote: CreditNotePDFData, company?: C
     </head>
     <body>
       <div class="page">
-        <!-- Watermark -->
         <div class="watermark">Credit Note</div>
         
         <!-- Header Section -->
         <div class="header">
-          <div class="company-info">
+          <!-- Row 1: Logo (20%) + Company Details (80%) -->
+          <div class="header-row-1">
             <div class="logo">
-              <img src="${companyData.logo_url || ''}" alt="${companyData.name} Logo" />
+              ${companyData.logo_url ?
+                `<img src="${companyData.logo_url}" alt="${companyData.name} Logo" onerror="this.style.display='none';" />` :
+                `<div style="width:100%; height:100%; background:#f8f9fa; border:2px dashed #e9ecef; display:flex; align-items:center; justify-content:center; font-size:12px; color:#6c757d; text-align:center;">No logo</div>`
+              }
             </div>
-            <div class="company-name">${companyData.name}</div>
-            <div class="company-details">
-              ${companyData.tax_number ? `PIN: ${companyData.tax_number}<br>` : ''}
-              ${companyData.address ? `${companyData.address}<br>` : ''}
-              ${companyData.city ? `${companyData.city}` : ''}${companyData.country ? `, ${companyData.country}` : ''}<br>
-              ${companyData.phone ? `Tel: ${companyData.phone}<br>` : ''}
-              ${companyData.email ? `Email: ${companyData.email}` : ''}
-            </div>
-          </div>
-          
-          <div class="document-info">
-            <div class="document-title">Credit Note</div>
-            <div class="document-details">
-              <table>
-                <tr>
-                  <td class="label">Credit Note #:</td>
-                  <td class="value">${creditNote.credit_note_number}</td>
-                </tr>
-                <tr>
-                  <td class="label">Date:</td>
-                  <td class="value">${formatDate(creditNote.credit_note_date)}</td>
-                </tr>
-                <tr>
-                  <td class="label">Status:</td>
-                  <td class="value">${creditNote.status.toUpperCase()}</td>
-                </tr>
-                <tr>
-                  <td class="label">Credit Amount:</td>
-                  <td class="value" style="font-weight: bold; color: #DC3545;">${formatCurrency(creditNote.total_amount)}</td>
-                </tr>
-              </table>
+            <div class="company-details-block">
+              <div class="company-name">${companyData.name}</div>
+              <div class="company-details">
+                ${companyData.tax_number ? `PIN: ${companyData.tax_number}<br>` : ''}
+                ${companyData.address ? `${companyData.address}<br>` : ''}
+                ${companyData.city ? `${companyData.city}` : ''}${companyData.country ? `, ${companyData.country}` : ''}<br>
+                ${companyData.phone ? `Tel: ${companyData.phone}<br>` : ''}
+                ${companyData.email ? `Email: ${companyData.email}` : ''}
+              </div>
             </div>
           </div>
-        </div>
-        
-        <!-- Customer Section -->
-        <div class="customer-section">
-          <div class="bill-to">
-            <div class="section-title">Credit To</div>
-            <div class="customer-name">${creditNote.customers.name}</div>
-            <div class="customer-details">
-              ${creditNote.customers.email ? `${creditNote.customers.email}<br>` : ''}
-              ${creditNote.customers.phone ? `${creditNote.customers.phone}<br>` : ''}
-              ${creditNote.customers.address ? `${creditNote.customers.address}<br>` : ''}
-              ${creditNote.customers.city ? `${creditNote.customers.city}` : ''}
-              ${creditNote.customers.country ? `, ${creditNote.customers.country}` : ''}<br>
-              Customer Code: ${creditNote.customers.customer_code}
+
+          <!-- Row 2: Customer Details (50%) + Document Details (50%) -->
+          <div class="header-row-2">
+            <div class="customer-info-block">
+              <div class="section-title">Customer</div>
+              <div class="customer-name">${creditNote.customers.name}</div>
+              <div class="customer-details">
+                ${creditNote.customers.email ? `${creditNote.customers.email}<br>` : ''}
+                ${creditNote.customers.phone ? `${creditNote.customers.phone}<br>` : ''}
+                ${creditNote.customers.address ? `${creditNote.customers.address}<br>` : ''}
+                ${creditNote.customers.city ? `${creditNote.customers.city}` : ''}
+                ${creditNote.customers.country ? `, ${creditNote.customers.country}` : ''}<br>
+                ${creditNote.customers.customer_code ? `Customer Code: ${creditNote.customers.customer_code}` : ''}
+              </div>
             </div>
-          </div>
-          
-          <div class="related-info">
-            <div class="section-title">Credit Details</div>
-            <div class="related-details">
-              ${creditNote.reason ? `<strong>Reason:</strong><br>${creditNote.reason}<br><br>` : ''}
-              ${creditNote.invoices?.invoice_number ? `<strong>Related Invoice:</strong><br>${creditNote.invoices.invoice_number}<br><br>` : ''}
-              <strong>Applied Amount:</strong><br>${formatCurrency(creditNote.applied_amount)}<br><br>
-              <strong>Remaining Balance:</strong><br>${formatCurrency(creditNote.balance)}
+
+            <div class="document-info">
+              <div class="document-title">Credit Note</div>
+              <div class="document-details">
+                <table>
+                  <tr>
+                    <td class="label">Credit Note #:</td>
+                    <td class="value">${creditNote.credit_note_number}</td>
+                  </tr>
+                  <tr>
+                    <td class="label">Date:</td>
+                    <td class="value">${formatDate(creditNote.credit_note_date)}</td>
+                  </tr>
+                  <tr>
+                    <td class="label">Status:</td>
+                    <td class="value">${creditNote.status.toUpperCase()}</td>
+                  </tr>
+                  <tr>
+                    <td class="label">Amount:</td>
+                    <td class="value" style="font-weight: bold; color: #2BB673;">${formatCurrency(creditNote.total_amount)}</td>
+                  </tr>
+                </table>
+              </div>
             </div>
           </div>
         </div>
@@ -530,15 +506,15 @@ export const generateCreditNotePDF = (creditNote: CreditNotePDFData, company?: C
                 <th style="width: 10%;">Qty</th>
                 <th style="width: 15%;">Unit Price</th>
                 <th style="width: 10%;">Tax %</th>
-                <th style="width: 15%;">Tax Amount</th>
-                <th style="width: 15%;">Line Total</th>
+                <th style="width: 10%;">Tax Amount</th>
+                <th style="width: 10%;">Line Total</th>
               </tr>
             </thead>
             <tbody>
               ${creditNote.credit_note_items.map((item, index) => `
                 <tr>
                   <td class="center">${index + 1}</td>
-                  <td class="description-cell">${item.description || item.product_name || item.products?.name || 'Unknown Item'}</td>
+                  <td class="description-cell">${item.description || item.products?.name || 'Unknown Item'}</td>
                   <td class="center">${item.quantity}</td>
                   <td class="amount-cell">${formatCurrency(item.unit_price)}</td>
                   <td class="center">${item.tax_percentage}%</td>
@@ -570,35 +546,15 @@ export const generateCreditNotePDF = (creditNote: CreditNotePDFData, company?: C
               <td class="label">Applied Amount:</td>
               <td class="amount">${formatCurrency(creditNote.applied_amount)}</td>
             </tr>
-            <tr class="balance-row">
+            <tr class="total-row">
               <td class="label">REMAINING BALANCE:</td>
               <td class="amount">${formatCurrency(creditNote.balance)}</td>
             </tr>
           </table>
         </div>
-
-        <!-- Notes Section -->
-        ${creditNote.notes || creditNote.terms_and_conditions ? `
-        <div class="notes-section">
-          ${creditNote.notes ? `
-          <div class="notes">
-            <div class="section-subtitle">Notes</div>
-            <div class="notes-content">${creditNote.notes}</div>
-          </div>
-          ` : ''}
-          
-          ${creditNote.terms_and_conditions ? `
-          <div class="terms">
-            <div class="section-subtitle">Terms & Conditions</div>
-            <div class="terms-content">${creditNote.terms_and_conditions}</div>
-          </div>
-          ` : ''}
-        </div>
-        ` : ''}
         
         <!-- Footer -->
         <div class="footer">
-          This credit note was generated on ${new Date().toLocaleString()}<br>
           <em>This credit note can be applied against future invoices or refunded as per our terms</em>
         </div>
       </div>
@@ -609,14 +565,12 @@ export const generateCreditNotePDF = (creditNote: CreditNotePDFData, company?: C
   printWindow.document.write(htmlContent);
   printWindow.document.close();
 
-  // Wait for content to load before printing
   printWindow.onload = () => {
     setTimeout(() => {
       printWindow.print();
     }, 500);
   };
 
-  // Fallback if onload doesn't fire
   setTimeout(() => {
     if (printWindow && !printWindow.closed) {
       printWindow.print();
