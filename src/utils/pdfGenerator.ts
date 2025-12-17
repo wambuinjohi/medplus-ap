@@ -206,50 +206,74 @@ export const generatePDF = (data: DocumentData) => {
         }
         
         .header {
-          display: flex;
-          justify-content: space-between;
-          align-items: flex-start;
+          display: grid;
+          grid-template-columns: 1fr;
+          grid-template-rows: auto auto;
           margin-bottom: 30px;
+          gap: 20px;
+        }
+
+        .header-row-1 {
+          display: grid;
+          grid-template-columns: 20% 80%;
+          gap: 20px;
+          align-items: flex-start;
           padding-bottom: 20px;
           border-bottom: 2px solid #2BB673;
         }
-        
-        .company-info {
-          flex: 1;
+
+        .header-row-2 {
+          display: grid;
+          grid-template-columns: 50% 50%;
+          gap: 20px;
         }
-        
+
+        .company-info {
+          display: contents;
+        }
+
         .logo {
-          width: 320px;
-          height: 160px;
-          margin-bottom: 15px;
+          width: 100%;
+          height: 120px;
           border-radius: 8px;
           overflow: hidden;
+          grid-column: 1;
+          grid-row: 1;
         }
-        
+
         .logo img {
           width: 100%;
           height: 100%;
           object-fit: contain;
         }
-        
+
+        .company-details-block {
+          grid-column: 2;
+          grid-row: 1;
+        }
+
         .company-name {
-          font-size: 24px;
+          font-size: 20px;
           font-weight: bold;
-          margin-bottom: 5px;
+          margin-bottom: 8px;
           color: #2BB673;
         }
-        
+
         .company-details {
-          font-size: 11px;
+          font-size: 10px;
           line-height: 1.6;
           color: #666;
           margin-bottom: 0;
         }
-        
+
         .document-info {
           text-align: right;
-          flex: 1;
-          max-width: 300px;
+          width: 100%;
+        }
+
+        .customer-info-block {
+          text-align: left;
+          width: 100%;
         }
         
         .document-title {
