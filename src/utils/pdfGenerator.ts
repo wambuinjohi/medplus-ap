@@ -497,9 +497,11 @@ export const generatePDF = (data: DocumentData) => {
         
         .notes-content, .terms-content {
           font-size: 10px;
-          line-height: 1.6;
-          color: #666;
+          line-height: 1.5;
+          color: #333;
           white-space: pre-wrap;
+          word-wrap: break-word;
+          overflow-wrap: break-word;
         }
         
         .footer {
