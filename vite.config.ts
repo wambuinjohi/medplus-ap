@@ -8,6 +8,10 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
+    hmr: {
+      host: typeof window !== 'undefined' ? window.location.hostname : 'localhost',
+      protocol: typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'wss' : 'ws',
+    },
   },
   plugins: [
     react(),
