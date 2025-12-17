@@ -215,7 +215,7 @@ export const generatePDF = (data: DocumentData) => {
 
         .header-row-1 {
           display: grid;
-          grid-template-columns: 20% 80%;
+          grid-template-columns: 1fr 2fr;
           gap: 20px;
           align-items: flex-start;
           padding-bottom: 20px;
