@@ -973,6 +973,42 @@ export const generatePDF = (data: DocumentData) => {
   return printWindow;
 };
 
+// Function for generating payment receipt PDF with payment details
+export const generatePaymentReceiptPDF = async (payment: any, company?: CompanyDetails) => {
+  const documentData: DocumentData = {
+    type: 'receipt',
+    number: payment.number || payment.payment_number || `REC-${Date.now()}`,
+    date: payment.date || payment.payment_date || new Date().toISOString().split('T')[0],
+    company: company,
+    customer: {
+      name: payment.customer || payment.customers?.name || 'Unknown Customer',
+      email: payment.customers?.email,
+      phone: payment.customers?.phone,
+    },
+    // Add payment allocations as items to display in table
+    items: (payment.payment_allocations || []).map((allocation: any) => ({
+      description: `Invoice ${allocation.invoice_number} - ${allocation.invoice_date ? new Date(allocation.invoice_date).toLocaleDateString() : 'N/A'}`,
+      quantity: 1,
+      unit_price: allocation.allocated_amount || 0,
+      tax_percentage: 0,
+      tax_amount: 0,
+      tax_inclusive: false,
+      line_total: allocation.allocated_amount || 0,
+      unit_of_measure: 'payment',
+    })),
+    subtotal: typeof payment.amount === 'string' ?
+      parseFloat(payment.amount.replace('$', '').replace(',', '')) :
+      payment.amount,
+    tax_amount: 0,
+    total_amount: typeof payment.amount === 'string' ?
+      parseFloat(payment.amount.replace('$', '').replace(',', '')) :
+      payment.amount,
+    notes: `Payment Method: ${payment.payment_method?.replace('_', ' ') || payment.method?.replace('_', ' ') || 'Unknown'}\nReference: ${payment.reference_number || 'N/A'}`,
+  };
+
+  return generatePDF(documentData);
+};
+
 // Specific function for invoice PDF generation
 export const downloadInvoicePDF = async (invoice: any, documentType: 'INVOICE' | 'PROFORMA' = 'INVOICE', company?: CompanyDetails) => {
   const documentData: DocumentData = {
