@@ -277,37 +277,39 @@ export const generatePDF = (data: DocumentData) => {
         }
         
         .document-title {
-          font-size: 28px;
+          font-size: 22px;
           font-weight: bold;
-          margin: 0 0 15px 0;
+          margin: 0 0 12px 0;
           color: #2DAAE1;
           text-transform: uppercase;
           letter-spacing: 1px;
+          text-align: right;
         }
-        
+
         .document-details {
           background: #f8f9fa;
-          padding: 15px;
+          padding: 12px;
           border-radius: 8px;
           border: 1px solid #e9ecef;
         }
-        
+
         .document-details table {
           width: 100%;
           border-collapse: collapse;
         }
-        
+
         .document-details td {
-          padding: 5px 0;
+          padding: 4px 0;
           border: none;
+          font-size: 11px;
         }
-        
+
         .document-details .label {
           font-weight: bold;
           color: #495057;
-          width: 40%;
+          width: 50%;
         }
-        
+
         .document-details .value {
           text-align: right;
           color: #212529;
