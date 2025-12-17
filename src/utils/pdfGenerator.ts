@@ -487,11 +487,12 @@ export const generatePDF = (data: DocumentData) => {
         }
         
         .section-subtitle {
-          font-size: 12px;
+          font-size: 11px;
           font-weight: bold;
           color: #2DAAE1;
-          margin: 0 0 10px 0;
+          margin: 0 0 8px 0;
           text-transform: uppercase;
+          letter-spacing: 0.5px;
         }
         
         .notes-content, .terms-content {
