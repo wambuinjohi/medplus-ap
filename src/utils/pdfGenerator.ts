@@ -1228,28 +1228,6 @@ export const generateCustomerStatementPDF = async (customer: any, invoices: any[
   return generatePDF(documentData);
 };
 
-// Function for generating payment receipt PDF
-export const generatePaymentReceiptPDF = async (payment: any, company?: CompanyDetails) => {
-  const documentData: DocumentData = {
-    type: 'receipt', // Use receipt type for payment receipts
-    number: payment.number || payment.payment_number || `REC-${Date.now()}`,
-    date: payment.date || payment.payment_date || new Date().toISOString().split('T')[0],
-    company: company, // Pass company details
-    customer: {
-      name: payment.customer || payment.customers?.name || 'Unknown Customer',
-      email: payment.customers?.email,
-      phone: payment.customers?.phone,
-    },
-    total_amount: typeof payment.amount === 'string' ?
-      parseFloat(payment.amount.replace('$', '').replace(',', '')) :
-      payment.amount,
-    notes: `Payment received via ${payment.payment_method?.replace('_', ' ') || payment.method?.replace('_', ' ') || 'Unknown method'}\n\nReference: ${payment.reference_number || 'N/A'}\nInvoice: ${payment.payment_allocations?.[0]?.invoice_number || 'N/A'}`,
-    terms_and_conditions: 'Thank you for your payment. This receipt confirms that payment has been received and processed.',
-  };
-
-  return generatePDF(documentData);
-};
-
 // Function for generating remittance advice PDF
 export const downloadRemittancePDF = async (remittance: any, company?: CompanyDetails) => {
   const documentData: DocumentData = {
