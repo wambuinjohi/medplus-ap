@@ -934,18 +934,18 @@ export const generatePDF = (data: DocumentData) => {
 
         <!-- Bank Details (invoice only) -->
         ${data.type === 'invoice' ? `
-        <div class="bank-details" style="text-align: left;">
-          <div style="font-weight: 800; font-size: 12px; text-align: center; margin-bottom: 8px;">BANKING DETAILS</div>
-          <table style="width: 100%; font-size: 10px; border-collapse: collapse;">
-            <tr><td style="padding: 4px 8px; width: 40%; font-weight: bold;">Account Name:</td><td style="padding: 4px 8px;">MEDPLUS AFRICA LIMITED</td></tr>
-            <tr><td style="padding: 4px 8px; font-weight: bold;">Bank Name :</td><td style="padding: 4px 8px;">ABSA BANK</td></tr>
-            <tr><td style="padding: 4px 8px; font-weight: bold;">Account No</td><td style="padding: 4px 8px;">2047138798</td></tr>
-            <tr><td style="padding: 4px 8px; font-weight: bold;">Branch Name :</td><td style="padding: 4px 8px;">RONGAI</td></tr>
-            <tr><td style="padding: 4px 8px; font-weight: bold;">Bank code  :</td><td style="padding: 4px 8px;">03</td></tr>
-            <tr><td style="padding: 4px 8px; font-weight: bold;">Branch code :</td><td style="padding: 4px 8px;">52</td></tr>
-            <tr><td style="padding: 4px 8px; font-weight: bold;">Swift code  :</td><td style="padding: 4px 8px;">BARCKENX</td></tr>
-            <tr><td style="padding: 4px 8px; font-weight: bold;">Paybill No:</td><td style="padding: 4px 8px;">303030</td></tr>
-          </table>
+        <div class="bank-details">
+          <div style="font-weight: 700; font-size: 11px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Banking Details</div>
+          <div style="font-size: 10px; line-height: 1.6; word-wrap: break-word; overflow-wrap: break-word;">
+            <span style="font-weight: bold;">Account Name:</span> MEDPLUS AFRICA LIMITED <span style="margin: 0 4px; color: #999;">•</span>
+            <span style="font-weight: bold;">Bank:</span> ABSA BANK <span style="margin: 0 4px; color: #999;">•</span>
+            <span style="font-weight: bold;">Account No:</span> 2047138798 <span style="margin: 0 4px; color: #999;">•</span>
+            <span style="font-weight: bold;">Branch:</span> RONGAI <span style="margin: 0 4px; color: #999;">•</span>
+            <span style="font-weight: bold;">Bank Code:</span> 03 <span style="margin: 0 4px; color: #999;">•</span>
+            <span style="font-weight: bold;">Branch Code:</span> 52 <span style="margin: 0 4px; color: #999;">•</span>
+            <span style="font-weight: bold;">Swift Code:</span> BARCKENX <span style="margin: 0 4px; color: #999;">•</span>
+            <span style="font-weight: bold;">Paybill No:</span> 303030
+          </div>
         </div>
         ` : ''}
 
