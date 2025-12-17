@@ -630,7 +630,7 @@ export const generatePDF = (data: DocumentData) => {
             padding: 20px;
           }
         }
-        \n        .payment-banner {\n          background: #f8f9fa;\n          padding: 8px 15px;\n          margin-bottom: 20px;\n          border-left: 4px solid #2BB673;\n          font-size: 10px;\n          color: #333;\n          text-align: center;\n          border-radius: 4px;\n          font-weight: 600;\n        }\n        \n        .bank-details {\n          background: #f8f9fa;\n          padding: 10px;\n          margin: 15px 0;\n          border-left: 4px solid #2BB673;\n          font-size: 10px;\n          color: #333;\n          text-align: center;\n          border-radius: 4px;\n          font-weight: 600;\n        }\n      </style>
+        \n        .payment-banner {\n          background: transparent;\n          padding: 8px 0;\n          margin-bottom: 20px;\n          border-left: none;\n          font-size: 10px;\n          color: #333;\n          text-align: center;\n          border-radius: 0;\n          font-weight: 600;\n        }\n        \n        .bank-details {\n          background: transparent;\n          padding: 0;\n          margin: 20px 0;\n          border-left: none;\n          font-size: 10px;\n          color: #333;\n          text-align: left;\n          border-radius: 0;\n          font-weight: 400;\n        }\n      </style>
     </head>
     <body>
       <div class="page">
