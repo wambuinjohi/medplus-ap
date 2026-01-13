@@ -924,8 +924,8 @@ export const generatePDF = (data: DocumentData) => {
         </div>
         ` : ''}
 
-        <!-- Terms & Conditions (invoice only) -->
-        ${data.type === 'invoice' ? `
+        <!-- Terms & Conditions -->
+        ${(data.terms_and_conditions || DEFAULT_TERMS_TEXT) && ['invoice', 'quotation', 'proforma', 'lpo', 'delivery', 'receipt'].includes(data.type) ? `
         <div class="notes-section">
           <div class="terms">
             <div class="section-subtitle">Terms &amp; Conditions</div>
