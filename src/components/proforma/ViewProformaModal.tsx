@@ -32,6 +32,7 @@ import {
   Trash2
 } from 'lucide-react';
 import { useDeleteProforma } from '@/hooks/useProforma';
+import { TermsAndConditions } from '@/components/ui/TermsAndConditions';
 
 interface ProformaItem {
   id: string;
