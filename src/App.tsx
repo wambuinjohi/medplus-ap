@@ -287,6 +287,14 @@ const App = () => {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/app/settings/terms"
+            element={
+              <ProtectedRoute>
+                <TermsAndConditionsSettings />
+              </ProtectedRoute>
+            }
+          />
 
           <Route
             path="/app/setup-test"
