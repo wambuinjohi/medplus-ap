@@ -292,34 +292,11 @@ export const ViewLPOModal = ({
             </Card>
           )}
 
-          {/* Notes and Terms */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {lpo.notes && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm">Notes</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                    {lpo.notes}
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-            
-            {lpo.terms_and_conditions && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm">Terms & Conditions</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                    {lpo.terms_and_conditions}
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-          </div>
+          {/* Terms and Conditions */}
+          <TermsAndConditions
+            terms={lpo.terms_and_conditions}
+            notes={lpo.notes}
+          />
         </div>
 
         <DialogFooter>
