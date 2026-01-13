@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import type { CreditNote } from '@/hooks/useCreditNotes';
 import { useCreditNotePDFDownload } from '@/hooks/useCreditNotePDF';
+import { TermsAndConditions } from '@/components/ui/TermsAndConditions';
 
 interface ViewCreditNoteModalProps {
   open: boolean;
@@ -220,32 +221,12 @@ export function ViewCreditNoteModal({ open, onOpenChange, creditNote }: ViewCred
             </CardContent>
           </Card>
 
-          {/* Notes */}
-          {(creditNote.notes || creditNote.terms_and_conditions) && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Additional Information</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {creditNote.notes && (
-                  <div>
-                    <h4 className="font-medium mb-2">Notes:</h4>
-                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                      {creditNote.notes}
-                    </p>
-                  </div>
-                )}
-                {creditNote.terms_and_conditions && (
-                  <div>
-                    <h4 className="font-medium mb-2">Terms and Conditions:</h4>
-                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                      {creditNote.terms_and_conditions}
-                    </p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
+          {/* Terms and Conditions */}
+          <TermsAndConditions
+            terms={creditNote.terms_and_conditions}
+            notes={creditNote.notes}
+            variant="compact"
+          />
 
           {/* Action Buttons */}
           <div className="flex justify-between items-center pt-4 border-t">

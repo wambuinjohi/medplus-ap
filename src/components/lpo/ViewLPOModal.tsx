@@ -11,10 +11,10 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Separator } from '@/components/ui/separator';
-import { 
-  ShoppingCart, 
-  Download, 
-  Send, 
+import {
+  ShoppingCart,
+  Download,
+  Send,
   Calendar,
   User,
   Package,
@@ -26,6 +26,7 @@ import {
   Phone,
   Edit
 } from 'lucide-react';
+import { TermsAndConditions } from '@/components/ui/TermsAndConditions';
 
 interface ViewLPOModalProps {
   open: boolean;
@@ -291,34 +292,11 @@ export const ViewLPOModal = ({
             </Card>
           )}
 
-          {/* Notes and Terms */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {lpo.notes && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm">Notes</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                    {lpo.notes}
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-            
-            {lpo.terms_and_conditions && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm">Terms & Conditions</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                    {lpo.terms_and_conditions}
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-          </div>
+          {/* Terms and Conditions */}
+          <TermsAndConditions
+            terms={lpo.terms_and_conditions}
+            notes={lpo.notes}
+          />
         </div>
 
         <DialogFooter>

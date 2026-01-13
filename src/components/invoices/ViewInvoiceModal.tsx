@@ -35,6 +35,7 @@ import {
   Trash2
 } from 'lucide-react';
 import { useDeleteInvoice } from '@/hooks/useInvoicesFixed';
+import { TermsAndConditions } from '@/components/ui/TermsAndConditions';
 
 interface ViewInvoiceModalProps {
   open: boolean;
@@ -238,15 +239,6 @@ export function ViewInvoiceModal({
                   </div>
                 </div>
               </div>
-
-              {invoice.notes && (
-                <div>
-                  <span className="text-muted-foreground text-sm">Notes:</span>
-                  <div className="text-sm mt-1 p-2 bg-muted/50 rounded">
-                    {invoice.notes}
-                  </div>
-                </div>
-              )}
             </CardContent>
           </Card>
         </div>
@@ -335,6 +327,12 @@ export function ViewInvoiceModal({
             </div>
           </CardContent>
         </Card>
+
+        {/* Terms and Conditions */}
+        <TermsAndConditions
+          terms={invoice.terms_and_conditions}
+          notes={invoice.notes}
+        />
 
         <DialogFooter>
           <Button

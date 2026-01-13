@@ -26,6 +26,8 @@ export interface CreditNotePDFData extends CreditNote {
   invoices?: {
     invoice_number: string;
   };
+  terms_and_conditions?: string;
+  notes?: string;
 }
 
 export interface CompanyData {
@@ -552,7 +554,25 @@ export const generateCreditNotePDF = (creditNote: CreditNotePDFData, company?: C
             </tr>
           </table>
         </div>
-        
+
+        <!-- Notes and Terms & Conditions -->
+        ${creditNote.notes || creditNote.terms_and_conditions ? `
+        <div style="margin-top: 30px; border-top: 1px solid #ddd; padding-top: 20px;">
+          ${creditNote.notes ? `
+          <div style="margin-bottom: 20px;">
+            <h3 style="margin: 0 0 10px 0; font-size: 13px; font-weight: bold;">Notes</h3>
+            <p style="margin: 0; white-space: pre-wrap; font-size: 11px; line-height: 1.6;">${creditNote.notes}</p>
+          </div>
+          ` : ''}
+          ${creditNote.terms_and_conditions ? `
+          <div>
+            <h3 style="margin: 0 0 10px 0; font-size: 13px; font-weight: bold;">Terms &amp; Conditions</h3>
+            <p style="margin: 0; white-space: pre-wrap; font-size: 11px; line-height: 1.6;">${creditNote.terms_and_conditions}</p>
+          </div>
+          ` : ''}
+        </div>
+        ` : ''}
+
         <!-- Footer -->
         <div class="footer">
           <em>This credit note can be applied against future invoices or refunded as per our terms</em>
