@@ -310,43 +310,35 @@ export const ViewDeliveryNoteModal = ({
             </Card>
           )}
 
-          {/* Delivery Personnel and Notes */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {(mappedDeliveryNote.delivered_by || mappedDeliveryNote.received_by) && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm">Personnel</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  {mappedDeliveryNote.delivered_by && (
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Delivered By</p>
-                      <p className="text-sm">{mappedDeliveryNote.delivered_by}</p>
-                    </div>
-                  )}
-                  {mappedDeliveryNote.received_by && (
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Received By</p>
-                      <p className="text-sm">{mappedDeliveryNote.received_by}</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-            
-            {mappedDeliveryNote.notes && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm">Delivery Notes</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                    {mappedDeliveryNote.notes}
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-          </div>
+          {/* Delivery Personnel */}
+          {(mappedDeliveryNote.delivered_by || mappedDeliveryNote.received_by) && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">Personnel</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {mappedDeliveryNote.delivered_by && (
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Delivered By</p>
+                    <p className="text-sm">{mappedDeliveryNote.delivered_by}</p>
+                  </div>
+                )}
+                {mappedDeliveryNote.received_by && (
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Received By</p>
+                    <p className="text-sm">{mappedDeliveryNote.received_by}</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Terms and Conditions */}
+          <TermsAndConditions
+            terms={mappedDeliveryNote.terms_and_conditions}
+            notes={mappedDeliveryNote.notes}
+            variant="compact"
+          />
         </div>
 
         <DialogFooter>
