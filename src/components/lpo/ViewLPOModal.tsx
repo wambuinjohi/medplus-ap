@@ -11,10 +11,10 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Separator } from '@/components/ui/separator';
-import { 
-  ShoppingCart, 
-  Download, 
-  Send, 
+import {
+  ShoppingCart,
+  Download,
+  Send,
   Calendar,
   User,
   Package,
@@ -26,6 +26,7 @@ import {
   Phone,
   Edit
 } from 'lucide-react';
+import { TermsAndConditions } from '@/components/ui/TermsAndConditions';
 
 interface ViewLPOModalProps {
   open: boolean;
