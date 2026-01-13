@@ -239,15 +239,6 @@ export function ViewInvoiceModal({
                   </div>
                 </div>
               </div>
-
-              {invoice.notes && (
-                <div>
-                  <span className="text-muted-foreground text-sm">Notes:</span>
-                  <div className="text-sm mt-1 p-2 bg-muted/50 rounded">
-                    {invoice.notes}
-                  </div>
-                </div>
-              )}
             </CardContent>
           </Card>
         </div>
