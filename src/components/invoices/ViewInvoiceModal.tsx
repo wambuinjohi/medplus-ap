@@ -337,6 +337,12 @@ export function ViewInvoiceModal({
           </CardContent>
         </Card>
 
+        {/* Terms and Conditions */}
+        <TermsAndConditions
+          terms={invoice.terms_and_conditions}
+          notes={invoice.notes}
+        />
+
         <DialogFooter>
           <Button
             variant="outline"
