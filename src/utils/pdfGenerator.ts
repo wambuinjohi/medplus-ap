@@ -95,6 +95,8 @@ const DEFAULT_TERMS_TEXT = `
       <li>Where applicable, transport will be invoiced seperately</li>
       <li>The company will not be responsible for any loss or damage of goods on transit collected by the customer or sent via customer's courier A/C</li>
       <li>The VAT is inclusive where applicable</li>
+      <li>Payment strictly as per approved terms. Interest of 2% per month will be charged on overdue invoices</li>
+      <li>E.&O.E</li>
     </ol>
   </div>
 `;

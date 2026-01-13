@@ -269,19 +269,19 @@ export const ViewDeliveryNoteModal = ({
                     {mappedDeliveryNote.delivery_items.map((item) => {
                       const isFullyDelivered = item.quantity_delivered >= item.quantity_ordered;
                       const isPartiallyDelivered = item.quantity_delivered > 0 && item.quantity_delivered < item.quantity_ordered;
-                      
+
                       return (
                         <TableRow key={item.id}>
                           <TableCell className="font-medium">{item.product_name}</TableCell>
                           <TableCell>{item.description}</TableCell>
                           <TableCell>{item.quantity_ordered}</TableCell>
                           <TableCell className={
-                            isFullyDelivered ? 'text-success' : 
+                            isFullyDelivered ? 'text-success' :
                             isPartiallyDelivered ? 'text-warning' : 'text-muted-foreground'
                           }>
                             {item.quantity_delivered}
                           </TableCell>
-                          <TableCell>{item.unit_of_measure}</TableCell>
+                          <TableCell>{(item.products as any)?.unit_of_measure || item.unit_of_measure || 'pcs'}</TableCell>
                           <TableCell>
                             {isFullyDelivered ? (
                               <Badge className="text-xs bg-success text-success-foreground">
