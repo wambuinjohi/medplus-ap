@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import type { CreditNote } from '@/hooks/useCreditNotes';
 import { useCreditNotePDFDownload } from '@/hooks/useCreditNotePDF';
+import { TermsAndConditions } from '@/components/ui/TermsAndConditions';
 
 interface ViewCreditNoteModalProps {
   open: boolean;
