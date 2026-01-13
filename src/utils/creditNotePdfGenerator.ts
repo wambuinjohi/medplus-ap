@@ -26,6 +26,8 @@ export interface CreditNotePDFData extends CreditNote {
   invoices?: {
     invoice_number: string;
   };
+  terms_and_conditions?: string;
+  notes?: string;
 }
 
 export interface CompanyData {
