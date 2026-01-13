@@ -35,6 +35,7 @@ import {
 import { BiolegendLogo } from '@/components/ui/biolegend-logo';
 import { useCompanies } from '@/hooks/useDatabase';
 import { useDeleteQuotation } from '@/hooks/useQuotationItems';
+import { TermsAndConditions } from '@/components/ui/TermsAndConditions';
 
 interface ViewQuotationModalProps {
   open: boolean;
