@@ -24,6 +24,7 @@ import {
   Clock,
   AlertTriangle
 } from 'lucide-react';
+import { TermsAndConditions } from '@/components/ui/TermsAndConditions';
 
 interface DeliveryItem {
   id: string;
