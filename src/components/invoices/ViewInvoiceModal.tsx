@@ -35,6 +35,7 @@ import {
   Trash2
 } from 'lucide-react';
 import { useDeleteInvoice } from '@/hooks/useInvoicesFixed';
+import { TermsAndConditions } from '@/components/ui/TermsAndConditions';
 
 interface ViewInvoiceModalProps {
   open: boolean;
