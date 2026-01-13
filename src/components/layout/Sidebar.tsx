@@ -102,6 +102,7 @@ const sidebarItems: SidebarItem[] = [
     children: [
       { title: 'Company Settings', icon: Building2, href: '/app/settings/company' },
       { title: 'User Management', icon: Users, href: '/app/settings/users' },
+      { title: 'Terms & Conditions', icon: FileText, href: '/app/settings/terms' },
       { title: 'Database Setup', icon: Package, href: '/database-setup' }
     ]
   }
