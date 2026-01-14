@@ -35,6 +35,7 @@ import { calculateItemTax, calculateDocumentTotals, formatCurrency, type Taxable
 import { generateNextProformaNumber } from '@/utils/improvedProformaFix';
 import { ProformaErrorSolution } from '@/components/fixes/ProformaErrorSolution';
 import { toast } from 'sonner';
+import { getTermsAndConditions } from '@/utils/termsManager';
 
 interface CreateProformaModalOptimizedProps {
   open: boolean;
@@ -54,7 +55,7 @@ export const CreateProformaModalOptimized = ({
     proforma_date: new Date().toISOString().split('T')[0],
     valid_until: '',
     notes: '',
-    terms_and_conditions: '',
+    terms_and_conditions: getTermsAndConditions(),
   });
 
   const [items, setItems] = useState<ProformaItem[]>([]);

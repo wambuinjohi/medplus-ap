@@ -38,6 +38,7 @@ import { setupProformaTables, checkProformaTables } from '@/utils/proformaDataba
 import { ProformaErrorNotification } from '@/components/fixes/ProformaErrorNotification';
 import { autoFixProformaFunction } from '@/utils/immediateProformaFix';
 import { toast } from 'sonner';
+import { getTermsAndConditions } from '@/utils/termsManager';
 
 interface CreateProformaModalProps {
   open: boolean;
@@ -57,7 +58,7 @@ export const CreateProformaModalFixed = ({
     proforma_date: new Date().toISOString().split('T')[0],
     valid_until: '',
     notes: '',
-    terms_and_conditions: '',
+    terms_and_conditions: getTermsAndConditions(),
   });
 
   const [items, setItems] = useState<ProformaItem[]>([]);
