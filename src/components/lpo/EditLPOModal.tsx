@@ -32,6 +32,7 @@ import { useUpdateLPOWithItems, useAllSuppliersAndCustomers, useProducts, useCom
 import { toast } from 'sonner';
 import { validateLPOEdit } from '@/utils/lpoValidation';
 import { parseErrorMessageWithCodes } from '@/utils/errorHelpers';
+import { getTermsAndConditions } from '@/utils/termsManager';
 
 interface LPOItem {
   id: string;
@@ -67,7 +68,7 @@ export const EditLPOModal = ({
     contact_person: '',
     contact_phone: '',
     notes: '',
-    terms_and_conditions: '',
+    terms_and_conditions: getTermsAndConditions(),
     status: 'draft',
   });
 
@@ -93,7 +94,7 @@ export const EditLPOModal = ({
         contact_person: lpo.contact_person || '',
         contact_phone: lpo.contact_phone || '',
         notes: lpo.notes || '',
-        terms_and_conditions: lpo.terms_and_conditions || '',
+        terms_and_conditions: lpo.terms_and_conditions || getTermsAndConditions(),
         status: lpo.status || 'draft',
       });
 

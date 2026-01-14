@@ -27,6 +27,7 @@ import {
 import { useUpdateCreditNote } from '@/hooks/useCreditNotes';
 import { toast } from 'sonner';
 import type { CreditNote } from '@/hooks/useCreditNotes';
+import { getTermsAndConditions } from '@/utils/termsManager';
 
 interface EditCreditNoteModalProps {
   open: boolean;
@@ -44,7 +45,7 @@ export function EditCreditNoteModal({
   const [creditNoteDate, setCreditNoteDate] = useState('');
   const [reason, setReason] = useState('');
   const [notes, setNotes] = useState('');
-  const [termsAndConditions, setTermsAndConditions] = useState('');
+  const [termsAndConditions, setTermsAndConditions] = useState(getTermsAndConditions());
   const [affectsInventory, setAffectsInventory] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -56,7 +57,7 @@ export function EditCreditNoteModal({
       setCreditNoteDate(creditNote.credit_note_date);
       setReason(creditNote.reason || '');
       setNotes(creditNote.notes || '');
-      setTermsAndConditions(creditNote.terms_and_conditions || '');
+      setTermsAndConditions(creditNote.terms_and_conditions || getTermsAndConditions());
       setAffectsInventory(creditNote.affects_inventory);
     }
   }, [creditNote, open]);

@@ -32,6 +32,7 @@ import {
 import { useCustomers, useProducts, useGenerateDocumentNumber, useTaxSettings } from '@/hooks/useDatabase';
 import { useCreateProformaWithItems } from '@/hooks/useQuotationItems';
 import { toast } from 'sonner';
+import { getTermsAndConditions } from '@/utils/termsManager';
 
 interface ProformaItem {
   id: string;
@@ -64,7 +65,7 @@ export const CreateProformaModal = ({
     proforma_date: new Date().toISOString().split('T')[0],
     valid_until: '',
     notes: '',
-    terms_and_conditions: '',
+    terms_and_conditions: getTermsAndConditions(),
   });
 
   const [items, setItems] = useState<ProformaItem[]>([]);

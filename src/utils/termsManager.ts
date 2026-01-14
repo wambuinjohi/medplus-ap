@@ -3,9 +3,7 @@
 
 const TERMS_STORAGE_KEY = 'default_terms_and_conditions';
 
-const DEFAULT_TERMS = `Terms and Conditions
-
-1. Payment Terms
+export const DEFAULT_TERMS = `1. Payment Terms
    Payment strictly as per approved terms. Interest of 2% per month will be charged on overdue invoices.
 
 2. Goods Return Policy
@@ -30,8 +28,9 @@ const DEFAULT_TERMS = `Terms and Conditions
    E.&O.E (Errors and Omissions Excepted)`;
 
 /**
- * Get the current terms and conditions
+ * Get the current terms and conditions (synchronous fallback)
  * Returns stored terms from localStorage, or DEFAULT_TERMS if not set
+ * Note: For fresh terms from database, use useCompanyTerms hook instead
  */
 export const getTermsAndConditions = (): string => {
   try {

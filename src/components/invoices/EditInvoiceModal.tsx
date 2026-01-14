@@ -33,6 +33,7 @@ import { useCustomers, useProducts, useTaxSettings } from '@/hooks/useDatabase';
 import { useUpdateInvoiceWithItems } from '@/hooks/useQuotationItems';
 import { useCurrentCompany } from '@/contexts/CompanyContext';
 import { toast } from 'sonner';
+import { getTermsAndConditions } from '@/utils/termsManager';
 
 interface InvoiceItem {
   id: string;
@@ -62,7 +63,7 @@ export function EditInvoiceModal({ open, onOpenChange, onSuccess, invoice }: Edi
   const [dueDate, setDueDate] = useState('');
   const [lpoNumber, setLpoNumber] = useState('');
   const [notes, setNotes] = useState('');
-  const [termsAndConditions, setTermsAndConditions] = useState('');
+  const [termsAndConditions, setTermsAndConditions] = useState(getTermsAndConditions());
   
   const [items, setItems] = useState<InvoiceItem[]>([]);
   const [searchProduct, setSearchProduct] = useState('');
@@ -86,7 +87,7 @@ export function EditInvoiceModal({ open, onOpenChange, onSuccess, invoice }: Edi
       setDueDate(invoice.due_date || '');
       setLpoNumber(invoice.lpo_number || '');
       setNotes(invoice.notes || '');
-      setTermsAndConditions(invoice.terms_and_conditions || '');
+      setTermsAndConditions(invoice.terms_and_conditions || getTermsAndConditions());
 
       // Convert invoice items to local format
       const invoiceItems = (invoice.invoice_items || []).map((item: any, index: number) => ({

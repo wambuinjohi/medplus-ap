@@ -35,6 +35,7 @@ import { useInvoicesFixed as useInvoices } from '@/hooks/useInvoicesFixed';
 import { useGenerateCreditNoteNumber } from '@/hooks/useCreditNotes';
 import { useCreateCreditNoteWithItems } from '@/hooks/useCreditNoteItems';
 import { toast } from 'sonner';
+import { getTermsAndConditions } from '@/utils/termsManager';
 
 interface CreditNoteItem {
   id: string;
@@ -69,7 +70,7 @@ export function CreateCreditNoteModal({
   const [creditNoteDate, setCreditNoteDate] = useState(new Date().toISOString().split('T')[0]);
   const [reason, setReason] = useState('');
   const [notes, setNotes] = useState('');
-  const [termsAndConditions, setTermsAndConditions] = useState('All credits must be used within 90 days.');
+  const [termsAndConditions, setTermsAndConditions] = useState(getTermsAndConditions());
   const [affectsInventory, setAffectsInventory] = useState(false);
   
   const [items, setItems] = useState<CreditNoteItem[]>([]);

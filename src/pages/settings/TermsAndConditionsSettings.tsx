@@ -1,227 +1,213 @@
 import { useState, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
-import { FileText, Save, RotateCcw, Copy } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Loader2, Check, AlertCircle, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
+import { useCompanies } from '@/hooks/useDatabase';
+import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { getTermsAndConditions, setTermsAndConditions, resetTermsToDefault, DEFAULT_TERMS_EXPORT } from '@/utils/termsManager';
-import { TermsVerificationPanel } from '@/components/TermsVerificationPanel';
+import { DEFAULT_TERMS_EXPORT } from '@/utils/termsManager';
 
 export default function TermsAndConditionsSettings() {
+  const queryClient = useQueryClient();
+  const { data: companies } = useCompanies();
+  const { profile } = useAuth();
+  const currentCompany = companies?.[0];
+
   const [terms, setTerms] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [hasChanges, setHasChanges] = useState(false);
+  const [originalTerms, setOriginalTerms] = useState('');
 
+  // Fetch terms from database
   useEffect(() => {
-    loadTerms();
-  }, []);
+    const fetchTerms = async () => {
+      if (!currentCompany?.id) return;
 
-  const loadTerms = async () => {
-    try {
-      setIsLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
+      try {
+        setIsLoading(true);
+        const { data, error } = await supabase
+          .from('company_settings')
+          .select('terms_and_conditions')
+          .eq('company_id', currentCompany.id)
+          .single();
 
-      if (!user) {
-        setTerms(getTermsAndConditions());
-        return;
+        if (error) {
+          console.warn('Error fetching terms:', error);
+          setTerms(DEFAULT_TERMS_EXPORT);
+          setOriginalTerms(DEFAULT_TERMS_EXPORT);
+        } else {
+          const fetchedTerms = data?.terms_and_conditions || DEFAULT_TERMS_EXPORT;
+          setTerms(fetchedTerms);
+          setOriginalTerms(fetchedTerms);
+        }
+      } catch (error) {
+        console.error('Error fetching terms:', error);
+        setTerms(DEFAULT_TERMS_EXPORT);
+        setOriginalTerms(DEFAULT_TERMS_EXPORT);
+      } finally {
+        setIsLoading(false);
       }
+    };
 
-      // Load terms using the termsManager
-      const savedTerms = getTermsAndConditions();
-      setTerms(savedTerms);
-    } catch (error) {
-      console.error('Error loading terms:', error);
-      setTerms(getTermsAndConditions());
-    } finally {
-      setIsLoading(false);
-    }
+    fetchTerms();
+  }, [currentCompany?.id]);
+
+  const handleTermsChange = (value: string) => {
+    setTerms(value);
+    setHasChanges(value !== originalTerms);
   };
 
   const handleSave = async () => {
-    try {
-      setIsSaving(true);
-      const { data: { user } } = await supabase.auth.getUser();
+    if (!currentCompany?.id || !profile?.id) {
+      toast.error('Company or user information not available');
+      return;
+    }
 
-      if (!user) {
-        toast.error('You must be logged in to save settings');
-        return;
+    if (!terms.trim()) {
+      toast.error('Terms and conditions cannot be empty');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const { error } = await supabase
+        .from('company_settings')
+        .upsert(
+          {
+            company_id: currentCompany.id,
+            terms_and_conditions: terms,
+            updated_by: profile.id,
+            updated_at: new Date().toISOString(),
+          },
+          {
+            onConflict: 'company_id',
+          }
+        );
+
+      if (error) {
+        throw error;
       }
 
-      // Save using termsManager
-      setTermsAndConditions(terms);
-
+      setOriginalTerms(terms);
       setHasChanges(false);
-      toast.success('Terms & Conditions saved successfully');
+
+      // Invalidate related queries to refresh cached data
+      queryClient.invalidateQueries({
+        queryKey: ['company-terms', currentCompany?.id],
+      });
+
+      toast.success('Terms and conditions updated successfully!');
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to save terms';
+      toast.error(`Error: ${errorMessage}`);
       console.error('Error saving terms:', error);
-      toast.error('Failed to save Terms & Conditions');
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleReset = () => {
-    if (window.confirm('Are you sure you want to reset to default terms?')) {
-      resetTermsToDefault();
-      setTerms(getTermsAndConditions());
-      setHasChanges(true);
+    if (confirm('Are you sure you want to reset to default terms?')) {
+      setTerms(DEFAULT_TERMS_EXPORT);
+      setHasChanges(DEFAULT_TERMS_EXPORT !== originalTerms);
     }
-  };
-
-  const handleCopyDefault = () => {
-    setTerms(DEFAULT_TERMS_EXPORT);
-    setHasChanges(true);
-    toast.info('Default terms copied. Click Save to apply changes.');
-  };
-
-  const handleChange = (newTerms: string) => {
-    setTerms(newTerms);
-    setHasChanges(true);
   };
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <div className="text-muted-foreground">Loading Terms & Conditions...</div>
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center space-x-2">
-        <FileText className="h-6 w-6 text-primary" />
-        <h1 className="text-3xl font-bold">Terms & Conditions</h1>
+    <div className="max-w-4xl mx-auto space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Terms & Conditions</h1>
+        <p className="text-muted-foreground mt-2">
+          Manage the default terms and conditions for your company. These will be applied to all quotations, invoices, proformas, and other documents.
+        </p>
       </div>
 
-      <p className="text-muted-foreground">
-        Manage default terms and conditions that will be automatically applied to quotations, invoices, proforma invoices, and other documents.
-      </p>
+      <Alert>
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          Changes to terms and conditions will apply to all new documents. Existing documents will keep their original terms.
+        </AlertDescription>
+      </Alert>
 
-      {/* Verification Panel */}
-      <TermsVerificationPanel />
+      <Card>
+        <CardHeader>
+          <CardTitle>Terms & Conditions Text</CardTitle>
+          <CardDescription>
+            Edit the default terms that will appear on all your documents
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <label htmlFor="terms" className="text-sm font-medium">
+              Terms & Conditions Content
+            </label>
+            <Textarea
+              id="terms"
+              value={terms}
+              onChange={(e) => handleTermsChange(e.target.value)}
+              placeholder="Enter your terms and conditions..."
+              className="min-h-96 font-mono text-sm"
+            />
+            <p className="text-xs text-muted-foreground">
+              Total characters: {terms.length}
+            </p>
+          </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Editor */}
-        <div className="lg:col-span-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Edit Terms & Conditions</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="terms">Terms & Conditions Text</Label>
-                <Textarea
-                  id="terms"
-                  value={terms}
-                  onChange={(e) => handleChange(e.target.value)}
-                  placeholder="Enter your terms and conditions..."
-                  className="mt-2 min-h-[400px] font-mono text-sm"
-                />
-              </div>
-              <Separator />
-              <div className="flex gap-2">
-                <Button
-                  onClick={handleSave}
-                  disabled={isSaving || !hasChanges}
-                  className="flex items-center gap-2"
-                >
-                  <Save className="h-4 w-4" />
-                  {isSaving ? 'Saving...' : 'Save Changes'}
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={handleReset}
-                  className="flex items-center gap-2"
-                >
-                  <RotateCcw className="h-4 w-4" />
-                  Reset to Default
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+          <div className="flex gap-3 justify-end">
+            <Button
+              variant="outline"
+              onClick={handleReset}
+              disabled={isSaving}
+            >
+              <RotateCcw className="h-4 w-4 mr-2" />
+              Reset to Default
+            </Button>
+            <Button
+              onClick={handleSave}
+              disabled={isSaving || !hasChanges}
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Check className="h-4 w-4 mr-2" />
+                  Save Terms
+                </>
+              )}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
-        {/* Help Panel */}
-        <div className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Preview</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-sm text-muted-foreground whitespace-pre-wrap max-h-[400px] overflow-y-auto border rounded p-3 bg-muted/50">
-                {terms}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Quick Actions</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <Button
-                variant="outline"
-                onClick={handleCopyDefault}
-                className="w-full justify-start"
-              >
-                <Copy className="h-4 w-4 mr-2" />
-                Load Default Terms
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Where Used</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <div className="text-sm space-y-2">
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="bg-blue-50">Quotations</Badge>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="bg-green-50">Invoices</Badge>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="bg-purple-50">Proforma Invoices</Badge>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="bg-orange-50">Credit Notes</Badge>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="bg-indigo-50">LPOs</Badge>
-                </div>
-              </div>
-              <p className="text-xs text-muted-foreground mt-4">
-                Note: Document-specific terms will override these defaults.
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Tips</CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm space-y-3 text-muted-foreground">
-              <div>
-                <strong>Use clear sections:</strong> Organize terms with numbered items for better readability.
-              </div>
-              <div>
-                <strong>Be specific:</strong> Include payment terms, return policies, and liability clauses.
-              </div>
-              <div>
-                <strong>Professional tone:</strong> Keep the language formal and professional.
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+      <Card className="bg-blue-50 border-blue-200">
+        <CardHeader>
+          <CardTitle className="text-lg">Preview</CardTitle>
+          <CardDescription>
+            This is how your terms will appear on documents
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="bg-white p-4 rounded border border-blue-100 max-h-64 overflow-y-auto whitespace-pre-wrap text-sm">
+            {terms}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

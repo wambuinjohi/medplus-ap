@@ -37,6 +37,7 @@ import { toast } from 'sonner';
 import { validateLPO } from '@/utils/lpoValidation';
 import { validateSupplierSelection, ValidationResult } from '@/utils/customerSupplierValidation';
 import { parseErrorMessageWithCodes } from '@/utils/errorHelpers';
+import { getTermsAndConditions } from '@/utils/termsManager';
 
 interface LPOItem {
   id: string;
@@ -70,7 +71,7 @@ export const CreateLPOModal = ({
     contact_person: '',
     contact_phone: '',
     notes: '',
-    terms_and_conditions: 'Payment terms: Net 30 days\nDelivery: As per agreed schedule\nQuality: All items must meet specified standards',
+    terms_and_conditions: getTermsAndConditions(),
   });
 
   const [items, setItems] = useState<LPOItem[]>([]);

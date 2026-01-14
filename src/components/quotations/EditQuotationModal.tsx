@@ -32,6 +32,7 @@ import {
 import { useCustomers, useProducts, useTaxSettings, useCompanies } from '@/hooks/useDatabase';
 import { useUpdateQuotationWithItems } from '@/hooks/useQuotationItems';
 import { toast } from 'sonner';
+import { getTermsAndConditions } from '@/utils/termsManager';
 
 interface QuotationItem {
   id: string;
@@ -59,7 +60,7 @@ export function EditQuotationModal({ open, onOpenChange, onSuccess, quotation }:
   const [quotationDate, setQuotationDate] = useState('');
   const [validUntil, setValidUntil] = useState('');
   const [notes, setNotes] = useState('');
-  const [termsAndConditions, setTermsAndConditions] = useState('');
+  const [termsAndConditions, setTermsAndConditions] = useState(getTermsAndConditions());
   
   const [items, setItems] = useState<QuotationItem[]>([]);
   const [searchProduct, setSearchProduct] = useState('');
@@ -83,7 +84,7 @@ export function EditQuotationModal({ open, onOpenChange, onSuccess, quotation }:
       setQuotationDate(quotation.quotation_date || '');
       setValidUntil(quotation.valid_until || '');
       setNotes(quotation.notes || '');
-      setTermsAndConditions(quotation.terms_and_conditions || '');
+      setTermsAndConditions(quotation.terms_and_conditions || getTermsAndConditions());
       
       // Convert quotation items to local format
       const quotationItems = (quotation.quotation_items || []).map((item: any, index: number) => ({
