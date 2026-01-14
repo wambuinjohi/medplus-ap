@@ -566,7 +566,7 @@ export const generateCreditNotePDF = (creditNote: CreditNotePDFData, company?: C
           ` : ''}
           ${creditNote.terms_and_conditions ? `
           <div>
-            <h3 style="margin: 0 0 10px 0; font-size: 13px; font-weight: bold;">Terms &amp; Conditions</h3>
+            <h3 style="margin: 0 0 2px 0; font-size: 13px; font-weight: bold;">Terms &amp; Conditions</h3>
             <p style="margin: 0; white-space: pre-wrap; font-size: 11px; line-height: 1.6; word-wrap: break-word; overflow-wrap: break-word;">${creditNote.terms_and_conditions}</p>
           </div>
           ` : ''}
