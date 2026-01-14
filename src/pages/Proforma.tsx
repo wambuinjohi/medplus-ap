@@ -99,21 +99,27 @@ export default function Proforma() {
 
   const handleDownloadPDF = async (proforma: ProformaWithItems) => {
     try {
+      // Apply dynamic company terms to proforma
+      const proformaWithTerms = await applyTermsToProformaForPDF(
+        proforma,
+        currentCompany?.id
+      );
+
       // Convert proforma to invoice format for PDF generation
       const invoiceData = {
-        id: proforma.id,
-        invoice_number: proforma.proforma_number,
-        customers: proforma.customers,
-        invoice_date: proforma.proforma_date,
-        valid_until: proforma.valid_until,
-        total_amount: proforma.total_amount,
-        invoice_items: proforma.proforma_items || [],
-        subtotal: proforma.subtotal,
-        tax_amount: proforma.tax_amount,
-        status: proforma.status,
-        notes: proforma.notes || 'This is a proforma invoice for advance payment.',
-        // Use proforma-specific terms if set, otherwise PDF generator will use dynamic terms
-        terms_and_conditions: proforma.terms_and_conditions || undefined,
+        id: proformaWithTerms.id,
+        invoice_number: proformaWithTerms.proforma_number,
+        customers: proformaWithTerms.customers,
+        invoice_date: proformaWithTerms.proforma_date,
+        valid_until: proformaWithTerms.valid_until,
+        total_amount: proformaWithTerms.total_amount,
+        invoice_items: proformaWithTerms.proforma_items || [],
+        subtotal: proformaWithTerms.subtotal,
+        tax_amount: proformaWithTerms.tax_amount,
+        status: proformaWithTerms.status,
+        notes: proformaWithTerms.notes || 'This is a proforma invoice for advance payment.',
+        // Use proforma terms (which now includes dynamic terms if not already set)
+        terms_and_conditions: proformaWithTerms.terms_and_conditions || undefined,
       };
 
       // Get current company details for PDF
