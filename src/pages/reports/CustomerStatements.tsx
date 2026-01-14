@@ -32,6 +32,7 @@ import { useInvoicesFixed as useInvoices } from '@/hooks/useInvoicesFixed';
 import { usePermissions } from '@/hooks/usePermissions';
 import { toast } from 'sonner';
 import { generateCustomerStatementPDF } from '@/utils/pdfGenerator';
+import { applyTermsToInvoiceForPDF } from '@/utils/pdfTermsManager';
 import { exportCustomerStatementsToCSV, exportCustomerStatementSummaryToCSV, exportCustomerStatementsToExcel } from '@/utils/csvExporter';
 import CustomerStatementPreviewModal from '@/components/statements/CustomerStatementPreviewModal';
 
