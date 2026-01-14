@@ -490,6 +490,8 @@ export const generatePDF = (data: DocumentData) => {
           white-space: pre-wrap;
           word-wrap: break-word;
           overflow-wrap: break-word;
+          margin: 0;
+          padding: 0;
         }
         
         .footer {
