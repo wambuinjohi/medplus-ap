@@ -8,6 +8,7 @@ import { downloadQuotationPDF } from '@/utils/pdfGenerator';
 import { useQuotations, useCompanies } from '@/hooks/useDatabase';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { getTermsAndConditions } from '@/utils/termsManager';
 
 const Index = () => {
   const { data: companies } = useCompanies();
