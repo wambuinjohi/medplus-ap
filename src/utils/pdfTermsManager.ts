@@ -22,9 +22,11 @@ export const applyDynamicTermsToPDFDocument = async <T extends Record<string, an
 
   try {
     const terms = await fetchCompanyTermsDirectly(companyId);
+    // Format terms for PDF display
+    const formattedTerms = formatTermsForPDFDisplay(terms);
     return {
       ...document,
-      terms_and_conditions: terms,
+      terms_and_conditions: formattedTerms,
     };
   } catch (error) {
     console.error('Error applying dynamic terms to PDF document:', error);
@@ -149,9 +151,11 @@ export const applyTermsToMultipleDocuments = async <T extends Record<string, any
 
   try {
     const terms = await fetchCompanyTermsDirectly(companyId);
+    // Format terms for PDF display
+    const formattedTerms = formatTermsForPDFDisplay(terms);
     return documents.map((doc) => ({
       ...doc,
-      terms_and_conditions: terms,
+      terms_and_conditions: formattedTerms,
     }));
   } catch (error) {
     console.error('Error applying terms to multiple documents:', error);

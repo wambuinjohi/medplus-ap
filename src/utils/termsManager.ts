@@ -88,12 +88,7 @@ export const formatTermsForPDF = (termsText: string): string => {
   // This maintains the exact text as entered by the user
   return `
     <div style="text-align:left; font-size:11px; color:#333; line-height:1.4;">
-      <div style="margin-bottom:8px;">
-        <strong>Prepared By:</strong>……………………………………………………….………………….&nbsp;&nbsp;&nbsp;
-        <strong>Checked By:</strong>………………………………………………...……….
-      </div>
-      <strong>Terms and regulations</strong>
-      <pre style="font-family: Arial, sans-serif; white-space: pre-wrap; word-wrap: break-word; margin: 8px 0; font-size: 11px; color: #333;">${escaped}</pre>
+      <pre style="font-family: Arial, sans-serif; white-space: pre-wrap; word-wrap: break-word; margin: 0; font-size: 11px; color: #333;">${escaped}</pre>
     </div>
   `;
 };
