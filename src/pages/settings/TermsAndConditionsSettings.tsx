@@ -45,18 +45,15 @@ export default function TermsAndConditionsSettings() {
     try {
       setIsSaving(true);
       const { data: { user } } = await supabase.auth.getUser();
-      
+
       if (!user) {
         toast.error('You must be logged in to save settings');
         return;
       }
 
-      // Save to localStorage
-      localStorage.setItem('default_terms_and_conditions', terms);
-      
-      // Optionally, you could also save to a settings table if you create one
-      // For now, localStorage is sufficient for client-side persistence
-      
+      // Save using termsManager
+      setTermsAndConditions(terms);
+
       setHasChanges(false);
       toast.success('Terms & Conditions saved successfully');
     } catch (error) {
