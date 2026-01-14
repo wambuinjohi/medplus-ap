@@ -32,6 +32,7 @@ import { useCustomers, useProducts, useGenerateDocumentNumber, useTaxSettings, u
 import { useCreateQuotationWithItems } from '@/hooks/useQuotationItems';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { getTermsAndConditions } from '@/utils/termsManager';
 
 interface QuotationItem {
   id: string;
