@@ -36,6 +36,7 @@ import { ChangeQuotationStatusModal } from '@/components/quotations/ChangeQuotat
 import { ConvertQuotationToProformaModal } from '@/components/quotations/ConvertQuotationToProformaModal';
 import { ConvertQuotationToInvoiceModal } from '@/components/quotations/ConvertQuotationToInvoiceModal';
 import { downloadQuotationPDF } from '@/utils/pdfGenerator';
+import { applyTermsToQuotationForPDF } from '@/utils/pdfTermsManager';
 
 interface Quotation {
   id: string;
