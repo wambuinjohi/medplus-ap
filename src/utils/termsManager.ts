@@ -87,8 +87,8 @@ export const formatTermsForPDF = (termsText: string): string => {
   // Preserve line breaks and formatting by wrapping in <pre> with proper styling
   // This maintains the exact text as entered by the user
   return `
-    <div style="text-align:left; font-size:11px; color:#333; line-height:1.4;">
-      <pre style="font-family: Arial, sans-serif; white-space: pre-wrap; word-wrap: break-word; margin: 0; font-size: 11px; color: #333;">${escaped}</pre>
+    <div style="text-align:left; font-size:11px; color:#333; line-height:1.4; margin: 0; padding: 0;">
+      <pre style="font-family: Arial, sans-serif; white-space: pre-wrap; word-wrap: break-word; margin: 0; padding: 0; font-size: 11px; color: #333;">${escaped}</pre>
     </div>
   `;
 };
