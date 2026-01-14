@@ -240,8 +240,8 @@ export const generateLPOPDF = (lpo: LPOPDFData, company: CompanyData) => {
         cellPadding: 3,
       },
       headStyles: {
-        fillColor: [66, 139, 202],
-        textColor: [255, 255, 255],
+        fillColor: [240, 240, 240],
+        textColor: [33, 37, 41],
         fontStyle: 'bold',
       },
       columnStyles: {
