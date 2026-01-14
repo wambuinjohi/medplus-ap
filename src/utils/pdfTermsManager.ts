@@ -22,7 +22,7 @@ export const applyDynamicTermsToPDFDocument = async <T extends Record<string, an
 
   try {
     const terms = await fetchCompanyTermsDirectly(companyId);
-    // Format terms with signature section for PDF display
+    // Format terms for PDF display
     const formattedTerms = formatTermsForPDFDisplay(terms);
     return {
       ...document,
@@ -151,7 +151,7 @@ export const applyTermsToMultipleDocuments = async <T extends Record<string, any
 
   try {
     const terms = await fetchCompanyTermsDirectly(companyId);
-    // Format terms with signature section for PDF display
+    // Format terms for PDF display
     const formattedTerms = formatTermsForPDFDisplay(terms);
     return documents.map((doc) => ({
       ...doc,
