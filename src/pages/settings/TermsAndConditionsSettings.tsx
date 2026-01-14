@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -11,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { DEFAULT_TERMS_EXPORT } from '@/utils/termsManager';
 
 export default function TermsAndConditionsSettings() {
+  const queryClient = useQueryClient();
   const { data: companies } = useCompanies();
   const { profile } = useAuth();
   const currentCompany = companies?.[0];
@@ -93,10 +95,13 @@ export default function TermsAndConditionsSettings() {
 
       setOriginalTerms(terms);
       setHasChanges(false);
+
+      // Invalidate related queries to refresh cached data
+      queryClient.invalidateQueries({
+        queryKey: ['company-terms', currentCompany?.id],
+      });
+
       toast.success('Terms and conditions updated successfully!');
-      
-      // Refresh the page to apply changes to PDFs
-      window.location.reload();
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to save terms';
       toast.error(`Error: ${errorMessage}`);
