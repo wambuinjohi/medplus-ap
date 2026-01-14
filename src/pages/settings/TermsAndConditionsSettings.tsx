@@ -33,7 +33,7 @@ const DEFAULT_TERMS = `Terms and Conditions
    The VAT is inclusive where applicable.
 
 8. General
-   E.O.E (Errors and Omissions Excepted)`;
+   E.&O.E (Errors and Omissions Excepted)`;
 
 export default function TermsAndConditionsSettings() {
   const [terms, setTerms] = useState('');
