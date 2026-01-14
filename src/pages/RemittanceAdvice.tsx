@@ -22,6 +22,7 @@ import {
   Building2
 } from 'lucide-react';
 import { downloadRemittancePDF } from '@/utils/pdfGenerator';
+import { applyTermsToRemittanceForPDF } from '@/utils/pdfTermsManager';
 import { toast } from 'sonner';
 import { useRemittanceAdvice, useCompanies } from '@/hooks/useDatabase';
 import { CreateRemittanceModal } from '@/components/remittance/CreateRemittanceModalFixed';
