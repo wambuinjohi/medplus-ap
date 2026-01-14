@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { downloadDeliveryNotePDF } from '@/utils/pdfGenerator';
+import { applyTermsToDeliveryNoteForPDF } from '@/utils/pdfTermsManager';
 import { CreateDeliveryNoteModal } from '@/components/delivery/CreateDeliveryNoteModal';
 import { ViewDeliveryNoteModal } from '@/components/delivery/ViewDeliveryNoteModal';
 import { useDeliveryNotes, useUpdateDeliveryNote, useCompanies } from '@/hooks/useDatabase';
