@@ -9,6 +9,7 @@ import { FileText, Save, RotateCcw, Copy } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { getTermsAndConditions, setTermsAndConditions, resetTermsToDefault, DEFAULT_TERMS_EXPORT } from '@/utils/termsManager';
+import { TermsVerificationPanel } from '@/components/TermsVerificationPanel';
 
 export default function TermsAndConditionsSettings() {
   const [terms, setTerms] = useState('');
