@@ -24,23 +24,18 @@ export default function TermsAndConditionsSettings() {
     try {
       setIsLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
-      
+
       if (!user) {
-        setTerms(DEFAULT_TERMS);
+        setTerms(getTermsAndConditions());
         return;
       }
 
-      // Try to load saved terms from a custom metadata or settings
-      // For now, we'll use localStorage as a fallback
-      const savedTerms = localStorage.getItem('default_terms_and_conditions');
-      if (savedTerms) {
-        setTerms(savedTerms);
-      } else {
-        setTerms(DEFAULT_TERMS);
-      }
+      // Load terms using the termsManager
+      const savedTerms = getTermsAndConditions();
+      setTerms(savedTerms);
     } catch (error) {
       console.error('Error loading terms:', error);
-      setTerms(DEFAULT_TERMS);
+      setTerms(getTermsAndConditions());
     } finally {
       setIsLoading(false);
     }
