@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { getTermsAndConditions as getFallbackTerms } from '@/utils/termsManager';
 
@@ -49,8 +49,18 @@ export const useCompanyTerms = (companyId: string | undefined) => {
  * Update company terms in database
  */
 export const useUpdateCompanyTerms = () => {
-  return {
-    mutateAsync: async (companyId: string, terms: string, userId: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      companyId,
+      terms,
+      userId,
+    }: {
+      companyId: string;
+      terms: string;
+      userId: string;
+    }) => {
       const { data, error } = await supabase
         .from('company_settings')
         .upsert(
@@ -73,5 +83,40 @@ export const useUpdateCompanyTerms = () => {
 
       return data as CompanySettings;
     },
-  };
+    onSuccess: (data) => {
+      // Invalidate and refetch the terms query for this company
+      queryClient.invalidateQueries({
+        queryKey: ['company-terms', data.company_id],
+      });
+    },
+  });
+};
+
+/**
+ * Fetch company terms directly (non-hook version for use in utility functions)
+ */
+export const fetchCompanyTermsDirectly = async (
+  companyId: string
+): Promise<string> => {
+  if (!companyId) {
+    return getFallbackTerms();
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('company_settings')
+      .select('terms_and_conditions')
+      .eq('company_id', companyId)
+      .single();
+
+    if (error) {
+      console.warn('Error fetching company terms:', error);
+      return getFallbackTerms();
+    }
+
+    return data?.terms_and_conditions || getFallbackTerms();
+  } catch (error) {
+    console.error('Unexpected error fetching company terms:', error);
+    return getFallbackTerms();
+  }
 };
