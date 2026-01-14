@@ -348,8 +348,8 @@ export const generatePDF = (data: DocumentData) => {
         }
 
         .items-table thead {
-          background: #2BB673;
-          color: white;
+          background: #f0f0f0;
+          color: #212529;
         }
 
         .items-table th {
@@ -359,7 +359,7 @@ export const generatePDF = (data: DocumentData) => {
           font-size: 10px;
           text-transform: uppercase;
           letter-spacing: 0.5px;
-          border-right: 1px solid rgba(255,255,255,0.2);
+          border-right: 1px solid #d9d9d9;
           word-break: break-word;
         }
 
