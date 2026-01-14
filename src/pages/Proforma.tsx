@@ -38,6 +38,7 @@ import { ProformaSetupBanner } from '@/components/proforma/ProformaSetupBanner';
 import { ChangeProformaStatusModal } from '@/components/proforma/ChangeProformaStatusModal';
 import { ConvertProformaToInvoiceModal } from '@/components/proforma/ConvertProformaToInvoiceModal';
 import { downloadInvoicePDF, downloadQuotationPDF } from '@/utils/pdfGenerator';
+import { applyTermsToProformaForPDF } from '@/utils/pdfTermsManager';
 import { formatCurrency } from '@/utils/taxCalculation';
 import { ensureProformaSchema } from '@/utils/proformaDatabaseSetup';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
