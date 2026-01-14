@@ -137,8 +137,14 @@ export default function Payments() {
     setShowDeleteModal(true);
   };
 
-  const handleDownloadReceipt = (payment: Payment) => {
+  const handleDownloadReceipt = async (payment: Payment) => {
     try {
+      // Apply dynamic company terms before PDF generation
+      const paymentWithTerms = await applyTermsToPaymentReceiptForPDF(
+        payment,
+        currentCompany?.id
+      );
+
       // Use the utility function with company details
       const companyDetails = currentCompany ? {
         name: currentCompany.name,
@@ -151,7 +157,7 @@ export default function Payments() {
         logo_url: currentCompany.logo_url
       } : undefined;
 
-      generatePaymentReceiptPDF(payment, companyDetails);
+      generatePaymentReceiptPDF(paymentWithTerms, companyDetails);
       toast.success(`Receipt downloaded for payment ${payment.payment_number}`);
     } catch (error) {
       console.error('Error downloading receipt:', error);
