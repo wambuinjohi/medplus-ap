@@ -129,7 +129,7 @@ export default function Quotations() {
     toast.success('Quotation updated successfully!');
   };
 
-  const handleDownloadQuotation = (quotation: Quotation) => {
+  const handleDownloadQuotation = async (quotation: Quotation) => {
     try {
       // Get current company details for PDF
       const companyDetails = currentCompany ? {
@@ -143,7 +143,13 @@ export default function Quotations() {
         logo_url: currentCompany.logo_url
       } : undefined;
 
-      downloadQuotationPDF(quotation, companyDetails);
+      // Apply dynamic company terms before PDF generation
+      const quotationWithDynamicTerms = await applyTermsToQuotationForPDF(
+        quotation,
+        currentCompany?.id
+      );
+
+      downloadQuotationPDF(quotationWithDynamicTerms, companyDetails);
       toast.success(`PDF download started for ${quotation.quotation_number}`);
     } catch (error) {
       console.error('Error downloading PDF:', error);
