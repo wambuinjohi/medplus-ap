@@ -242,7 +242,13 @@ export default function CustomerStatements() {
           const customerInvoices = invoices?.filter(inv => inv.customer_id === customer.id) || [];
           const customerPayments = payments?.filter(pay => pay.customer_id === customer.id) || [];
 
-          await generateCustomerStatementPDF(customer, customerInvoices, customerPayments, {
+          // Apply dynamic company terms before generating statement
+          const customerWithTerms = await applyTermsToInvoiceForPDF(
+            customer,
+            currentCompany?.id
+          );
+
+          await generateCustomerStatementPDF(customerWithTerms, customerInvoices, customerPayments, {
             statement_date: statementDate
           }, companyDetails);
         }
