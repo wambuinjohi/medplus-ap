@@ -173,7 +173,13 @@ export default function Customers() {
         method: payment.payment_method || 'Cash'
       })) || [];
 
-      generateCustomerStatementPDF(customer, invoices, payments);
+      // Apply dynamic company terms before generating statement PDF
+      const customerWithTerms = await applyTermsToInvoiceForPDF(
+        customer,
+        currentCompany?.id
+      );
+
+      generateCustomerStatementPDF(customerWithTerms, invoices, payments, undefined, undefined);
       toast.success(`Statement generated for ${customer.name}`);
     } catch (error) {
       console.error('Error generating statement:', error);
