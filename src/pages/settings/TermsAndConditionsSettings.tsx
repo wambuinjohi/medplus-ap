@@ -10,7 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { DEFAULT_TERMS_EXPORT } from '@/utils/termsManager';
 
-export function TermsAndConditionsSettings() {
+export default function TermsAndConditionsSettings() {
   const { data: companies } = useCompanies();
   const { profile } = useAuth();
   const currentCompany = companies?.[0];
