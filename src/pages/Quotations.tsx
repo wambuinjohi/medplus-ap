@@ -36,6 +36,7 @@ import { ChangeQuotationStatusModal } from '@/components/quotations/ChangeQuotat
 import { ConvertQuotationToProformaModal } from '@/components/quotations/ConvertQuotationToProformaModal';
 import { ConvertQuotationToInvoiceModal } from '@/components/quotations/ConvertQuotationToInvoiceModal';
 import { downloadQuotationPDF } from '@/utils/pdfGenerator';
+import { applyTermsToQuotationForPDF } from '@/utils/pdfTermsManager';
 
 interface Quotation {
   id: string;
@@ -128,7 +129,7 @@ export default function Quotations() {
     toast.success('Quotation updated successfully!');
   };
 
-  const handleDownloadQuotation = (quotation: Quotation) => {
+  const handleDownloadQuotation = async (quotation: Quotation) => {
     try {
       // Get current company details for PDF
       const companyDetails = currentCompany ? {
@@ -142,7 +143,13 @@ export default function Quotations() {
         logo_url: currentCompany.logo_url
       } : undefined;
 
-      downloadQuotationPDF(quotation, companyDetails);
+      // Apply dynamic company terms before PDF generation
+      const quotationWithDynamicTerms = await applyTermsToQuotationForPDF(
+        quotation,
+        currentCompany?.id
+      );
+
+      downloadQuotationPDF(quotationWithDynamicTerms, companyDetails);
       toast.success(`PDF download started for ${quotation.quotation_number}`);
     } catch (error) {
       console.error('Error downloading PDF:', error);

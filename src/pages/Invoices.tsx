@@ -49,6 +49,7 @@ import { ViewInvoiceModal } from '@/components/invoices/ViewInvoiceModal';
 import { RecordPaymentModal } from '@/components/payments/RecordPaymentModal';
 import { CreateDeliveryNoteModal } from '@/components/delivery/CreateDeliveryNoteModal';
 import { downloadInvoicePDF } from '@/utils/pdfGenerator';
+import { applyTermsToInvoiceForPDF } from '@/utils/pdfTermsManager';
 import { reconcileAllInvoiceBalances } from '@/utils/balanceReconciliation';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -259,7 +260,13 @@ export default function Invoices() {
         logo_url: currentCompany.logo_url
       } : undefined;
 
-      await downloadInvoicePDF(enrichedInvoice, 'INVOICE', companyDetails);
+      // Apply dynamic company terms before PDF generation
+      const invoiceWithDynamicTerms = await applyTermsToInvoiceForPDF(
+        enrichedInvoice,
+        currentCompany?.id
+      );
+
+      await downloadInvoicePDF(invoiceWithDynamicTerms, 'INVOICE', companyDetails);
       toast.success(`PDF download started for ${invoice.invoice_number}`);
     } catch (error) {
       console.error('Error downloading PDF:', error);

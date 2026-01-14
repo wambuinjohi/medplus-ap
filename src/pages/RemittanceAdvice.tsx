@@ -22,6 +22,7 @@ import {
   Building2
 } from 'lucide-react';
 import { downloadRemittancePDF } from '@/utils/pdfGenerator';
+import { applyTermsToRemittanceForPDF } from '@/utils/pdfTermsManager';
 import { toast } from 'sonner';
 import { useRemittanceAdvice, useCompanies } from '@/hooks/useDatabase';
 import { CreateRemittanceModal } from '@/components/remittance/CreateRemittanceModalFixed';
@@ -55,7 +56,7 @@ const RemittanceAdvice = () => {
     setShowEditModal(true);
   };
 
-  const handleDownloadRemittance = (remittance: any) => {
+  const handleDownloadRemittance = async (remittance: any) => {
     try {
       // Use live data format
       const remittanceData = {
@@ -74,6 +75,12 @@ const RemittanceAdvice = () => {
         items: remittance.items || [] // Fallback for legacy format
       };
 
+      // Apply dynamic company terms before PDF generation
+      const remittanceWithTerms = await applyTermsToRemittanceForPDF(
+        remittanceData,
+        currentCompany?.id
+      );
+
       // Pass company details to PDF generator
       const companyDetails = currentCompany ? {
         name: currentCompany.name,
@@ -86,7 +93,7 @@ const RemittanceAdvice = () => {
         logo_url: currentCompany.logo_url
       } : undefined;
 
-      downloadRemittancePDF(remittanceData, companyDetails);
+      downloadRemittancePDF(remittanceWithTerms, companyDetails);
       toast.success(`PDF download started for ${remittance.advice_number}`);
     } catch (error) {
       console.error('Error downloading PDF:', error);

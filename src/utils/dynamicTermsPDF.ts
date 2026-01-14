@@ -31,7 +31,7 @@ export const fetchCompanyTermsForPDF = async (companyId: string): Promise<string
 
 /**
  * Format terms for PDF display with proper structure
- * Preserves line breaks and numbering
+ * Preserves line breaks and numbering, includes signature lines
  */
 export const formatTermsForPDFDisplay = (termsText: string): string => {
   // Escape HTML special characters
@@ -42,13 +42,15 @@ export const formatTermsForPDFDisplay = (termsText: string): string => {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
 
-  // Preserve formatting with proper CSS
+  // Preserve formatting with proper CSS and include signature section
   return `
-    <div style="text-align:left; font-size:11px; color:#333; line-height:1.5; font-family: Arial, sans-serif;">
-      <strong>Terms & Conditions</strong>
-      <div style="margin-top: 8px; white-space: pre-wrap; word-wrap: break-word;">
-        ${escaped}
+    <div style="text-align:left; font-size:11px; color:#333; line-height:1.4; font-family: Arial, sans-serif;">
+      <div style="margin-bottom:8px;">
+        <strong>Prepared By:</strong>……………………………………………………….………………….&nbsp;&nbsp;&nbsp;
+        <strong>Checked By:</strong>………………………………………………...……….
       </div>
+      <strong>Terms and regulations</strong>
+      <pre style="font-family: Arial, sans-serif; white-space: pre-wrap; word-wrap: break-word; margin: 8px 0; font-size: 11px; color: #333;">${escaped}</pre>
     </div>
   `;
 };

@@ -48,6 +48,7 @@ import { ViewCustomerModal } from '@/components/customers/ViewCustomerModal';
 import { CreateCustomerModal } from '@/components/customers/CreateCustomerModal';
 import { CreateInvoiceModal } from '@/components/invoices/CreateInvoiceModal';
 import { generateCustomerStatementPDF } from '@/utils/pdfGenerator';
+import { applyTermsToInvoiceForPDF } from '@/utils/pdfTermsManager';
 
 // Memoized customer row component for better performance
 const CustomerRow = React.memo(({ 
@@ -314,7 +315,13 @@ export default function OptimizedCustomers() {
         method: payment.payment_method || 'Cash'
       })) || [];
 
-      generateCustomerStatementPDF(customer, invoices, payments);
+      // Apply dynamic company terms before generating statement PDF
+      const customerWithTerms = await applyTermsToInvoiceForPDF(
+        customer,
+        currentCompany?.id
+      );
+
+      generateCustomerStatementPDF(customerWithTerms, invoices, payments);
       toast.success(`Statement generated for ${customer.name}`);
     } catch (error) {
       console.error('Error generating statement:', error);

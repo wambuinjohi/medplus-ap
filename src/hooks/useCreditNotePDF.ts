@@ -2,6 +2,7 @@ import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { generateCreditNotePDF, type CreditNotePDFData, type CompanyData } from '@/utils/creditNotePdfGenerator';
 import { useCompanies } from '@/hooks/useDatabase';
+import { applyTermsToCreditNoteForPDF } from '@/utils/pdfTermsManager';
 
 export function useCreditNotePDFDownload() {
   const { data: companies } = useCompanies();
@@ -20,9 +21,15 @@ export function useCreditNotePDFDownload() {
         logo_url: currentCompany?.logo_url || '',
       };
 
+      // Apply dynamic company terms before generating PDF
+      const creditNoteWithTerms = await applyTermsToCreditNoteForPDF(
+        creditNote,
+        currentCompany?.id
+      );
+
       // Generate and download PDF
-      generateCreditNotePDF(creditNote, companyData);
-      
+      generateCreditNotePDF(creditNoteWithTerms, companyData);
+
       return { success: true };
     },
     onSuccess: () => {
