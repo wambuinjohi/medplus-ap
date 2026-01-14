@@ -34,6 +34,7 @@ import {
 import { toast } from 'sonner';
 import { useLPOs, useUpdateLPO, useCompanies, useDeleteLPO } from '@/hooks/useDatabase';
 import { downloadLPOPDF } from '@/utils/pdfGenerator';
+import { applyTermsToLPOForPDF } from '@/utils/pdfTermsManager';
 import { parseErrorMessageWithCodes } from '@/utils/errorHelpers';
 import { CreateLPOModal } from '@/components/lpo/CreateLPOModal';
 import { ViewLPOModal } from '@/components/lpo/ViewLPOModal';
