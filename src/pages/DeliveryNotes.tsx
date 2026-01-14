@@ -98,6 +98,12 @@ export default function DeliveryNotes() {
 
   const handleDownloadPDF = async (deliveryNote: any) => {
     try {
+      // Apply dynamic company terms before PDF generation
+      const deliveryNoteWithTerms = await applyTermsToDeliveryNoteForPDF(
+        deliveryNote,
+        currentCompany?.id
+      );
+
       // Get current company details for PDF
       const companyDetails = currentCompany ? {
         name: currentCompany.name,
@@ -110,7 +116,7 @@ export default function DeliveryNotes() {
         logo_url: currentCompany.logo_url
       } : undefined;
 
-      await downloadDeliveryNotePDF(deliveryNote, companyDetails);
+      await downloadDeliveryNotePDF(deliveryNoteWithTerms, companyDetails);
       const noteNumber = deliveryNote.delivery_note_number || deliveryNote.delivery_number;
       toast.success(`Delivery note ${noteNumber} PDF downloaded successfully!`);
     } catch (error) {
