@@ -8,32 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { FileText, Save, RotateCcw, Copy } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-
-const DEFAULT_TERMS = `Terms and Conditions
-
-1. Payment Terms
-   Payment strictly as per approved terms. Interest of 2% per month will be charged on overdue invoices.
-
-2. Goods Return Policy
-   Claims and queries must be lodged with us within 21 days of dispatch of goods, otherwise they will not be accepted back.
-
-3. Payment Methods
-   Cash transactions of any kind are not acceptable. All payments should be made by cheque, MPESA, or Bank transfer only.
-
-4. Liability and Responsibility
-   The company will not be responsible for any loss or damage of goods in transit collected by the customer or sent via customer's courier account.
-
-5. Lien Rights
-   The company shall have general as well as particular lien on all goods for any unpaid account.
-
-6. Transportation
-   Where applicable, transport will be invoiced separately.
-
-7. Tax Policy
-   The VAT is inclusive where applicable.
-
-8. General
-   E.&O.E (Errors and Omissions Excepted)`;
+import { getTermsAndConditions, setTermsAndConditions, resetTermsToDefault, DEFAULT_TERMS_EXPORT } from '@/utils/termsManager';
 
 export default function TermsAndConditionsSettings() {
   const [terms, setTerms] = useState('');
