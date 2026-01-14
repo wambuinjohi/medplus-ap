@@ -33,6 +33,7 @@ import { useCustomers, useProducts, useTaxSettings } from '@/hooks/useDatabase';
 import { useCreateQuotationWithItems } from '@/hooks/useQuotationItems';
 import { useUpdateProforma } from '@/hooks/useProforma';
 import { toast } from 'sonner';
+import { getTermsAndConditions } from '@/utils/termsManager';
 
 interface ProformaItem {
   id: string;
@@ -86,7 +87,7 @@ export const EditProformaModal = ({
     proforma_date: '',
     valid_until: '',
     notes: '',
-    terms_and_conditions: '',
+    terms_and_conditions: getTermsAndConditions(),
     status: 'draft',
   });
 
@@ -109,7 +110,7 @@ export const EditProformaModal = ({
         proforma_date: proforma.proforma_date,
         valid_until: proforma.valid_until,
         notes: proforma.notes || '',
-        terms_and_conditions: proforma.terms_and_conditions || '',
+        terms_and_conditions: proforma.terms_and_conditions || getTermsAndConditions(),
         status: proforma.status,
       });
       
