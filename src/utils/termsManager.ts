@@ -74,43 +74,27 @@ export const resetTermsToDefault = (): void => {
 
 /**
  * Convert plain text terms to HTML format for PDF display
- * Handles proper formatting with line breaks and lists
+ * Preserves the exact content without aggressive transformation
  */
 export const formatTermsForPDF = (termsText: string): string => {
-  // Escape HTML special characters
-  let html = termsText
+  // Escape HTML special characters to prevent injection
+  const escaped = termsText
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
 
-  // Convert numbered lists (1. 2. 3. etc) to proper list items
-  html = html.replace(/^\s*(\d+)\.\s+(.+)$/gm, '<li>$2</li>');
-
-  // Wrap consecutive list items in <ol> tags
-  html = html.replace(/(<li>.*<\/li>)/s, (match) => {
-    return '<ol style="margin-top:8px; padding-left:18px;">' + match + '</ol>';
-  });
-
-  // Convert line breaks to <br>
-  html = html.split('\n').map(line => {
-    // Skip lines that are already in list items or ol tags
-    if (line.includes('<li>') || line.includes('<ol') || line.includes('</ol>')) {
-      return line;
-    }
-    return line.trim() ? line : '<br>';
-  }).join('<br>');
-
-  // Wrap in div for proper styling
+  // Preserve line breaks and formatting by wrapping in <pre> with proper styling
+  // This maintains the exact text as entered by the user
   return `
     <div style="text-align:left; font-size:11px; color:#333; line-height:1.4;">
       <div style="margin-bottom:8px;">
         <strong>Prepared By:</strong>……………………………………………………….………………….&nbsp;&nbsp;&nbsp;
         <strong>Checked By:</strong>………………………………………………...……….
       </div>
-      <strong>Terms and Conditions</strong>
-      ${html}
+      <strong>Terms and regulations</strong>
+      <pre style="font-family: Arial, sans-serif; white-space: pre-wrap; word-wrap: break-word; margin: 8px 0; font-size: 11px; color: #333;">${escaped}</pre>
     </div>
   `;
 };
