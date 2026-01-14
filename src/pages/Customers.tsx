@@ -49,6 +49,7 @@ import { CreateCustomerModal } from '@/components/customers/CreateCustomerModal'
 import { DeleteCustomerModal } from '@/components/customers/DeleteCustomerModal';
 import { CreateInvoiceModal } from '@/components/invoices/CreateInvoiceModal';
 import { generateCustomerStatementPDF } from '@/utils/pdfGenerator';
+import { applyTermsToInvoiceForPDF } from '@/utils/pdfTermsManager';
 
 interface Customer {
   id: string;
