@@ -53,6 +53,11 @@ export interface CompanyData {
   logo_url?: string;
 }
 
+/**
+ * Generate LPO PDF with support for dynamic terms and conditions
+ * The LPO object should have terms_and_conditions property set before calling this function
+ * Use applyTermsToLPOForPDF() from pdfTermsManager.ts to apply dynamic terms
+ */
 export const generateLPOPDF = (lpo: LPOPDFData, company: CompanyData) => {
   const doc = new jsPDF();
   let yPosition = 20;
