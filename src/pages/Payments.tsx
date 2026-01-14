@@ -33,6 +33,7 @@ import { usePayments, useCompanies } from '@/hooks/useDatabase';
 import { useInvoicesFixed as useInvoices } from '@/hooks/useInvoicesFixed';
 import { usePermissions } from '@/hooks/usePermissions';
 import { generatePaymentReceiptPDF } from '@/utils/pdfGenerator';
+import { applyTermsToPaymentReceiptForPDF } from '@/utils/pdfTermsManager';
 
 interface Payment {
   id: string;
