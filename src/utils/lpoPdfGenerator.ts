@@ -281,7 +281,7 @@ export const generateLPOPDF = (lpo: LPOPDFData, company: CompanyData) => {
   if (lpo.notes) {
     doc.setFont('helvetica', 'bold');
     doc.text('Notes:', 20, yPosition);
-    yPosition += 8;
+    yPosition += 2;
 
     doc.setFont('helvetica', 'normal');
     const noteLines = doc.splitTextToSize(lpo.notes, 170);
@@ -293,7 +293,7 @@ export const generateLPOPDF = (lpo: LPOPDFData, company: CompanyData) => {
   if (lpo.terms_and_conditions) {
     doc.setFont('helvetica', 'bold');
     doc.text('Terms & Conditions:', 20, yPosition);
-    yPosition += 8;
+    yPosition += 2;
 
     doc.setFont('helvetica', 'normal');
     const termsLines = doc.splitTextToSize(lpo.terms_and_conditions, 170);

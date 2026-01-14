@@ -42,10 +42,10 @@ export const formatTermsForPDFDisplay = (termsText: string): string => {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
 
-  // Preserve formatting with proper CSS
+  // Preserve formatting with proper CSS - no margins on wrapper or pre
   return `
-    <div style="text-align:left; font-size:11px; color:#333; line-height:1.4; font-family: Arial, sans-serif;">
-      <pre style="font-family: Arial, sans-serif; white-space: pre-wrap; word-wrap: break-word; margin: 0; font-size: 11px; color: #333;">${escaped}</pre>
+    <div style="text-align:left; font-size:11px; color:#333; line-height:1.4; font-family: Arial, sans-serif; margin: 0; padding: 0;">
+      <pre style="font-family: Arial, sans-serif; white-space: pre-wrap; word-wrap: break-word; margin: 0; padding: 0; font-size: 11px; color: #333;">${escaped}</pre>
     </div>
   `;
 };

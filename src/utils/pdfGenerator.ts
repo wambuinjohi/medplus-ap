@@ -478,7 +478,7 @@ export const generatePDF = (data: DocumentData) => {
           font-size: 11px;
           font-weight: bold;
           color: #2DAAE1;
-          margin: 0 0 8px 0;
+          margin: 0 0 2px 0;
           text-transform: uppercase;
           letter-spacing: 0.5px;
         }
@@ -490,6 +490,8 @@ export const generatePDF = (data: DocumentData) => {
           white-space: pre-wrap;
           word-wrap: break-word;
           overflow-wrap: break-word;
+          margin: 0;
+          padding: 0;
         }
         
         .footer {
