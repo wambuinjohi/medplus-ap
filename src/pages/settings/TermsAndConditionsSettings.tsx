@@ -103,6 +103,9 @@ export default function TermsAndConditionsSettings() {
         Manage default terms and conditions that will be automatically applied to quotations, invoices, proforma invoices, and other documents.
       </p>
 
+      {/* Verification Panel */}
+      <TermsVerificationPanel />
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Editor */}
         <div className="lg:col-span-2">
