@@ -121,6 +121,9 @@ export const generatePDF = (data: DocumentData) => {
   // Use company details from data or fall back to defaults
   const company = data.company || DEFAULT_COMPANY;
 
+  // Get dynamically stored terms or use default
+  const dynamicTerms = getFormattedTermsForPDF();
+
   // Analyze which columns have values
   const visibleColumns = analyzeColumns(data.items);
   const formatCurrency = (amount: number) => {
