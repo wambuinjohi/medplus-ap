@@ -66,13 +66,14 @@ export default function TermsAndConditionsSettings() {
 
   const handleReset = () => {
     if (window.confirm('Are you sure you want to reset to default terms?')) {
-      setTerms(DEFAULT_TERMS);
+      resetTermsToDefault();
+      setTerms(getTermsAndConditions());
       setHasChanges(true);
     }
   };
 
   const handleCopyDefault = () => {
-    setTerms(DEFAULT_TERMS);
+    setTerms(DEFAULT_TERMS_EXPORT);
     setHasChanges(true);
     toast.info('Default terms copied. Click Save to apply changes.');
   };
