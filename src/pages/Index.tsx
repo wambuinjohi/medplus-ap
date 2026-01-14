@@ -16,13 +16,18 @@ const Index = () => {
   const { data: quotations } = useQuotations(currentCompany?.id);
   const [showAuthPerformance, setShowAuthPerformance] = useState(false);
 
-  const handleTestPDF = () => {
+  const handleTestPDF = async () => {
     try {
       // Use real quotation data if available, otherwise use test data
       const realQuotation = quotations?.[0];
 
       if (realQuotation) {
-        downloadQuotationPDF(realQuotation);
+        // Apply dynamic company terms to real quotation
+        const quotationWithTerms = await applyTermsToQuotationForPDF(
+          realQuotation,
+          currentCompany?.id
+        );
+        downloadQuotationPDF(quotationWithTerms);
         toast.success('PDF generated using real quotation data!');
         return;
       }
@@ -76,7 +81,13 @@ const Index = () => {
         ]
       };
 
-      downloadQuotationPDF(testQuotation);
+      // Apply dynamic company terms to test quotation
+      const testQuotationWithTerms = await applyTermsToQuotationForPDF(
+        testQuotation,
+        currentCompany?.id
+      );
+
+      downloadQuotationPDF(testQuotationWithTerms);
       toast.success('Test PDF generated using sample data (no real quotations found)');
     } catch (error) {
       console.error('Error generating PDF:', error);
