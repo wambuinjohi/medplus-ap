@@ -5,10 +5,10 @@ import { AuthPerformanceTest } from '@/components/auth/AuthPerformanceTest';
 import { Button } from '@/components/ui/button';
 import { FileText, BarChart3 } from 'lucide-react';
 import { downloadQuotationPDF } from '@/utils/pdfGenerator';
+import { applyTermsToQuotationForPDF } from '@/utils/pdfTermsManager';
 import { useQuotations, useCompanies } from '@/hooks/useDatabase';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { getTermsAndConditions } from '@/utils/termsManager';
 
 const Index = () => {
   const { data: companies } = useCompanies();
