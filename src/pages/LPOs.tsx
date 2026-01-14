@@ -117,7 +117,13 @@ export default function LPOs() {
         return;
       }
 
-      await downloadLPOPDF(lpo, {
+      // Apply dynamic company terms before PDF generation
+      const lpoWithTerms = await applyTermsToLPOForPDF(
+        lpo,
+        currentCompany.id
+      );
+
+      await downloadLPOPDF(lpoWithTerms, {
         name: currentCompany.name,
         email: currentCompany.email,
         phone: currentCompany.phone,
