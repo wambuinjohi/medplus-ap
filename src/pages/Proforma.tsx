@@ -111,7 +111,8 @@ export default function Proforma() {
         tax_amount: proforma.tax_amount,
         status: proforma.status,
         notes: proforma.notes || 'This is a proforma invoice for advance payment.',
-        terms_and_conditions: proforma.terms_and_conditions || 'Payment required before goods are delivered.',
+        // Use proforma-specific terms if set, otherwise PDF generator will use dynamic terms
+        terms_and_conditions: proforma.terms_and_conditions || undefined,
       };
 
       // Get current company details for PDF

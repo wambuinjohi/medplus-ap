@@ -2,6 +2,8 @@
 // Since we don't have jsPDF installed, I'll create a simple HTML-to-print function
 // In a real app, you'd want to use a proper PDF library like jsPDF or react-pdf
 
+import { getFormattedTermsForPDF } from './termsManager';
+
 export interface DocumentData {
   type: 'quotation' | 'invoice' | 'remittance' | 'proforma' | 'delivery' | 'statement' | 'receipt' | 'lpo';
   number: string;
@@ -80,26 +82,7 @@ const DEFAULT_COMPANY: CompanyDetails = {
   logo_url: 'https://cdn.builder.io/api/v1/image/assets%2Ffd1c9d5781fc4f20b6ad16683f5b85b3%2F274fc62c033e464584b0f50713695127?format=webp&width=800' // Will use company settings or fallback gracefully
 };
 
-// Default terms and conditions (extracted from provided invoice image)
-const DEFAULT_TERMS_TEXT = `
-  <div style="text-align:left; font-size:11px; color:#333; line-height:1.4;">
-    <div style="margin-bottom:8px;">
-      <strong>Prepared By:</strong>……………………………………………………….………………….&nbsp;&nbsp;&nbsp;
-      <strong>Checked By:</strong>………………………………………………...……….
-    </div>
-    <strong>Terms and regulations</strong>
-    <ol style="margin-top:8px; padding-left:18px;">
-      <li>The company shall have general as well as particular lien on all goods for any unpaid A/C</li>
-      <li>Cash transactions of any kind are not acceptable. All payments should be made by cheque , MPESA, or Bank transfer only</li>
-      <li>Claims and queries must be lodged with us within 21 days of dispatch of goods, otherwise they will not be acceopted back</li>
-      <li>Where applicable, transport will be invoiced seperately</li>
-      <li>The company will not be responsible for any loss or damage of goods on transit collected by the customer or sent via customer's courier A/C</li>
-      <li>The VAT is inclusive where applicable</li>
-      <li>Payment strictly as per approved terms. Interest of 2% per month will be charged on overdue invoices</li>
-      <li>E.&O.E</li>
-    </ol>
-  </div>
-`;
+// Terms and conditions are now loaded dynamically from termsManager
 
 // Helper function to determine which columns have values
 const analyzeColumns = (items: DocumentData['items']) => {
@@ -137,6 +120,9 @@ const analyzeColumns = (items: DocumentData['items']) => {
 export const generatePDF = (data: DocumentData) => {
   // Use company details from data or fall back to defaults
   const company = data.company || DEFAULT_COMPANY;
+
+  // Get dynamically stored terms or use default
+  const dynamicTerms = getFormattedTermsForPDF();
 
   // Analyze which columns have values
   const visibleColumns = analyzeColumns(data.items);
@@ -925,11 +911,11 @@ export const generatePDF = (data: DocumentData) => {
         ` : ''}
 
         <!-- Terms & Conditions -->
-        ${(data.terms_and_conditions || DEFAULT_TERMS_TEXT) && ['invoice', 'quotation', 'proforma', 'lpo', 'delivery', 'receipt'].includes(data.type) ? `
+        ${(data.terms_and_conditions || dynamicTerms) && ['invoice', 'quotation', 'proforma', 'lpo', 'delivery', 'receipt'].includes(data.type) ? `
         <div class="notes-section">
           <div class="terms">
             <div class="section-subtitle">Terms &amp; Conditions</div>
-            <div class="notes-content">${data.terms_and_conditions || DEFAULT_TERMS_TEXT}</div>
+            <div class="notes-content">${data.terms_and_conditions || dynamicTerms}</div>
           </div>
         </div>
         ` : ''}

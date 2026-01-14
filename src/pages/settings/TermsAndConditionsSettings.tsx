@@ -8,32 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { FileText, Save, RotateCcw, Copy } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-
-const DEFAULT_TERMS = `Terms and Conditions
-
-1. Payment Terms
-   Payment strictly as per approved terms. Interest of 2% per month will be charged on overdue invoices.
-
-2. Goods Return Policy
-   Claims and queries must be lodged with us within 21 days of dispatch of goods, otherwise they will not be accepted back.
-
-3. Payment Methods
-   Cash transactions of any kind are not acceptable. All payments should be made by cheque, MPESA, or Bank transfer only.
-
-4. Liability and Responsibility
-   The company will not be responsible for any loss or damage of goods in transit collected by the customer or sent via customer's courier account.
-
-5. Lien Rights
-   The company shall have general as well as particular lien on all goods for any unpaid account.
-
-6. Transportation
-   Where applicable, transport will be invoiced separately.
-
-7. Tax Policy
-   The VAT is inclusive where applicable.
-
-8. General
-   E.O.E (Errors and Omissions Excepted)`;
+import { getTermsAndConditions, setTermsAndConditions, resetTermsToDefault, DEFAULT_TERMS_EXPORT } from '@/utils/termsManager';
+import { TermsVerificationPanel } from '@/components/TermsVerificationPanel';
 
 export default function TermsAndConditionsSettings() {
   const [terms, setTerms] = useState('');
@@ -49,23 +25,18 @@ export default function TermsAndConditionsSettings() {
     try {
       setIsLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
-      
+
       if (!user) {
-        setTerms(DEFAULT_TERMS);
+        setTerms(getTermsAndConditions());
         return;
       }
 
-      // Try to load saved terms from a custom metadata or settings
-      // For now, we'll use localStorage as a fallback
-      const savedTerms = localStorage.getItem('default_terms_and_conditions');
-      if (savedTerms) {
-        setTerms(savedTerms);
-      } else {
-        setTerms(DEFAULT_TERMS);
-      }
+      // Load terms using the termsManager
+      const savedTerms = getTermsAndConditions();
+      setTerms(savedTerms);
     } catch (error) {
       console.error('Error loading terms:', error);
-      setTerms(DEFAULT_TERMS);
+      setTerms(getTermsAndConditions());
     } finally {
       setIsLoading(false);
     }
@@ -75,18 +46,15 @@ export default function TermsAndConditionsSettings() {
     try {
       setIsSaving(true);
       const { data: { user } } = await supabase.auth.getUser();
-      
+
       if (!user) {
         toast.error('You must be logged in to save settings');
         return;
       }
 
-      // Save to localStorage
-      localStorage.setItem('default_terms_and_conditions', terms);
-      
-      // Optionally, you could also save to a settings table if you create one
-      // For now, localStorage is sufficient for client-side persistence
-      
+      // Save using termsManager
+      setTermsAndConditions(terms);
+
       setHasChanges(false);
       toast.success('Terms & Conditions saved successfully');
     } catch (error) {
@@ -99,13 +67,14 @@ export default function TermsAndConditionsSettings() {
 
   const handleReset = () => {
     if (window.confirm('Are you sure you want to reset to default terms?')) {
-      setTerms(DEFAULT_TERMS);
+      resetTermsToDefault();
+      setTerms(getTermsAndConditions());
       setHasChanges(true);
     }
   };
 
   const handleCopyDefault = () => {
-    setTerms(DEFAULT_TERMS);
+    setTerms(DEFAULT_TERMS_EXPORT);
     setHasChanges(true);
     toast.info('Default terms copied. Click Save to apply changes.');
   };
@@ -133,6 +102,9 @@ export default function TermsAndConditionsSettings() {
       <p className="text-muted-foreground">
         Manage default terms and conditions that will be automatically applied to quotations, invoices, proforma invoices, and other documents.
       </p>
+
+      {/* Verification Panel */}
+      <TermsVerificationPanel />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Editor */}
