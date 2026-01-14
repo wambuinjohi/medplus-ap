@@ -48,6 +48,7 @@ import { ViewCustomerModal } from '@/components/customers/ViewCustomerModal';
 import { CreateCustomerModal } from '@/components/customers/CreateCustomerModal';
 import { CreateInvoiceModal } from '@/components/invoices/CreateInvoiceModal';
 import { generateCustomerStatementPDF } from '@/utils/pdfGenerator';
+import { applyTermsToInvoiceForPDF } from '@/utils/pdfTermsManager';
 
 // Memoized customer row component for better performance
 const CustomerRow = React.memo(({ 
