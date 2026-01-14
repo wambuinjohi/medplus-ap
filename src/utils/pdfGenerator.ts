@@ -911,11 +911,11 @@ export const generatePDF = (data: DocumentData) => {
         ` : ''}
 
         <!-- Terms & Conditions -->
-        ${(data.terms_and_conditions || DEFAULT_TERMS_TEXT) && ['invoice', 'quotation', 'proforma', 'lpo', 'delivery', 'receipt'].includes(data.type) ? `
+        ${(data.terms_and_conditions || dynamicTerms) && ['invoice', 'quotation', 'proforma', 'lpo', 'delivery', 'receipt'].includes(data.type) ? `
         <div class="notes-section">
           <div class="terms">
             <div class="section-subtitle">Terms &amp; Conditions</div>
-            <div class="notes-content">${data.terms_and_conditions || DEFAULT_TERMS_TEXT}</div>
+            <div class="notes-content">${data.terms_and_conditions || dynamicTerms}</div>
           </div>
         </div>
         ` : ''}
