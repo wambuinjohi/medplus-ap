@@ -248,10 +248,11 @@ export const generateLPOPDF = (lpo: LPOPDFData, company: CompanyData) => {
       },
       columnStyles: {
         2: { halign: 'center' }, // Quantity
-        3: { halign: 'right' },  // Unit Price
-        4: { halign: 'center' }, // Tax %
-        5: { halign: 'right' },  // Tax Amount
-        6: { halign: 'right' },  // Total
+        3: { halign: 'center' }, // UoM
+        4: { halign: 'right' },  // Unit Price
+        5: { halign: 'center' }, // Tax %
+        6: { halign: 'right' },  // Tax Amount
+        7: { halign: 'right' },  // Total
       },
     });
 
