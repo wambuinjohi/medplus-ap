@@ -1377,6 +1377,32 @@ export const downloadDeliveryNotePDF = async (deliveryNote: any, company?: Compa
 
 // Function for LPO PDF generation
 export const downloadLPOPDF = async (lpo: any, company?: CompanyDetails) => {
+  // Resolve all unit_of_measure UUIDs to abbreviations first
+  const resolvedItems = await Promise.all(
+    (lpo.lpo_items || []).map(async (item: any) => {
+      const quantity = Number(item.quantity || 0);
+      const unitPrice = Number(item.unit_price || 0);
+      const taxAmount = Number(item.tax_amount || 0);
+      const computedLineTotal = quantity * unitPrice + taxAmount;
+
+      const uomValue = item.products?.unit_of_measure || item.unit_of_measure || 'pcs';
+      const resolvedUoM = await resolveUnitOfMeasure(uomValue);
+
+      return {
+        description: item.description || item.products?.name || 'Unknown Item',
+        quantity: quantity,
+        unit_price: unitPrice,
+        discount_percentage: 0,
+        discount_amount: 0,
+        tax_percentage: Number(item.tax_rate || 0),
+        tax_amount: taxAmount,
+        tax_inclusive: false,
+        line_total: Number(item.line_total ?? computedLineTotal),
+        unit_of_measure: resolvedUoM,
+      };
+    })
+  );
+
   const documentData: DocumentData = {
     type: 'lpo', // Use LPO document type
     number: lpo.lpo_number,
@@ -1393,25 +1419,7 @@ export const downloadLPOPDF = async (lpo: any, company?: CompanyDetails) => {
       city: lpo.suppliers?.city,
       country: lpo.suppliers?.country,
     },
-    items: lpo.lpo_items?.map((item: any) => {
-      const quantity = Number(item.quantity || 0);
-      const unitPrice = Number(item.unit_price || 0);
-      const taxAmount = Number(item.tax_amount || 0);
-      const computedLineTotal = quantity * unitPrice + taxAmount;
-
-      return {
-        description: item.description || item.products?.name || 'Unknown Item',
-        quantity: quantity,
-        unit_price: unitPrice,
-        discount_percentage: 0,
-        discount_amount: 0,
-        tax_percentage: Number(item.tax_rate || 0),
-        tax_amount: taxAmount,
-        tax_inclusive: false,
-        line_total: Number(item.line_total ?? computedLineTotal),
-        unit_of_measure: item.products?.unit_of_measure || 'pcs',
-      };
-    }) || [],
+    items: resolvedItems,
     subtotal: lpo.subtotal,
     tax_amount: lpo.tax_amount,
     total_amount: lpo.total_amount,
