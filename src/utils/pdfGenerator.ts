@@ -797,9 +797,10 @@ export const generatePDF = (data: DocumentData) => {
                 <th style="width: 18%;">Payment Amount</th>
                 ` : `
                 <th style="width: 5%;">#</th>
-                <th style="width: ${visibleColumns.discountPercentage || visibleColumns.discountBeforeVat || visibleColumns.discountAmount || visibleColumns.taxPercentage || visibleColumns.taxAmount ? '30%' : '40%'};">Description</th>
-                <th style="width: 10%;">Qty</th>
-                <th style="width: 15%;">Unit Price</th>
+                <th style="width: ${visibleColumns.discountPercentage || visibleColumns.discountBeforeVat || visibleColumns.discountAmount || visibleColumns.taxPercentage || visibleColumns.taxAmount ? '28%' : '38%'};">Description</th>
+                <th style="width: 8%;">Qty</th>
+                <th style="width: 8%;">UoM</th>
+                <th style="width: 13%;">Unit Price</th>
                 ${visibleColumns.discountPercentage ? '<th style="width: 10%;">Disc %</th>' : ''}
                 ${visibleColumns.discountBeforeVat ? '<th style="width: 12%;">Disc Before VAT</th>' : ''}
                 ${visibleColumns.discountAmount ? '<th style="width: 12%;">Disc Amount</th>' : ''}
