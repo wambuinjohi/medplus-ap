@@ -548,7 +548,7 @@ export const generateCreditNotePDF = async (creditNote: CreditNotePDFData, compa
         </div>
 
         <!-- Items Section -->
-        ${creditNote.credit_note_items && creditNote.credit_note_items.length > 0 ? `
+        ${resolvedItems && resolvedItems.length > 0 ? `
         <div class="items-section">
           <table class="items-table">
             <thead>
@@ -564,12 +564,12 @@ export const generateCreditNotePDF = async (creditNote: CreditNotePDFData, compa
               </tr>
             </thead>
             <tbody>
-              ${creditNote.credit_note_items.map((item, index) => `
+              ${resolvedItems.map((item, index) => `
                 <tr>
                   <td class="center">${index + 1}</td>
                   <td class="description-cell">${item.description || item.products?.name || 'Unknown Item'}</td>
                   <td class="center">${item.quantity}</td>
-                  <td class="center">${item.products?.unit_of_measure || item.unit_of_measure || 'pcs'}</td>
+                  <td class="center">${item.unit_of_measure || 'pcs'}</td>
                   <td class="amount-cell">${formatCurrency(item.unit_price)}</td>
                   <td class="center">${item.tax_percentage}%</td>
                   <td class="amount-cell">${formatCurrency(item.tax_amount)}</td>
