@@ -96,9 +96,17 @@ const DEFAULT_COMPANY: CompanyData = {
   logo_url: 'https://cdn.builder.io/api/v1/image/assets%2Ffd1c9d5781fc4f20b6ad16683f5b85b3%2F274fc62c033e464584b0f50713695127?format=webp&width=800'
 };
 
-export const generateCreditNotePDF = (creditNote: CreditNotePDFData, company?: CompanyData) => {
+export const generateCreditNotePDF = async (creditNote: CreditNotePDFData, company?: CompanyData) => {
   const companyData = company || DEFAULT_COMPANY;
-  
+
+  // Resolve all unit_of_measure UUIDs to abbreviations first
+  const resolvedItems = await Promise.all(
+    (creditNote.credit_note_items || []).map(async (item) => ({
+      ...item,
+      unit_of_measure: await resolveUnitOfMeasure(item.products?.unit_of_measure || 'pcs'),
+    }))
+  );
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-KE', {
       style: 'currency',
