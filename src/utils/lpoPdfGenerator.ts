@@ -1,5 +1,47 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { supabase } from '@/integrations/supabase/client';
+
+// Helper to detect if a string looks like a UUID
+const isUUID = (str: string): boolean => {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(str);
+};
+
+// Cache for UUID -> abbreviation lookups
+const uuidCache = new Map<string, string>();
+
+// Helper to resolve UUID to unit abbreviation
+const resolveUnitOfMeasure = async (value: string | undefined): Promise<string> => {
+  if (!value) return 'pcs';
+
+  // If it's already an abbreviation (not a UUID), return it
+  if (!isUUID(value)) return value;
+
+  // Check cache first
+  if (uuidCache.has(value)) {
+    return uuidCache.get(value) || 'pcs';
+  }
+
+  try {
+    // Look up the unit in the database
+    const { data, error } = await supabase
+      .from('units_of_measure')
+      .select('abbreviation')
+      .eq('id', value)
+      .single();
+
+    if (!error && data?.abbreviation) {
+      uuidCache.set(value, data.abbreviation);
+      return data.abbreviation;
+    }
+  } catch (err) {
+    console.warn(`Failed to resolve unit UUID ${value}:`, err);
+  }
+
+  // Fallback
+  return 'pcs';
+};
 
 export interface LPOPDFData {
   id: string;
@@ -58,7 +100,18 @@ export interface CompanyData {
  * The LPO object should have terms_and_conditions property set before calling this function
  * Use applyTermsToLPOForPDF() from pdfTermsManager.ts to apply dynamic terms
  */
-export const generateLPOPDF = (lpo: LPOPDFData, company: CompanyData) => {
+export const generateLPOPDF = async (lpo: LPOPDFData, company: CompanyData) => {
+  // Resolve all unit_of_measure UUIDs to abbreviations first
+  const resolvedItems = await Promise.all(
+    (lpo.lpo_items || []).map(async (item) => ({
+      ...item,
+      products: {
+        ...item.products,
+        unit_of_measure: await resolveUnitOfMeasure(item.products?.unit_of_measure),
+      },
+    }))
+  );
+
   const doc = new jsPDF();
   let yPosition = 20;
 
@@ -209,7 +262,7 @@ export const generateLPOPDF = (lpo: LPOPDFData, company: CompanyData) => {
   }
 
   // Items Table
-  if (lpo.lpo_items && lpo.lpo_items.length > 0) {
+  if (resolvedItems && resolvedItems.length > 0) {
     const tableColumns = [
       'Item',
       'Description',
@@ -221,7 +274,7 @@ export const generateLPOPDF = (lpo: LPOPDFData, company: CompanyData) => {
       'Total'
     ];
 
-    const tableRows = lpo.lpo_items.map(item => [
+    const tableRows = resolvedItems.map(item => [
       item.products?.name || 'N/A',
       item.description,
       item.quantity,

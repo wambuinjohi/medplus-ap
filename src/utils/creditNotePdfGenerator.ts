@@ -1,4 +1,46 @@
 import type { CreditNote } from '@/hooks/useCreditNotes';
+import { supabase } from '@/integrations/supabase/client';
+
+// Helper to detect if a string looks like a UUID
+const isUUID = (str: string): boolean => {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(str);
+};
+
+// Cache for UUID -> abbreviation lookups
+const uuidCache = new Map<string, string>();
+
+// Helper to resolve UUID to unit abbreviation
+const resolveUnitOfMeasure = async (value: string | undefined): Promise<string> => {
+  if (!value) return 'pcs';
+
+  // If it's already an abbreviation (not a UUID), return it
+  if (!isUUID(value)) return value;
+
+  // Check cache first
+  if (uuidCache.has(value)) {
+    return uuidCache.get(value) || 'pcs';
+  }
+
+  try {
+    // Look up the unit in the database
+    const { data, error } = await supabase
+      .from('units_of_measure')
+      .select('abbreviation')
+      .eq('id', value)
+      .single();
+
+    if (!error && data?.abbreviation) {
+      uuidCache.set(value, data.abbreviation);
+      return data.abbreviation;
+    }
+  } catch (err) {
+    console.warn(`Failed to resolve unit UUID ${value}:`, err);
+  }
+
+  // Fallback
+  return 'pcs';
+};
 
 export interface CreditNotePDFData extends CreditNote {
   customers: {
@@ -54,9 +96,17 @@ const DEFAULT_COMPANY: CompanyData = {
   logo_url: 'https://cdn.builder.io/api/v1/image/assets%2Ffd1c9d5781fc4f20b6ad16683f5b85b3%2F274fc62c033e464584b0f50713695127?format=webp&width=800'
 };
 
-export const generateCreditNotePDF = (creditNote: CreditNotePDFData, company?: CompanyData) => {
+export const generateCreditNotePDF = async (creditNote: CreditNotePDFData, company?: CompanyData) => {
   const companyData = company || DEFAULT_COMPANY;
-  
+
+  // Resolve all unit_of_measure UUIDs to abbreviations first
+  const resolvedItems = await Promise.all(
+    (creditNote.credit_note_items || []).map(async (item) => ({
+      ...item,
+      unit_of_measure: await resolveUnitOfMeasure(item.products?.unit_of_measure || 'pcs'),
+    }))
+  );
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-KE', {
       style: 'currency',
@@ -498,26 +548,28 @@ export const generateCreditNotePDF = (creditNote: CreditNotePDFData, company?: C
         </div>
 
         <!-- Items Section -->
-        ${creditNote.credit_note_items && creditNote.credit_note_items.length > 0 ? `
+        ${resolvedItems && resolvedItems.length > 0 ? `
         <div class="items-section">
           <table class="items-table">
             <thead>
               <tr>
                 <th style="width: 5%;">#</th>
-                <th style="width: 40%;">Description</th>
-                <th style="width: 10%;">Qty</th>
-                <th style="width: 15%;">Unit Price</th>
-                <th style="width: 10%;">Tax %</th>
+                <th style="width: 35%;">Description</th>
+                <th style="width: 8%;">Qty</th>
+                <th style="width: 8%;">UoM</th>
+                <th style="width: 12%;">Unit Price</th>
+                <th style="width: 8%;">Tax %</th>
                 <th style="width: 10%;">Tax Amount</th>
-                <th style="width: 10%;">Line Total</th>
+                <th style="width: 12%;">Line Total</th>
               </tr>
             </thead>
             <tbody>
-              ${creditNote.credit_note_items.map((item, index) => `
+              ${resolvedItems.map((item, index) => `
                 <tr>
                   <td class="center">${index + 1}</td>
                   <td class="description-cell">${item.description || item.products?.name || 'Unknown Item'}</td>
                   <td class="center">${item.quantity}</td>
+                  <td class="center">${item.unit_of_measure || 'pcs'}</td>
                   <td class="amount-cell">${formatCurrency(item.unit_price)}</td>
                   <td class="center">${item.tax_percentage}%</td>
                   <td class="amount-cell">${formatCurrency(item.tax_amount)}</td>

@@ -3,6 +3,48 @@
 // In a real app, you'd want to use a proper PDF library like jsPDF or react-pdf
 
 import { getFormattedTermsForPDF } from './termsManager';
+import { supabase } from '@/integrations/supabase/client';
+
+// Helper to detect if a string looks like a UUID
+const isUUID = (str: string): boolean => {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(str);
+};
+
+// Cache for UUID -> abbreviation lookups
+const uuidCache = new Map<string, string>();
+
+// Helper to resolve UUID to unit abbreviation
+const resolveUnitOfMeasure = async (value: string | undefined): Promise<string> => {
+  if (!value) return 'pcs';
+
+  // If it's already an abbreviation (not a UUID), return it
+  if (!isUUID(value)) return value;
+
+  // Check cache first
+  if (uuidCache.has(value)) {
+    return uuidCache.get(value) || 'pcs';
+  }
+
+  try {
+    // Look up the unit in the database
+    const { data, error } = await supabase
+      .from('units_of_measure')
+      .select('abbreviation')
+      .eq('id', value)
+      .single();
+
+    if (!error && data?.abbreviation) {
+      uuidCache.set(value, data.abbreviation);
+      return data.abbreviation;
+    }
+  } catch (err) {
+    console.warn(`Failed to resolve unit UUID ${value}:`, err);
+  }
+
+  // Fallback
+  return 'pcs';
+};
 
 export interface DocumentData {
   type: 'quotation' | 'invoice' | 'remittance' | 'proforma' | 'delivery' | 'statement' | 'receipt' | 'lpo';
@@ -1000,6 +1042,34 @@ export const generatePaymentReceiptPDF = async (payment: any, company?: CompanyD
 
 // Specific function for invoice PDF generation
 export const downloadInvoicePDF = async (invoice: any, documentType: 'INVOICE' | 'PROFORMA' = 'INVOICE', company?: CompanyDetails) => {
+  // Resolve all unit_of_measure UUIDs to abbreviations first
+  const resolvedItems = await Promise.all(
+    (invoice.invoice_items || []).map(async (item: any) => {
+      const quantity = Number(item.quantity || 0);
+      const unitPrice = Number(item.unit_price || 0);
+      const taxAmount = Number(item.tax_amount || 0);
+      const discountAmount = Number(item.discount_amount || 0);
+      const computedLineTotal = quantity * unitPrice - discountAmount + taxAmount;
+
+      const uomValue = item.products?.unit_of_measure || item.unit_of_measure || 'pcs';
+      const resolvedUoM = await resolveUnitOfMeasure(uomValue);
+
+      return {
+        description: item.description || item.product_name || item.products?.name || 'Unknown Item',
+        quantity: quantity,
+        unit_price: unitPrice,
+        discount_percentage: Number(item.discount_percentage || 0),
+        discount_before_vat: Number(item.discount_before_vat || 0),
+        discount_amount: discountAmount,
+        tax_percentage: Number(item.tax_percentage || 0),
+        tax_amount: taxAmount,
+        tax_inclusive: item.tax_inclusive || false,
+        line_total: Number(item.line_total ?? computedLineTotal),
+        unit_of_measure: resolvedUoM,
+      };
+    })
+  );
+
   const documentData: DocumentData = {
     type: documentType === 'PROFORMA' ? 'proforma' : 'invoice',
     number: invoice.invoice_number,
@@ -1015,27 +1085,7 @@ export const downloadInvoicePDF = async (invoice: any, documentType: 'INVOICE' |
       city: invoice.customers?.city,
       country: invoice.customers?.country,
     },
-    items: invoice.invoice_items?.map((item: any) => {
-      const quantity = Number(item.quantity || 0);
-      const unitPrice = Number(item.unit_price || 0);
-      const taxAmount = Number(item.tax_amount || 0);
-      const discountAmount = Number(item.discount_amount || 0);
-      const computedLineTotal = quantity * unitPrice - discountAmount + taxAmount;
-
-      return {
-        description: item.description || item.product_name || item.products?.name || 'Unknown Item',
-        quantity: quantity,
-        unit_price: unitPrice,
-        discount_percentage: Number(item.discount_percentage || 0),
-        discount_before_vat: Number(item.discount_before_vat || 0),
-        discount_amount: discountAmount,
-        tax_percentage: Number(item.tax_percentage || 0),
-        tax_amount: taxAmount,
-        tax_inclusive: item.tax_inclusive || false,
-        line_total: Number(item.line_total ?? computedLineTotal),
-        unit_of_measure: item.products?.unit_of_measure || item.unit_of_measure || 'pcs',
-      };
-    }) || [],
+    items: resolvedItems,
     subtotal: invoice.subtotal,
     tax_amount: invoice.tax_amount,
     total_amount: invoice.total_amount,
@@ -1050,6 +1100,33 @@ export const downloadInvoicePDF = async (invoice: any, documentType: 'INVOICE' |
 
 // Function for quotation PDF generation
 export const downloadQuotationPDF = async (quotation: any, company?: CompanyDetails) => {
+  // Resolve all unit_of_measure UUIDs to abbreviations first
+  const resolvedItems = await Promise.all(
+    (quotation.quotation_items || []).map(async (item: any) => {
+      const quantity = Number(item.quantity || 0);
+      const unitPrice = Number(item.unit_price || 0);
+      const taxAmount = Number(item.tax_amount || 0);
+      const discountAmount = Number(item.discount_amount || 0);
+      const computedLineTotal = quantity * unitPrice - discountAmount + taxAmount;
+
+      const uomValue = item.products?.unit_of_measure || item.unit_of_measure || 'pcs';
+      const resolvedUoM = await resolveUnitOfMeasure(uomValue);
+
+      return {
+        description: item.description || item.product_name || item.products?.name || 'Unknown Item',
+        quantity: quantity,
+        unit_price: unitPrice,
+        discount_percentage: Number(item.discount_percentage || 0),
+        discount_amount: discountAmount,
+        tax_percentage: Number(item.tax_percentage || 0),
+        tax_amount: taxAmount,
+        tax_inclusive: item.tax_inclusive || false,
+        line_total: Number(item.line_total ?? computedLineTotal),
+        unit_of_measure: resolvedUoM,
+      };
+    })
+  );
+
   const documentData: DocumentData = {
     type: 'quotation',
     number: quotation.quotation_number,
@@ -1064,26 +1141,7 @@ export const downloadQuotationPDF = async (quotation: any, company?: CompanyDeta
       city: quotation.customers?.city,
       country: quotation.customers?.country,
     },
-    items: quotation.quotation_items?.map((item: any) => {
-      const quantity = Number(item.quantity || 0);
-      const unitPrice = Number(item.unit_price || 0);
-      const taxAmount = Number(item.tax_amount || 0);
-      const discountAmount = Number(item.discount_amount || 0);
-      const computedLineTotal = quantity * unitPrice - discountAmount + taxAmount;
-
-      return {
-        description: item.description || item.product_name || item.products?.name || 'Unknown Item',
-        quantity: quantity,
-        unit_price: unitPrice,
-        discount_percentage: Number(item.discount_percentage || 0),
-        discount_amount: discountAmount,
-        tax_percentage: Number(item.tax_percentage || 0),
-        tax_amount: taxAmount,
-        tax_inclusive: item.tax_inclusive || false,
-        line_total: Number(item.line_total ?? computedLineTotal),
-        unit_of_measure: item.products?.unit_of_measure || item.unit_of_measure || 'pcs',
-      };
-    }) || [],
+    items: resolvedItems,
     subtotal: quotation.subtotal,
     tax_amount: quotation.tax_amount,
     total_amount: quotation.total_amount,
@@ -1265,6 +1323,28 @@ export const downloadDeliveryNotePDF = async (deliveryNote: any, company?: Compa
                        deliveryNote.invoices?.invoice_number ||
                        (deliveryNote.invoice_id ? `INV-${deliveryNote.invoice_id.slice(-8)}` : 'N/A');
 
+  // Resolve all unit_of_measure UUIDs to abbreviations first
+  const resolvedItems = await Promise.all(
+    ((deliveryNote.delivery_note_items || deliveryNote.delivery_items) || []).map(async (item: any) => {
+      const uomValue = item.products?.unit_of_measure || item.unit_of_measure || 'pcs';
+      const resolvedUoM = await resolveUnitOfMeasure(uomValue);
+
+      return {
+        description: `${item.products?.name || item.product_name || item.description || 'Unknown Item'}${invoiceNumber !== 'N/A' ? ` (From Invoice: ${invoiceNumber})` : ''}`,
+        quantity: item.quantity_delivered || item.quantity || 0,
+        unit_price: 0, // Not relevant for delivery notes
+        tax_percentage: 0,
+        tax_amount: 0,
+        tax_inclusive: false,
+        line_total: 0,
+        unit_of_measure: resolvedUoM,
+        // Add delivery-specific details
+        quantity_ordered: item.quantity_ordered || item.quantity || 0,
+        quantity_delivered: item.quantity_delivered || item.quantity || 0,
+      };
+    })
+  );
+
   const documentData: DocumentData = {
     type: 'delivery',
     number: deliveryNote.delivery_note_number || deliveryNote.delivery_number,
@@ -1287,19 +1367,7 @@ export const downloadDeliveryNotePDF = async (deliveryNote: any, company?: Compa
       city: deliveryNote.customers?.city,
       country: deliveryNote.customers?.country,
     },
-    items: (deliveryNote.delivery_note_items || deliveryNote.delivery_items)?.map((item: any, index: number) => ({
-      description: `${item.products?.name || item.product_name || item.description || 'Unknown Item'}${invoiceNumber !== 'N/A' ? ` (From Invoice: ${invoiceNumber})` : ''}`,
-      quantity: item.quantity_delivered || item.quantity || 0,
-      unit_price: 0, // Not relevant for delivery notes
-      tax_percentage: 0,
-      tax_amount: 0,
-      tax_inclusive: false,
-      line_total: 0,
-      unit_of_measure: item.products?.unit_of_measure || item.unit_of_measure || 'pcs',
-      // Add delivery-specific details
-      quantity_ordered: item.quantity_ordered || item.quantity || 0,
-      quantity_delivered: item.quantity_delivered || item.quantity || 0,
-    })) || [],
+    items: resolvedItems,
     total_amount: 0, // Not relevant for delivery notes
     notes: deliveryNote.notes || `Items delivered as per Invoice ${invoiceNumber}`,
   };
@@ -1309,6 +1377,32 @@ export const downloadDeliveryNotePDF = async (deliveryNote: any, company?: Compa
 
 // Function for LPO PDF generation
 export const downloadLPOPDF = async (lpo: any, company?: CompanyDetails) => {
+  // Resolve all unit_of_measure UUIDs to abbreviations first
+  const resolvedItems = await Promise.all(
+    (lpo.lpo_items || []).map(async (item: any) => {
+      const quantity = Number(item.quantity || 0);
+      const unitPrice = Number(item.unit_price || 0);
+      const taxAmount = Number(item.tax_amount || 0);
+      const computedLineTotal = quantity * unitPrice + taxAmount;
+
+      const uomValue = item.products?.unit_of_measure || item.unit_of_measure || 'pcs';
+      const resolvedUoM = await resolveUnitOfMeasure(uomValue);
+
+      return {
+        description: item.description || item.products?.name || 'Unknown Item',
+        quantity: quantity,
+        unit_price: unitPrice,
+        discount_percentage: 0,
+        discount_amount: 0,
+        tax_percentage: Number(item.tax_rate || 0),
+        tax_amount: taxAmount,
+        tax_inclusive: false,
+        line_total: Number(item.line_total ?? computedLineTotal),
+        unit_of_measure: resolvedUoM,
+      };
+    })
+  );
+
   const documentData: DocumentData = {
     type: 'lpo', // Use LPO document type
     number: lpo.lpo_number,
@@ -1325,25 +1419,7 @@ export const downloadLPOPDF = async (lpo: any, company?: CompanyDetails) => {
       city: lpo.suppliers?.city,
       country: lpo.suppliers?.country,
     },
-    items: lpo.lpo_items?.map((item: any) => {
-      const quantity = Number(item.quantity || 0);
-      const unitPrice = Number(item.unit_price || 0);
-      const taxAmount = Number(item.tax_amount || 0);
-      const computedLineTotal = quantity * unitPrice + taxAmount;
-
-      return {
-        description: item.description || item.products?.name || 'Unknown Item',
-        quantity: quantity,
-        unit_price: unitPrice,
-        discount_percentage: 0,
-        discount_amount: 0,
-        tax_percentage: Number(item.tax_rate || 0),
-        tax_amount: taxAmount,
-        tax_inclusive: false,
-        line_total: Number(item.line_total ?? computedLineTotal),
-        unit_of_measure: item.products?.unit_of_measure || 'pcs',
-      };
-    }) || [],
+    items: resolvedItems,
     subtotal: lpo.subtotal,
     tax_amount: lpo.tax_amount,
     total_amount: lpo.total_amount,

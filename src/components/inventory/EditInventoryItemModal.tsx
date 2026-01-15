@@ -219,7 +219,7 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
 
     if (existingUnit) {
       // Unit already exists, select it instead
-      handleInputChange('unit_of_measure', existingUnit.id);
+      handleInputChange('unit_of_measure', existingUnit.abbreviation);
       setNewUnitName('');
       setNewUnitAbbr('');
       setShowCreateUnit(false);
@@ -237,7 +237,7 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
         sort_order: (unitsOfMeasure?.length || 0) + 1
       });
 
-      handleInputChange('unit_of_measure', newUnit.id);
+      handleInputChange('unit_of_measure', newUnit.abbreviation);
       setNewUnitName('');
       setNewUnitAbbr('');
       setShowCreateUnit(false);
@@ -402,7 +402,7 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
                     <div className="px-2 py-1.5 text-sm text-muted-foreground">Loading units...</div>
                   ) : unitsOfMeasure && unitsOfMeasure.length > 0 ? (
                     unitsOfMeasure.map((unit) => (
-                      <SelectItem key={unit.id} value={unit.id}>
+                      <SelectItem key={unit.id} value={unit.abbreviation}>
                         {unit.name} ({unit.abbreviation})
                       </SelectItem>
                     ))
