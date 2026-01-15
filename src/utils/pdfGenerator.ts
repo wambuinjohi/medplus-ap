@@ -1042,6 +1042,34 @@ export const generatePaymentReceiptPDF = async (payment: any, company?: CompanyD
 
 // Specific function for invoice PDF generation
 export const downloadInvoicePDF = async (invoice: any, documentType: 'INVOICE' | 'PROFORMA' = 'INVOICE', company?: CompanyDetails) => {
+  // Resolve all unit_of_measure UUIDs to abbreviations first
+  const resolvedItems = await Promise.all(
+    (invoice.invoice_items || []).map(async (item: any) => {
+      const quantity = Number(item.quantity || 0);
+      const unitPrice = Number(item.unit_price || 0);
+      const taxAmount = Number(item.tax_amount || 0);
+      const discountAmount = Number(item.discount_amount || 0);
+      const computedLineTotal = quantity * unitPrice - discountAmount + taxAmount;
+
+      const uomValue = item.products?.unit_of_measure || item.unit_of_measure || 'pcs';
+      const resolvedUoM = await resolveUnitOfMeasure(uomValue);
+
+      return {
+        description: item.description || item.product_name || item.products?.name || 'Unknown Item',
+        quantity: quantity,
+        unit_price: unitPrice,
+        discount_percentage: Number(item.discount_percentage || 0),
+        discount_before_vat: Number(item.discount_before_vat || 0),
+        discount_amount: discountAmount,
+        tax_percentage: Number(item.tax_percentage || 0),
+        tax_amount: taxAmount,
+        tax_inclusive: item.tax_inclusive || false,
+        line_total: Number(item.line_total ?? computedLineTotal),
+        unit_of_measure: resolvedUoM,
+      };
+    })
+  );
+
   const documentData: DocumentData = {
     type: documentType === 'PROFORMA' ? 'proforma' : 'invoice',
     number: invoice.invoice_number,
@@ -1057,27 +1085,7 @@ export const downloadInvoicePDF = async (invoice: any, documentType: 'INVOICE' |
       city: invoice.customers?.city,
       country: invoice.customers?.country,
     },
-    items: invoice.invoice_items?.map((item: any) => {
-      const quantity = Number(item.quantity || 0);
-      const unitPrice = Number(item.unit_price || 0);
-      const taxAmount = Number(item.tax_amount || 0);
-      const discountAmount = Number(item.discount_amount || 0);
-      const computedLineTotal = quantity * unitPrice - discountAmount + taxAmount;
-
-      return {
-        description: item.description || item.product_name || item.products?.name || 'Unknown Item',
-        quantity: quantity,
-        unit_price: unitPrice,
-        discount_percentage: Number(item.discount_percentage || 0),
-        discount_before_vat: Number(item.discount_before_vat || 0),
-        discount_amount: discountAmount,
-        tax_percentage: Number(item.tax_percentage || 0),
-        tax_amount: taxAmount,
-        tax_inclusive: item.tax_inclusive || false,
-        line_total: Number(item.line_total ?? computedLineTotal),
-        unit_of_measure: item.products?.unit_of_measure || item.unit_of_measure || 'pcs',
-      };
-    }) || [],
+    items: resolvedItems,
     subtotal: invoice.subtotal,
     tax_amount: invoice.tax_amount,
     total_amount: invoice.total_amount,
