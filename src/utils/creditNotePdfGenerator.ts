@@ -504,12 +504,13 @@ export const generateCreditNotePDF = (creditNote: CreditNotePDFData, company?: C
             <thead>
               <tr>
                 <th style="width: 5%;">#</th>
-                <th style="width: 40%;">Description</th>
-                <th style="width: 10%;">Qty</th>
-                <th style="width: 15%;">Unit Price</th>
-                <th style="width: 10%;">Tax %</th>
+                <th style="width: 35%;">Description</th>
+                <th style="width: 8%;">Qty</th>
+                <th style="width: 8%;">UoM</th>
+                <th style="width: 12%;">Unit Price</th>
+                <th style="width: 8%;">Tax %</th>
                 <th style="width: 10%;">Tax Amount</th>
-                <th style="width: 10%;">Line Total</th>
+                <th style="width: 12%;">Line Total</th>
               </tr>
             </thead>
             <tbody>
@@ -518,6 +519,7 @@ export const generateCreditNotePDF = (creditNote: CreditNotePDFData, company?: C
                   <td class="center">${index + 1}</td>
                   <td class="description-cell">${item.description || item.products?.name || 'Unknown Item'}</td>
                   <td class="center">${item.quantity}</td>
+                  <td class="center">${item.products?.unit_of_measure || item.unit_of_measure || 'pcs'}</td>
                   <td class="amount-cell">${formatCurrency(item.unit_price)}</td>
                   <td class="center">${item.tax_percentage}%</td>
                   <td class="amount-cell">${formatCurrency(item.tax_amount)}</td>
