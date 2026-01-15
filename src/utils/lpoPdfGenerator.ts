@@ -1,5 +1,47 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { supabase } from '@/integrations/supabase/client';
+
+// Helper to detect if a string looks like a UUID
+const isUUID = (str: string): boolean => {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(str);
+};
+
+// Cache for UUID -> abbreviation lookups
+const uuidCache = new Map<string, string>();
+
+// Helper to resolve UUID to unit abbreviation
+const resolveUnitOfMeasure = async (value: string | undefined): Promise<string> => {
+  if (!value) return 'pcs';
+
+  // If it's already an abbreviation (not a UUID), return it
+  if (!isUUID(value)) return value;
+
+  // Check cache first
+  if (uuidCache.has(value)) {
+    return uuidCache.get(value) || 'pcs';
+  }
+
+  try {
+    // Look up the unit in the database
+    const { data, error } = await supabase
+      .from('units_of_measure')
+      .select('abbreviation')
+      .eq('id', value)
+      .single();
+
+    if (!error && data?.abbreviation) {
+      uuidCache.set(value, data.abbreviation);
+      return data.abbreviation;
+    }
+  } catch (err) {
+    console.warn(`Failed to resolve unit UUID ${value}:`, err);
+  }
+
+  // Fallback
+  return 'pcs';
+};
 
 export interface LPOPDFData {
   id: string;
