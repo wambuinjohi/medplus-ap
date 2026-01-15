@@ -262,7 +262,7 @@ export const generateLPOPDF = async (lpo: LPOPDFData, company: CompanyData) => {
   }
 
   // Items Table
-  if (lpo.lpo_items && lpo.lpo_items.length > 0) {
+  if (resolvedItems && resolvedItems.length > 0) {
     const tableColumns = [
       'Item',
       'Description',
@@ -274,7 +274,7 @@ export const generateLPOPDF = async (lpo: LPOPDFData, company: CompanyData) => {
       'Total'
     ];
 
-    const tableRows = lpo.lpo_items.map(item => [
+    const tableRows = resolvedItems.map(item => [
       item.products?.name || 'N/A',
       item.description,
       item.quantity,
