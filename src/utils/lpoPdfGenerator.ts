@@ -100,7 +100,18 @@ export interface CompanyData {
  * The LPO object should have terms_and_conditions property set before calling this function
  * Use applyTermsToLPOForPDF() from pdfTermsManager.ts to apply dynamic terms
  */
-export const generateLPOPDF = (lpo: LPOPDFData, company: CompanyData) => {
+export const generateLPOPDF = async (lpo: LPOPDFData, company: CompanyData) => {
+  // Resolve all unit_of_measure UUIDs to abbreviations first
+  const resolvedItems = await Promise.all(
+    (lpo.lpo_items || []).map(async (item) => ({
+      ...item,
+      products: {
+        ...item.products,
+        unit_of_measure: await resolveUnitOfMeasure(item.products?.unit_of_measure),
+      },
+    }))
+  );
+
   const doc = new jsPDF();
   let yPosition = 20;
 
