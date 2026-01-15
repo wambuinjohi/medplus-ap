@@ -1323,6 +1323,28 @@ export const downloadDeliveryNotePDF = async (deliveryNote: any, company?: Compa
                        deliveryNote.invoices?.invoice_number ||
                        (deliveryNote.invoice_id ? `INV-${deliveryNote.invoice_id.slice(-8)}` : 'N/A');
 
+  // Resolve all unit_of_measure UUIDs to abbreviations first
+  const resolvedItems = await Promise.all(
+    ((deliveryNote.delivery_note_items || deliveryNote.delivery_items) || []).map(async (item: any) => {
+      const uomValue = item.products?.unit_of_measure || item.unit_of_measure || 'pcs';
+      const resolvedUoM = await resolveUnitOfMeasure(uomValue);
+
+      return {
+        description: `${item.products?.name || item.product_name || item.description || 'Unknown Item'}${invoiceNumber !== 'N/A' ? ` (From Invoice: ${invoiceNumber})` : ''}`,
+        quantity: item.quantity_delivered || item.quantity || 0,
+        unit_price: 0, // Not relevant for delivery notes
+        tax_percentage: 0,
+        tax_amount: 0,
+        tax_inclusive: false,
+        line_total: 0,
+        unit_of_measure: resolvedUoM,
+        // Add delivery-specific details
+        quantity_ordered: item.quantity_ordered || item.quantity || 0,
+        quantity_delivered: item.quantity_delivered || item.quantity || 0,
+      };
+    })
+  );
+
   const documentData: DocumentData = {
     type: 'delivery',
     number: deliveryNote.delivery_note_number || deliveryNote.delivery_number,
@@ -1345,19 +1367,7 @@ export const downloadDeliveryNotePDF = async (deliveryNote: any, company?: Compa
       city: deliveryNote.customers?.city,
       country: deliveryNote.customers?.country,
     },
-    items: (deliveryNote.delivery_note_items || deliveryNote.delivery_items)?.map((item: any, index: number) => ({
-      description: `${item.products?.name || item.product_name || item.description || 'Unknown Item'}${invoiceNumber !== 'N/A' ? ` (From Invoice: ${invoiceNumber})` : ''}`,
-      quantity: item.quantity_delivered || item.quantity || 0,
-      unit_price: 0, // Not relevant for delivery notes
-      tax_percentage: 0,
-      tax_amount: 0,
-      tax_inclusive: false,
-      line_total: 0,
-      unit_of_measure: item.products?.unit_of_measure || item.unit_of_measure || 'pcs',
-      // Add delivery-specific details
-      quantity_ordered: item.quantity_ordered || item.quantity || 0,
-      quantity_delivered: item.quantity_delivered || item.quantity || 0,
-    })) || [],
+    items: resolvedItems,
     total_amount: 0, // Not relevant for delivery notes
     notes: deliveryNote.notes || `Items delivered as per Invoice ${invoiceNumber}`,
   };
