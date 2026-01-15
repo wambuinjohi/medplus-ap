@@ -86,14 +86,17 @@ const DEFAULT_COMPANY: CompanyDetails = {
 
 // Helper function to determine which columns have values
 const analyzeColumns = (items: DocumentData['items']) => {
-  if (!items || items.length === 0) return {};
+  if (!items || items.length === 0) return {
+    taxPercentage: true,
+    taxAmount: true,
+  };
 
   const columns = {
     discountPercentage: false,
     discountBeforeVat: false,
     discountAmount: false,
-    taxPercentage: false,
-    taxAmount: false,
+    taxPercentage: true,
+    taxAmount: true,
   };
 
   items.forEach(item => {
@@ -105,12 +108,6 @@ const analyzeColumns = (items: DocumentData['items']) => {
     }
     if (item.discount_amount && item.discount_amount > 0) {
       columns.discountAmount = true;
-    }
-    if (item.tax_percentage && item.tax_percentage > 0) {
-      columns.taxPercentage = true;
-    }
-    if (item.tax_amount && item.tax_amount > 0) {
-      columns.taxAmount = true;
     }
   });
 
