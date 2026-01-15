@@ -214,6 +214,7 @@ export const generateLPOPDF = (lpo: LPOPDFData, company: CompanyData) => {
       'Item',
       'Description',
       'Qty',
+      'UoM',
       'Unit Price',
       'Tax %',
       'Tax Amount',
@@ -223,7 +224,8 @@ export const generateLPOPDF = (lpo: LPOPDFData, company: CompanyData) => {
     const tableRows = lpo.lpo_items.map(item => [
       item.products?.name || 'N/A',
       item.description,
-      `${item.quantity} ${item.products?.unit_of_measure || 'pcs'}`,
+      item.quantity,
+      item.products?.unit_of_measure || 'pcs',
       formatCurrency(item.unit_price),
       `${item.tax_rate}%`,
       formatCurrency(item.tax_amount),
