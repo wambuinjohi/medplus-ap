@@ -1100,6 +1100,33 @@ export const downloadInvoicePDF = async (invoice: any, documentType: 'INVOICE' |
 
 // Function for quotation PDF generation
 export const downloadQuotationPDF = async (quotation: any, company?: CompanyDetails) => {
+  // Resolve all unit_of_measure UUIDs to abbreviations first
+  const resolvedItems = await Promise.all(
+    (quotation.quotation_items || []).map(async (item: any) => {
+      const quantity = Number(item.quantity || 0);
+      const unitPrice = Number(item.unit_price || 0);
+      const taxAmount = Number(item.tax_amount || 0);
+      const discountAmount = Number(item.discount_amount || 0);
+      const computedLineTotal = quantity * unitPrice - discountAmount + taxAmount;
+
+      const uomValue = item.products?.unit_of_measure || item.unit_of_measure || 'pcs';
+      const resolvedUoM = await resolveUnitOfMeasure(uomValue);
+
+      return {
+        description: item.description || item.product_name || item.products?.name || 'Unknown Item',
+        quantity: quantity,
+        unit_price: unitPrice,
+        discount_percentage: Number(item.discount_percentage || 0),
+        discount_amount: discountAmount,
+        tax_percentage: Number(item.tax_percentage || 0),
+        tax_amount: taxAmount,
+        tax_inclusive: item.tax_inclusive || false,
+        line_total: Number(item.line_total ?? computedLineTotal),
+        unit_of_measure: resolvedUoM,
+      };
+    })
+  );
+
   const documentData: DocumentData = {
     type: 'quotation',
     number: quotation.quotation_number,
@@ -1114,26 +1141,7 @@ export const downloadQuotationPDF = async (quotation: any, company?: CompanyDeta
       city: quotation.customers?.city,
       country: quotation.customers?.country,
     },
-    items: quotation.quotation_items?.map((item: any) => {
-      const quantity = Number(item.quantity || 0);
-      const unitPrice = Number(item.unit_price || 0);
-      const taxAmount = Number(item.tax_amount || 0);
-      const discountAmount = Number(item.discount_amount || 0);
-      const computedLineTotal = quantity * unitPrice - discountAmount + taxAmount;
-
-      return {
-        description: item.description || item.product_name || item.products?.name || 'Unknown Item',
-        quantity: quantity,
-        unit_price: unitPrice,
-        discount_percentage: Number(item.discount_percentage || 0),
-        discount_amount: discountAmount,
-        tax_percentage: Number(item.tax_percentage || 0),
-        tax_amount: taxAmount,
-        tax_inclusive: item.tax_inclusive || false,
-        line_total: Number(item.line_total ?? computedLineTotal),
-        unit_of_measure: item.products?.unit_of_measure || item.unit_of_measure || 'pcs',
-      };
-    }) || [],
+    items: resolvedItems,
     subtotal: quotation.subtotal,
     tax_amount: quotation.tax_amount,
     total_amount: quotation.total_amount,
