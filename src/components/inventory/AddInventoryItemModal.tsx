@@ -406,7 +406,7 @@ export function AddInventoryItemModal({ open, onOpenChange, onSuccess }: AddInve
                         <div className="px-2 py-1.5 text-sm text-muted-foreground">Loading units...</div>
                       ) : unitsOfMeasure && unitsOfMeasure.length > 0 ? (
                         unitsOfMeasure.map((unit) => (
-                          <SelectItem key={unit.id} value={unit.id}>
+                          <SelectItem key={unit.id} value={unit.abbreviation}>
                             {unit.name} ({unit.abbreviation})
                           </SelectItem>
                         ))
