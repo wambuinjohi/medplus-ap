@@ -86,14 +86,17 @@ const DEFAULT_COMPANY: CompanyDetails = {
 
 // Helper function to determine which columns have values
 const analyzeColumns = (items: DocumentData['items']) => {
-  if (!items || items.length === 0) return {};
+  if (!items || items.length === 0) return {
+    taxPercentage: true,
+    taxAmount: true,
+  };
 
   const columns = {
     discountPercentage: false,
     discountBeforeVat: false,
     discountAmount: false,
-    taxPercentage: false,
-    taxAmount: false,
+    taxPercentage: true,
+    taxAmount: true,
   };
 
   items.forEach(item => {
@@ -105,12 +108,6 @@ const analyzeColumns = (items: DocumentData['items']) => {
     }
     if (item.discount_amount && item.discount_amount > 0) {
       columns.discountAmount = true;
-    }
-    if (item.tax_percentage && item.tax_percentage > 0) {
-      columns.taxPercentage = true;
-    }
-    if (item.tax_amount && item.tax_amount > 0) {
-      columns.taxAmount = true;
     }
   });
 
@@ -800,9 +797,10 @@ export const generatePDF = (data: DocumentData) => {
                 <th style="width: 18%;">Payment Amount</th>
                 ` : `
                 <th style="width: 5%;">#</th>
-                <th style="width: ${visibleColumns.discountPercentage || visibleColumns.discountBeforeVat || visibleColumns.discountAmount || visibleColumns.taxPercentage || visibleColumns.taxAmount ? '30%' : '40%'};">Description</th>
-                <th style="width: 10%;">Qty</th>
-                <th style="width: 15%;">Unit Price</th>
+                <th style="width: ${visibleColumns.discountPercentage || visibleColumns.discountBeforeVat || visibleColumns.discountAmount || visibleColumns.taxPercentage || visibleColumns.taxAmount ? '28%' : '38%'};">Description</th>
+                <th style="width: 8%;">Qty</th>
+                <th style="width: 8%;">UoM</th>
+                <th style="width: 13%;">Unit Price</th>
                 ${visibleColumns.discountPercentage ? '<th style="width: 10%;">Disc %</th>' : ''}
                 ${visibleColumns.discountBeforeVat ? '<th style="width: 12%;">Disc Before VAT</th>' : ''}
                 ${visibleColumns.discountAmount ? '<th style="width: 12%;">Disc Amount</th>' : ''}
@@ -844,6 +842,7 @@ export const generatePDF = (data: DocumentData) => {
                   </td>
                   ` : `
                   <td>${item.quantity}</td>
+                  <td>${item.unit_of_measure || 'pcs'}</td>
                   <td class="amount-cell">${formatCurrency(item.unit_price)}</td>
                   ${visibleColumns.discountPercentage ? `<td>${item.discount_percentage || 0}%</td>` : ''}
                   ${visibleColumns.discountBeforeVat ? `<td>${(item.discount_before_vat || 0)}%</td>` : ''}

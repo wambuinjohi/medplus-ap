@@ -214,6 +214,7 @@ export const generateLPOPDF = (lpo: LPOPDFData, company: CompanyData) => {
       'Item',
       'Description',
       'Qty',
+      'UoM',
       'Unit Price',
       'Tax %',
       'Tax Amount',
@@ -223,7 +224,8 @@ export const generateLPOPDF = (lpo: LPOPDFData, company: CompanyData) => {
     const tableRows = lpo.lpo_items.map(item => [
       item.products?.name || 'N/A',
       item.description,
-      `${item.quantity} ${item.products?.unit_of_measure || 'pcs'}`,
+      item.quantity,
+      item.products?.unit_of_measure || 'pcs',
       formatCurrency(item.unit_price),
       `${item.tax_rate}%`,
       formatCurrency(item.tax_amount),
@@ -246,10 +248,11 @@ export const generateLPOPDF = (lpo: LPOPDFData, company: CompanyData) => {
       },
       columnStyles: {
         2: { halign: 'center' }, // Quantity
-        3: { halign: 'right' },  // Unit Price
-        4: { halign: 'center' }, // Tax %
-        5: { halign: 'right' },  // Tax Amount
-        6: { halign: 'right' },  // Total
+        3: { halign: 'center' }, // UoM
+        4: { halign: 'right' },  // Unit Price
+        5: { halign: 'center' }, // Tax %
+        6: { halign: 'right' },  // Tax Amount
+        7: { halign: 'right' },  // Total
       },
     });
 
