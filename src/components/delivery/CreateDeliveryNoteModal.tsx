@@ -239,6 +239,7 @@ export const CreateDeliveryNoteModal = ({
           quantity_ordered: Math.max(item.quantity_ordered, 0.01),
           quantity_delivered: Math.max(item.quantity_delivered, 0.01),
           quantity: Math.max(item.quantity_delivered, 0.01), // For compatibility
+          unit_of_measure: item.unit_of_measure || 'pcs',
           unit_price: 0 // Delivery notes don't include pricing
         }))
       });
