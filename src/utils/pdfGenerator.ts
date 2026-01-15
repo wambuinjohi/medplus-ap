@@ -842,6 +842,7 @@ export const generatePDF = (data: DocumentData) => {
                   </td>
                   ` : `
                   <td>${item.quantity}</td>
+                  <td>${item.unit_of_measure || 'pcs'}</td>
                   <td class="amount-cell">${formatCurrency(item.unit_price)}</td>
                   ${visibleColumns.discountPercentage ? `<td>${item.discount_percentage || 0}%</td>` : ''}
                   ${visibleColumns.discountBeforeVat ? `<td>${(item.discount_before_vat || 0)}%</td>` : ''}
