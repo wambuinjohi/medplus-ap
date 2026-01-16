@@ -103,6 +103,8 @@ export function CreateCustomerModal({ open, onOpenChange, onSuccess }: CreateCus
         payment_terms: 0,
         is_active: true,
       });
+      setUseCustomPaymentTerms(false);
+      setCustomPaymentTerms('');
     } catch (error: any) {
       console.error('Error creating customer:', error);
       // Better formatting for Supabase errors
