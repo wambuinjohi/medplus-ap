@@ -51,6 +51,8 @@ export function CreateCustomerModal({ open, onOpenChange, onSuccess }: CreateCus
     is_active: true,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [useCustomPaymentTerms, setUseCustomPaymentTerms] = useState(false);
+  const [customPaymentTerms, setCustomPaymentTerms] = useState<number | ''>('');
 
   const { data: companies } = useCompanies();
   const currentCompany = companies?.[0];
