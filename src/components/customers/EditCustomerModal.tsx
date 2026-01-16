@@ -65,11 +65,17 @@ export function EditCustomerModal({ open, onOpenChange, onSuccess, customer }: E
     is_active: true,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [useCustomPaymentTerms, setUseCustomPaymentTerms] = useState(false);
+  const [customPaymentTerms, setCustomPaymentTerms] = useState<number | ''>('');
   const updateCustomer = useUpdateCustomer();
 
   // Load customer data when modal opens
   useEffect(() => {
     if (customer && open) {
+      const paymentTerms = customer.payment_terms || 0;
+      const presetValues = [0, 14, 45, 60, 120, 180];
+      const isCustom = !presetValues.includes(paymentTerms);
+
       setFormData({
         name: customer.name || '',
         email: customer.email || '',
@@ -78,9 +84,12 @@ export function EditCustomerModal({ open, onOpenChange, onSuccess, customer }: E
         city: customer.city || '',
         country: customer.country || 'Kenya',
         credit_limit: customer.credit_limit || 0,
-        payment_terms: customer.payment_terms || 0,
+        payment_terms: paymentTerms,
         is_active: customer.is_active !== false,
       });
+
+      setUseCustomPaymentTerms(isCustom);
+      setCustomPaymentTerms(isCustom ? paymentTerms : '');
     }
   }, [customer, open]);
 
@@ -254,8 +263,17 @@ export function EditCustomerModal({ open, onOpenChange, onSuccess, customer }: E
               <div className="space-y-2">
                 <Label htmlFor="payment_terms">Payment Terms (Days)</Label>
                 <Select
-                  value={formData.payment_terms.toString()}
-                  onValueChange={(value) => handleInputChange('payment_terms', parseInt(value))}
+                  value={useCustomPaymentTerms ? 'custom' : formData.payment_terms.toString()}
+                  onValueChange={(value) => {
+                    if (value === 'custom') {
+                      setUseCustomPaymentTerms(true);
+                      setCustomPaymentTerms(formData.payment_terms || '');
+                    } else {
+                      setUseCustomPaymentTerms(false);
+                      setCustomPaymentTerms('');
+                      handleInputChange('payment_terms', parseInt(value, 10));
+                    }
+                  }}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select payment terms" />
@@ -267,8 +285,27 @@ export function EditCustomerModal({ open, onOpenChange, onSuccess, customer }: E
                     <SelectItem value="60">60 days</SelectItem>
                     <SelectItem value="120">120 days</SelectItem>
                     <SelectItem value="180">Up to 180 days</SelectItem>
+                    <SelectItem value="custom">Custom...</SelectItem>
                   </SelectContent>
                 </Select>
+                {useCustomPaymentTerms && (
+                  <div className="mt-2">
+                    <Label htmlFor="custom_payment_terms" className="text-xs">Custom Payment Terms (Days)</Label>
+                    <Input
+                      id="custom_payment_terms"
+                      type="number"
+                      value={customPaymentTerms}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        const num = v === '' ? '' : parseInt(v, 10);
+                        setCustomPaymentTerms(num);
+                        handleInputChange('payment_terms', num === '' ? 0 : num);
+                      }}
+                      placeholder="Enter days (e.g. 30)"
+                      min={0}
+                    />
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center justify-between">
