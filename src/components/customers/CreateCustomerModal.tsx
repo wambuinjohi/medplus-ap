@@ -141,6 +141,8 @@ export function CreateCustomerModal({ open, onOpenChange, onSuccess }: CreateCus
       payment_terms: 0,
       is_active: true,
     });
+    setUseCustomPaymentTerms(false);
+    setCustomPaymentTerms('');
     onOpenChange(false);
   };
 
