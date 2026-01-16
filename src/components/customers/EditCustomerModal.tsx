@@ -72,6 +72,10 @@ export function EditCustomerModal({ open, onOpenChange, onSuccess, customer }: E
   // Load customer data when modal opens
   useEffect(() => {
     if (customer && open) {
+      const paymentTerms = customer.payment_terms || 0;
+      const presetValues = [0, 14, 45, 60, 120, 180];
+      const isCustom = !presetValues.includes(paymentTerms);
+
       setFormData({
         name: customer.name || '',
         email: customer.email || '',
@@ -80,9 +84,12 @@ export function EditCustomerModal({ open, onOpenChange, onSuccess, customer }: E
         city: customer.city || '',
         country: customer.country || 'Kenya',
         credit_limit: customer.credit_limit || 0,
-        payment_terms: customer.payment_terms || 0,
+        payment_terms: paymentTerms,
         is_active: customer.is_active !== false,
       });
+
+      setUseCustomPaymentTerms(isCustom);
+      setCustomPaymentTerms(isCustom ? paymentTerms : '');
     }
   }, [customer, open]);
 
