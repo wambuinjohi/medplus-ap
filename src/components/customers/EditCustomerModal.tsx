@@ -65,6 +65,8 @@ export function EditCustomerModal({ open, onOpenChange, onSuccess, customer }: E
     is_active: true,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [useCustomPaymentTerms, setUseCustomPaymentTerms] = useState(false);
+  const [customPaymentTerms, setCustomPaymentTerms] = useState<number | ''>('');
   const updateCustomer = useUpdateCustomer();
 
   // Load customer data when modal opens
