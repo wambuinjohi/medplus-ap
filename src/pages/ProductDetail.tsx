@@ -99,6 +99,9 @@ export default function ProductDetail() {
     additionalNotes: ''
   });
 
+  const [submissionMethod, setSubmissionMethod] = useState<'whatsapp' | 'email'>('whatsapp');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setQuotationForm(prev => ({
@@ -107,7 +110,18 @@ export default function ProductDetail() {
     }));
   };
 
-  const sendToWhatsApp = () => {
+  const resetForm = () => {
+    setQuotationForm({
+      quantity: '',
+      companyName: '',
+      contactPerson: '',
+      email: '',
+      phone: '',
+      additionalNotes: ''
+    });
+  };
+
+  const handleSubmitQuotation = async () => {
     if (!quotationForm.quantity || !quotationForm.companyName || !quotationForm.email || !quotationForm.phone) {
       toast({
         title: "Missing Information",
@@ -117,39 +131,64 @@ export default function ProductDetail() {
       return;
     }
 
+    setIsSubmitting(true);
+
     try {
-      openWhatsAppQuotation({
-        productName: variant?.name || category?.name || 'Product',
-        productSku: variant?.sku,
-        category: category?.name,
-        quantity: quotationForm.quantity,
-        companyName: quotationForm.companyName,
-        contactPerson: quotationForm.contactPerson,
-        email: quotationForm.email,
-        phone: quotationForm.phone,
-        additionalNotes: quotationForm.additionalNotes
-      });
+      if (submissionMethod === 'whatsapp') {
+        openWhatsAppQuotation({
+          productName: variant?.name || category?.name || 'Product',
+          productSku: variant?.sku,
+          category: category?.name,
+          quantity: quotationForm.quantity,
+          companyName: quotationForm.companyName,
+          contactPerson: quotationForm.contactPerson,
+          email: quotationForm.email,
+          phone: quotationForm.phone,
+          additionalNotes: quotationForm.additionalNotes
+        });
 
-      toast({
-        title: "Success!",
-        description: "Opening WhatsApp. Please complete your message and send.",
-      });
+        toast({
+          title: "Success!",
+          description: "Opening WhatsApp. Please complete your message and send.",
+        });
 
-      setQuotationForm({
-        quantity: '',
-        companyName: '',
-        contactPerson: '',
-        email: '',
-        phone: '',
-        additionalNotes: ''
-      });
+        resetForm();
+      } else if (submissionMethod === 'email') {
+        const result = await sendQuotationEmailSafe({
+          productName: variant?.name || category?.name || 'Product',
+          productSku: variant?.sku,
+          category: category?.name,
+          quantity: quotationForm.quantity,
+          companyName: quotationForm.companyName,
+          contactPerson: quotationForm.contactPerson,
+          email: quotationForm.email,
+          phone: quotationForm.phone,
+          additionalNotes: quotationForm.additionalNotes
+        });
+
+        if (result.success) {
+          toast({
+            title: "Success!",
+            description: result.message,
+          });
+          resetForm();
+        } else {
+          toast({
+            title: "Error",
+            description: result.message,
+            variant: "destructive"
+          });
+        }
+      }
     } catch (error) {
-      console.error('Error opening WhatsApp:', error);
+      console.error('Error submitting quotation:', error);
       toast({
         title: "Error",
-        description: "Failed to open WhatsApp. Please try again.",
+        description: "Failed to submit quotation. Please try again.",
         variant: "destructive"
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
