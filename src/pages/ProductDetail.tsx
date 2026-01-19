@@ -557,21 +557,80 @@ export default function ProductDetail() {
               />
             </div>
 
+            {/* Submission Method Selector */}
+            <div>
+              <Label className="text-gray-700 mb-3 block font-semibold">How would you like to submit? *</Label>
+              <div className="flex gap-4">
+                <label className="flex items-center gap-3 p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 flex-1">
+                  <input
+                    type="radio"
+                    name="submissionMethod"
+                    value="whatsapp"
+                    checked={submissionMethod === 'whatsapp'}
+                    onChange={(e) => setSubmissionMethod(e.target.value as 'whatsapp' | 'email')}
+                    className="w-4 h-4"
+                  />
+                  <div className="flex items-center gap-2">
+                    <MessageCircle size={18} className="text-green-600" />
+                    <span className="font-medium">WhatsApp</span>
+                  </div>
+                </label>
+                <label className="flex items-center gap-3 p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 flex-1">
+                  <input
+                    type="radio"
+                    name="submissionMethod"
+                    value="email"
+                    checked={submissionMethod === 'email'}
+                    onChange={(e) => setSubmissionMethod(e.target.value as 'whatsapp' | 'email')}
+                    className="w-4 h-4"
+                  />
+                  <div className="flex items-center gap-2">
+                    <Mail size={18} className="text-blue-600" />
+                    <span className="font-medium">Email</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+
             {/* Submit Button */}
             <div className="flex gap-4">
               <Button
                 type="button"
-                onClick={sendToWhatsApp}
-                className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-lg flex items-center justify-center gap-2"
+                onClick={handleSubmitQuotation}
+                disabled={isSubmitting}
+                className={`flex-1 text-white font-semibold py-3 rounded-lg flex items-center justify-center gap-2 ${
+                  submissionMethod === 'whatsapp'
+                    ? 'bg-green-600 hover:bg-green-700'
+                    : 'bg-blue-600 hover:bg-blue-700'
+                }`}
               >
-                <MessageCircle size={20} />
-                Send via WhatsApp
+                {isSubmitting ? (
+                  <>
+                    <Loader size={20} className="animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    {submissionMethod === 'whatsapp' ? (
+                      <>
+                        <MessageCircle size={20} />
+                        Send via WhatsApp
+                      </>
+                    ) : (
+                      <>
+                        <Mail size={20} />
+                        Send via Email
+                      </>
+                    )}
+                  </>
+                )}
               </Button>
               <Button
                 type="button"
                 onClick={() => navigate('/products')}
                 variant="outline"
                 className="flex-1 py-3"
+                disabled={isSubmitting}
               >
                 <ArrowLeft size={16} className="mr-2" />
                 Back to Products
