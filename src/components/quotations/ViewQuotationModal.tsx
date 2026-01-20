@@ -65,6 +65,7 @@ export function ViewQuotationModal({
 }: ViewQuotationModalProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const deleteQuotation = useDeleteQuotation();
+  const { canDelete } = usePermissions();
 
   // Get company data for logo
   const { data: companies } = useCompanies();
