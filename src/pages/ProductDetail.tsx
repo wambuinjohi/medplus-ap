@@ -107,6 +107,7 @@ export default function ProductDetail() {
   const [selectedVariantForQuotation, setSelectedVariantForQuotation] = useState<typeof variants[0] | null>(null);
   const [showSubmissionMethodDialog, setShowSubmissionMethodDialog] = useState(false);
   const [showEmailConfirmationDialog, setShowEmailConfirmationDialog] = useState(false);
+  const [showEmailFormDialog, setShowEmailFormDialog] = useState(false);
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
