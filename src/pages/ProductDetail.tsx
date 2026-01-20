@@ -439,6 +439,16 @@ export default function ProductDetail() {
           productName={selectedVariantForQuotation?.name}
         />
 
+        <EmailQuotationFormDialog
+          open={showEmailFormDialog}
+          onOpenChange={setShowEmailFormDialog}
+          onSubmit={handleEmailFormSubmit}
+          isLoading={isSubmitting}
+          productName={selectedVariantForQuotation?.name}
+          productSku={selectedVariantForQuotation?.sku}
+          category={category?.name}
+        />
+
         <PublicFooter />
       </div>
     );
