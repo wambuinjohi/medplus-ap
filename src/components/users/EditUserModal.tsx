@@ -39,6 +39,7 @@ export function EditUserModal({
   onUpdateUser,
   loading = false,
 }: EditUserModalProps) {
+  const { profile: currentUser } = useAuth();
   const [formData, setFormData] = useState<UpdateUserData>({
     full_name: '',
     role: 'user',
@@ -48,6 +49,38 @@ export function EditUserModal({
     position: '',
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [roles, setRoles] = useState<RoleDefinition[]>([]);
+  const [rolesLoading, setRolesLoading] = useState(false);
+
+  // Fetch roles from database when modal opens
+  useEffect(() => {
+    if (open && currentUser?.company_id) {
+      fetchRoles();
+    }
+  }, [open, currentUser?.company_id]);
+
+  const fetchRoles = async () => {
+    if (!currentUser?.company_id) return;
+
+    setRolesLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('roles')
+        .select('*')
+        .eq('company_id', currentUser.company_id)
+        .order('is_default', { ascending: false })
+        .order('name', { ascending: true });
+
+      if (error) throw error;
+
+      setRoles(data || []);
+    } catch (err) {
+      console.error('Error fetching roles:', err);
+      toast.error('Failed to load roles');
+    } finally {
+      setRolesLoading(false);
+    }
+  };
 
   // Update form data when user changes
   useEffect(() => {
