@@ -28,6 +28,7 @@ import {
 import { useQuotations, useCompanies } from '@/hooks/useDatabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDeleteQuotation } from '@/hooks/useQuotationItems';
+import usePermissions from '@/hooks/usePermissions';
 import { toast } from 'sonner';
 import { CreateQuotationModal } from '@/components/quotations/CreateQuotationModal';
 import { ViewQuotationModal } from '@/components/quotations/ViewQuotationModal';
