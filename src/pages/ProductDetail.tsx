@@ -124,6 +124,49 @@ export default function ProductDetail() {
     });
   };
 
+  const handleQuotationRequestClick = (variantData: typeof variants[0]) => {
+    setSelectedVariantForQuotation(variantData);
+    setShowSubmissionMethodDialog(true);
+  };
+
+  const handleWhatsAppSelection = () => {
+    if (!selectedVariantForQuotation) return;
+
+    openWhatsAppQuotation({
+      productName: selectedVariantForQuotation.name,
+      productSku: selectedVariantForQuotation.sku,
+      category: category?.name,
+      quantity: '1',
+      companyName: '',
+      contactPerson: '',
+      email: '',
+      phone: ''
+    });
+
+    setShowSubmissionMethodDialog(false);
+    setSelectedVariantForQuotation(null);
+  };
+
+  const handleEmailSelection = () => {
+    if (!selectedVariantForQuotation) return;
+
+    // Set the form with product info and show the form section
+    setQuotationForm(prev => ({
+      ...prev,
+      // Keep existing form data but we'll highlight the form
+    }));
+
+    // Scroll to form
+    const formElement = document.getElementById('quotation-form');
+    if (formElement) {
+      formElement.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    setSubmissionMethod('email');
+    setShowSubmissionMethodDialog(false);
+    setSelectedVariantForQuotation(null);
+  };
+
   const handleSubmitQuotation = async () => {
     if (!quotationForm.quantity || !quotationForm.companyName || !quotationForm.email || !quotationForm.phone) {
       toast({
