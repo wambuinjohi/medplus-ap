@@ -156,19 +156,7 @@ export default function ProductDetail() {
 
     setSubmissionMethod('email');
     setShowSubmissionMethodDialog(false);
-
-    // Scroll to form after a brief delay to ensure dialog closes
-    setTimeout(() => {
-      const formElement = document.getElementById('quotation-form');
-      if (formElement) {
-        formElement.scrollIntoView({ behavior: 'smooth' });
-      }
-    }, 100);
-
-    // Keep selectedVariantForQuotation for a moment to show in product display
-    setTimeout(() => {
-      setSelectedVariantForQuotation(null);
-    }, 1000);
+    setShowEmailFormDialog(true);
   };
 
   const handleSubmitQuotation = async () => {
