@@ -179,69 +179,85 @@ export default function ProductDetail() {
       return;
     }
 
+    if (submissionMethod === 'email') {
+      // Show confirmation dialog for email before sending
+      setShowEmailConfirmationDialog(true);
+      return;
+    }
+
+    // Handle WhatsApp submission
+    setIsSubmitting(true);
+    try {
+      openWhatsAppQuotation({
+        productName: variant?.name || category?.name || 'Product',
+        productSku: variant?.sku,
+        category: category?.name,
+        quantity: quotationForm.quantity,
+        companyName: quotationForm.companyName,
+        contactPerson: quotationForm.contactPerson,
+        email: quotationForm.email,
+        phone: quotationForm.phone,
+        additionalNotes: quotationForm.additionalNotes
+      });
+
+      toast({
+        title: "Success!",
+        description: "Opening WhatsApp. Please complete your message and send.",
+      });
+
+      resetForm();
+    } catch (error) {
+      console.error('Error opening WhatsApp:', error);
+      toast({
+        title: "⚠ Submission Error",
+        description: "Failed to submit quotation. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleConfirmEmailSubmission = async () => {
     setIsSubmitting(true);
 
     try {
-      if (submissionMethod === 'whatsapp') {
-        openWhatsAppQuotation({
-          productName: variant?.name || category?.name || 'Product',
-          productSku: variant?.sku,
-          category: category?.name,
-          quantity: quotationForm.quantity,
-          companyName: quotationForm.companyName,
-          contactPerson: quotationForm.contactPerson,
-          email: quotationForm.email,
-          phone: quotationForm.phone,
-          additionalNotes: quotationForm.additionalNotes
-        });
+      toast({
+        title: "Sending...",
+        description: "Submitting your quotation request via email...",
+      });
 
+      const result = await sendQuotationEmailSafe({
+        productName: variant?.name || category?.name || 'Product',
+        productSku: variant?.sku,
+        category: category?.name,
+        quantity: quotationForm.quantity,
+        companyName: quotationForm.companyName,
+        contactPerson: quotationForm.contactPerson,
+        email: quotationForm.email,
+        phone: quotationForm.phone,
+        additionalNotes: quotationForm.additionalNotes
+      });
+
+      if (result.success) {
+        setShowEmailConfirmationDialog(false);
         toast({
-          title: "Success!",
-          description: "Opening WhatsApp. Please complete your message and send.",
+          title: "✓ Quotation Sent!",
+          description: `Email sent to our sales team. We'll reply to ${quotationForm.email} with your quotation.`,
         });
-
         resetForm();
-      } else if (submissionMethod === 'email') {
+      } else {
         toast({
-          title: "Sending...",
-          description: "Submitting your quotation request via email...",
+          title: "⚠ Email Submission Failed",
+          description: result.message + " Try using WhatsApp instead, or contact us directly.",
+          variant: "destructive"
         });
-
-        const result = await sendQuotationEmailSafe({
-          productName: variant?.name || category?.name || 'Product',
-          productSku: variant?.sku,
-          category: category?.name,
-          quantity: quotationForm.quantity,
-          companyName: quotationForm.companyName,
-          contactPerson: quotationForm.contactPerson,
-          email: quotationForm.email,
-          phone: quotationForm.phone,
-          additionalNotes: quotationForm.additionalNotes
-        });
-
-        if (result.success) {
-          toast({
-            title: "✓ Quotation Sent!",
-            description: "Your quotation request has been sent to our sales team successfully. We'll get back to you soon.",
-          });
-          resetForm();
-        } else {
-          toast({
-            title: "⚠ Email Submission Failed",
-            description: result.message + " Try using WhatsApp instead, or contact us directly.",
-            variant: "destructive"
-          });
-        }
       }
     } catch (error) {
       console.error('Error submitting quotation:', error);
-      const errorMsg = submissionMethod === 'email'
-        ? "Email submission failed. Please try WhatsApp or contact us directly."
-        : "Failed to submit quotation. Please try again.";
-
       toast({
         title: "⚠ Submission Error",
-        description: errorMsg,
+        description: "Email submission failed. Please try WhatsApp or contact us directly.",
         variant: "destructive"
       });
     } finally {
