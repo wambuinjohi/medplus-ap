@@ -489,9 +489,9 @@ export default function ProductDetail() {
             {/* Product Display */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <p className="text-sm text-blue-600 font-semibold">Product Category</p>
-              <p className="text-lg text-blue-900 font-bold">{category?.name}</p>
-              <p className="text-sm text-blue-700 mt-2">Variant: {variant?.name}</p>
-              <p className="text-sm text-blue-600">SKU: {variant?.sku}</p>
+              <p className="text-lg text-blue-900 font-bold">{category?.name || (selectedVariantForQuotation && category?.name)}</p>
+              <p className="text-sm text-blue-700 mt-2">Variant: {selectedVariantForQuotation ? selectedVariantForQuotation.name : variant?.name}</p>
+              <p className="text-sm text-blue-600">SKU: {selectedVariantForQuotation ? selectedVariantForQuotation.sku : variant?.sku}</p>
             </div>
 
             <div className="grid md:grid-cols-2 gap-6">
