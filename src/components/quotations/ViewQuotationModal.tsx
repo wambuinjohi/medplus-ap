@@ -190,7 +190,9 @@ export function ViewQuotationModal({
                   variant="outline"
                   size="sm"
                   onClick={() => setShowDeleteDialog(true)}
-                  className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                  disabled={!canDelete('quotation')}
+                  title={!canDelete('quotation') ? 'You do not have permission to delete quotations' : 'Delete quotation'}
+                  className={`${canDelete('quotation') ? 'text-destructive hover:bg-destructive hover:text-destructive-foreground' : 'text-muted-foreground/50 cursor-not-allowed'}`}
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
