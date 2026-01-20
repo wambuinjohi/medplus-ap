@@ -576,7 +576,7 @@ export default function ProductDetail() {
               {/* Email */}
               <div>
                 <Label htmlFor="email" className="text-gray-700 mb-2 block">
-                  Email Address *
+                  Email Address * <span className="text-xs text-blue-600">(we'll reply here)</span>
                 </Label>
                 <Input
                   id="email"
@@ -589,6 +589,7 @@ export default function ProductDetail() {
                   required
                   className="mt-1"
                 />
+                <p className="text-xs text-gray-500 mt-1">Your email address where we'll send the quotation</p>
               </div>
 
               {/* Phone */}
