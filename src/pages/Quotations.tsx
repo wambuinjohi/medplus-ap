@@ -430,7 +430,9 @@ Website: www.biolegendscientific.co.ke`;
                             variant="ghost"
                             size="icon"
                             onClick={() => handleEditQuotation(quotation)}
-                            title="Edit quotation"
+                            disabled={!canEdit('quotation')}
+                            title={!canEdit('quotation') ? 'You do not have permission to edit quotations' : 'Edit quotation'}
+                            className={!canEdit('quotation') ? 'text-muted-foreground/50 cursor-not-allowed' : ''}
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
