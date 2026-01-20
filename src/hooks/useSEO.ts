@@ -19,10 +19,14 @@ export const useSEO = (metadata: SEOMetadata, structuredData?: any) => {
 
     // Add structured data
     if (structuredData) {
+      // Remove any existing schema of the same type to prevent duplicates
+      removeStructuredDataByType(structuredData['@type']);
       addStructuredData(structuredData);
     } else {
       // Default to WebPage schema if none provided
-      addStructuredData(generateWebPageSchema(metadata));
+      const webPageSchema = generateWebPageSchema(metadata);
+      removeStructuredDataByType('WebPage');
+      addStructuredData(webPageSchema);
     }
 
     // Scroll to top
