@@ -208,6 +208,15 @@ export default function ProductDetail() {
     }
   };
 
+  const handleEmailFormSubmit = (formData: EmailQuotationFormData) => {
+    // Update the main quotation form with the data from the email form dialog
+    setQuotationForm(formData);
+    setShowEmailFormDialog(false);
+
+    // Show the confirmation dialog
+    setShowEmailConfirmationDialog(true);
+  };
+
   const handleConfirmEmailSubmission = async () => {
     setIsSubmitting(true);
 
