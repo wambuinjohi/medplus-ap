@@ -735,6 +735,28 @@ export default function ProductDetail() {
         </div>
       </section>
 
+      <SubmissionMethodDialog
+        open={showSubmissionMethodDialog}
+        onOpenChange={setShowSubmissionMethodDialog}
+        onWhatsAppSelect={handleWhatsAppSelection}
+        onEmailSelect={handleEmailSelection}
+        productName={selectedVariantForQuotation?.name}
+      />
+
+      <EmailConfirmationDialog
+        open={showEmailConfirmationDialog}
+        onOpenChange={setShowEmailConfirmationDialog}
+        onConfirm={handleConfirmEmailSubmission}
+        onCancel={() => setShowEmailConfirmationDialog(false)}
+        isLoading={isSubmitting}
+        senderEmail={quotationForm.email}
+        senderName={quotationForm.contactPerson}
+        companyName={quotationForm.companyName}
+        phoneNumber={quotationForm.phone}
+        productName={variant?.name || category?.name || 'Product'}
+        quantity={quotationForm.quantity}
+      />
+
       <PublicFooter />
     </div>
   );
