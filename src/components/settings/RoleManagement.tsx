@@ -381,6 +381,15 @@ export function RoleManagement() {
           </DialogHeader>
 
           <div className="space-y-6">
+            {!canEditRoles && (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>
+                  You do not have permission to edit roles. Please contact your administrator if you need access.
+                </AlertDescription>
+              </Alert>
+            )}
+
             <div className="space-y-4">
               <div>
                 <Label htmlFor="name">Role Name *</Label>
@@ -391,7 +400,7 @@ export function RoleManagement() {
                   onChange={(e) =>
                     setFormData((prev) => ({ ...prev, name: e.target.value }))
                   }
-                  disabled={editingRole?.is_default}
+                  disabled={editingRole?.is_default || !canEditRoles}
                 />
               </div>
 
@@ -407,6 +416,7 @@ export function RoleManagement() {
                       description: e.target.value,
                     }))
                   }
+                  disabled={!canEditRoles}
                 />
               </div>
 
