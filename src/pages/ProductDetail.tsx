@@ -200,6 +200,11 @@ export default function ProductDetail() {
 
         resetForm();
       } else if (submissionMethod === 'email') {
+        toast({
+          title: "Sending...",
+          description: "Submitting your quotation request via email...",
+        });
+
         const result = await sendQuotationEmailSafe({
           productName: variant?.name || category?.name || 'Product',
           productSku: variant?.sku,
@@ -214,14 +219,14 @@ export default function ProductDetail() {
 
         if (result.success) {
           toast({
-            title: "Success!",
-            description: result.message,
+            title: "✓ Quotation Sent!",
+            description: "Your quotation request has been sent to our sales team successfully. We'll get back to you soon.",
           });
           resetForm();
         } else {
           toast({
-            title: "Error",
-            description: result.message,
+            title: "⚠ Email Submission Failed",
+            description: result.message + " Try using WhatsApp instead, or contact us directly.",
             variant: "destructive"
           });
         }
