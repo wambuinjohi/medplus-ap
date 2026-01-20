@@ -248,12 +248,19 @@ export const updateMetaTags = (metadata: SEOMetadata) => {
   updateOrCreateMetaTag('property', 'og:description', metadata.description);
   updateOrCreateMetaTag('property', 'og:url', metadata.url || SITE_CONFIG.url);
   updateOrCreateMetaTag('property', 'og:image', metadata.image || SITE_CONFIG.logo);
+  updateOrCreateMetaTag('property', 'og:image:width', '1200');
+  updateOrCreateMetaTag('property', 'og:image:height', '630');
+  updateOrCreateMetaTag('property', 'og:image:alt', metadata.title);
   updateOrCreateMetaTag('property', 'og:type', metadata.type || 'website');
+  updateOrCreateMetaTag('property', 'og:site_name', SITE_CONFIG.siteName);
+  updateOrCreateMetaTag('property', 'og:locale', 'en_KE');
 
-  // Twitter
+  // Twitter Card
+  updateOrCreateMetaTag('name', 'twitter:card', 'summary_large_image');
   updateOrCreateMetaTag('name', 'twitter:title', metadata.title);
   updateOrCreateMetaTag('name', 'twitter:description', metadata.description);
   updateOrCreateMetaTag('name', 'twitter:image', metadata.image || SITE_CONFIG.logo);
+  updateOrCreateMetaTag('name', 'twitter:image:alt', metadata.title);
 
   // Canonical
   updateOrCreateCanonical(metadata.url || SITE_CONFIG.url);
