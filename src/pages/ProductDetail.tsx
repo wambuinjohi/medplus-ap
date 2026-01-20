@@ -233,9 +233,13 @@ export default function ProductDetail() {
       }
     } catch (error) {
       console.error('Error submitting quotation:', error);
+      const errorMsg = submissionMethod === 'email'
+        ? "Email submission failed. Please try WhatsApp or contact us directly."
+        : "Failed to submit quotation. Please try again.";
+
       toast({
-        title: "Error",
-        description: "Failed to submit quotation. Please try again.",
+        title: "⚠ Submission Error",
+        description: errorMsg,
         variant: "destructive"
       });
     } finally {
