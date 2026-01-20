@@ -82,6 +82,11 @@ export function RoleManagement() {
   const { isAdmin, profile } = useAuth();
   const currentCompanyId = useCurrentCompanyId();
   const { roles, loading, createRole, updateRole, deleteRole } = useRoleManagement();
+  const { can } = usePermissions();
+
+  // Check if user can manage roles and permissions
+  const canEditRoles = can('manage_roles') || can('manage_permissions') || can('edit_user');
+  const canDeleteRoles = can('manage_roles') || can('manage_permissions') || can('delete_user');
 
   const [searchTerm, setSearchTerm] = useState('');
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
