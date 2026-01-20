@@ -1,10 +1,11 @@
 import { useEffect } from 'react';
-import { 
-  updateMetaTags, 
-  addStructuredData, 
+import {
+  updateMetaTags,
+  addStructuredData,
+  removeStructuredDataByType,
   generateWebPageSchema,
   generateProductSchema,
-  SEOMetadata 
+  SEOMetadata
 } from '@/utils/seoHelpers';
 
 /**
