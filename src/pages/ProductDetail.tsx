@@ -150,21 +150,21 @@ export default function ProductDetail() {
   const handleEmailSelection = () => {
     if (!selectedVariantForQuotation) return;
 
-    // Set the form with product info and show the form section
-    setQuotationForm(prev => ({
-      ...prev,
-      // Keep existing form data but we'll highlight the form
-    }));
-
-    // Scroll to form
-    const formElement = document.getElementById('quotation-form');
-    if (formElement) {
-      formElement.scrollIntoView({ behavior: 'smooth' });
-    }
-
     setSubmissionMethod('email');
     setShowSubmissionMethodDialog(false);
-    setSelectedVariantForQuotation(null);
+
+    // Scroll to form after a brief delay to ensure dialog closes
+    setTimeout(() => {
+      const formElement = document.getElementById('quotation-form');
+      if (formElement) {
+        formElement.scrollIntoView({ behavior: 'smooth' });
+      }
+    }, 100);
+
+    // Keep selectedVariantForQuotation for a moment to show in product display
+    setTimeout(() => {
+      setSelectedVariantForQuotation(null);
+    }, 1000);
   };
 
   const handleSubmitQuotation = async () => {
