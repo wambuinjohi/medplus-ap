@@ -17,6 +17,7 @@ import { generateProductSchema, SITE_CONFIG, useBreadcrumbSchema } from '@/utils
 import { openWhatsAppQuotation } from '@/utils/whatsappQuotation';
 import { sendQuotationEmailSafe } from '@/utils/emailjsQuotation';
 import { VariantImagesModal } from '@/components/web-manager/VariantImagesModal';
+import { SubmissionMethodDialog } from '@/components/quotations/SubmissionMethodDialog';
 
 export default function ProductDetail() {
   const { productSlug } = useParams<{ productSlug: string }>();
