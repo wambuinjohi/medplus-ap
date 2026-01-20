@@ -54,6 +54,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCurrentCompanyId } from '@/contexts/CompanyContext';
 import useRoleManagement from '@/hooks/useRoleManagement';
+import usePermissions from '@/hooks/usePermissions';
 import { Permission, PERMISSION_DESCRIPTIONS, RoleDefinition } from '@/types/permissions';
 import { toast } from 'sonner';
 import { RoleAuditHistory } from '@/components/roles/RoleAuditHistory';
@@ -81,6 +82,11 @@ export function RoleManagement() {
   const { isAdmin, profile } = useAuth();
   const currentCompanyId = useCurrentCompanyId();
   const { roles, loading, createRole, updateRole, deleteRole } = useRoleManagement();
+  const { can } = usePermissions();
+
+  // Check if user can manage roles and permissions
+  const canEditRoles = can('manage_roles') || can('manage_permissions') || can('edit_user');
+  const canDeleteRoles = can('manage_roles') || can('manage_permissions') || can('delete_user');
 
   const [searchTerm, setSearchTerm] = useState('');
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -232,6 +238,8 @@ export function RoleManagement() {
         <Button
           variant="primary-gradient"
           size="lg"
+          disabled={!canEditRoles}
+          title={!canEditRoles ? 'You do not have permission to create roles' : ''}
           onClick={() => {
             setEditingRole(null);
             setFormData({ name: '', description: '', permissions: [], company_id: currentCompanyId || profile?.company_id || '' });
@@ -306,7 +314,11 @@ export function RoleManagement() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => openEditDialog(role)}>
+                          <DropdownMenuItem
+                            onClick={() => openEditDialog(role)}
+                            disabled={!canEditRoles}
+                            title={!canEditRoles ? 'You do not have permission to edit roles' : ''}
+                          >
                             <Edit className="mr-2 h-4 w-4" />
                             Edit
                           </DropdownMenuItem>
@@ -322,6 +334,8 @@ export function RoleManagement() {
                           {!role.is_default && (
                             <DropdownMenuItem
                               className="text-destructive"
+                              disabled={!canDeleteRoles}
+                              title={!canDeleteRoles ? 'You do not have permission to delete roles' : ''}
                               onClick={() => {
                                 setDeletingRole(role);
                                 setDeleteDialogOpen(true);
@@ -367,6 +381,15 @@ export function RoleManagement() {
           </DialogHeader>
 
           <div className="space-y-6">
+            {!canEditRoles && (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>
+                  You do not have permission to edit roles. Please contact your administrator if you need access.
+                </AlertDescription>
+              </Alert>
+            )}
+
             <div className="space-y-4">
               <div>
                 <Label htmlFor="name">Role Name *</Label>
@@ -377,7 +400,7 @@ export function RoleManagement() {
                   onChange={(e) =>
                     setFormData((prev) => ({ ...prev, name: e.target.value }))
                   }
-                  disabled={editingRole?.is_default}
+                  disabled={editingRole?.is_default || !canEditRoles}
                 />
               </div>
 
@@ -393,6 +416,7 @@ export function RoleManagement() {
                       description: e.target.value,
                     }))
                   }
+                  disabled={!canEditRoles}
                 />
               </div>
 
@@ -432,11 +456,17 @@ export function RoleManagement() {
                           <Checkbox
                             id={`group-${group}`}
                             checked={allIncluded || someIncluded}
-                            onCheckedChange={() => togglePermissionGroup(permissions)}
+                            disabled={!canEditRoles}
+                            title={!canEditRoles ? 'You do not have permission to modify permissions' : ''}
+                            onCheckedChange={() => {
+                              if (canEditRoles) {
+                                togglePermissionGroup(permissions);
+                              }
+                            }}
                           />
                           <Label
                             htmlFor={`group-${group}`}
-                            className="font-semibold cursor-pointer"
+                            className={`font-semibold ${canEditRoles ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}`}
                           >
                             {group}
                           </Label>
@@ -448,11 +478,17 @@ export function RoleManagement() {
                               <Checkbox
                                 id={permission}
                                 checked={formData.permissions.includes(permission)}
-                                onCheckedChange={() => togglePermission(permission)}
+                                disabled={!canEditRoles}
+                                title={!canEditRoles ? 'You do not have permission to modify permissions' : ''}
+                                onCheckedChange={() => {
+                                  if (canEditRoles) {
+                                    togglePermission(permission);
+                                  }
+                                }}
                               />
                               <Label
                                 htmlFor={permission}
-                                className="text-sm font-normal cursor-pointer flex-1"
+                                className={`text-sm font-normal flex-1 ${canEditRoles ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}`}
                               >
                                 <div className="flex flex-col">
                                   <span className="capitalize">
@@ -491,7 +527,8 @@ export function RoleManagement() {
             <Button
               type="button"
               onClick={editingRole ? handleEditRole : handleCreateRole}
-              disabled={submitting || !formData.name.trim()}
+              disabled={submitting || !formData.name.trim() || !canEditRoles}
+              title={!canEditRoles ? 'You do not have permission to save changes' : ''}
             >
               {submitting ? (
                 <>

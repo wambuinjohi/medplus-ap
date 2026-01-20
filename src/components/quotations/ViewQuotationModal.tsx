@@ -35,6 +35,7 @@ import {
 import { BiolegendLogo } from '@/components/ui/biolegend-logo';
 import { useCompanies } from '@/hooks/useDatabase';
 import { useDeleteQuotation } from '@/hooks/useQuotationItems';
+import usePermissions from '@/hooks/usePermissions';
 import { TermsAndConditions } from '@/components/ui/TermsAndConditions';
 
 interface ViewQuotationModalProps {
@@ -64,6 +65,7 @@ export function ViewQuotationModal({
 }: ViewQuotationModalProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const deleteQuotation = useDeleteQuotation();
+  const { canDelete } = usePermissions();
 
   // Get company data for logo
   const { data: companies } = useCompanies();
@@ -188,7 +190,9 @@ export function ViewQuotationModal({
                   variant="outline"
                   size="sm"
                   onClick={() => setShowDeleteDialog(true)}
-                  className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                  disabled={!canDelete('quotation')}
+                  title={!canDelete('quotation') ? 'You do not have permission to delete quotations' : 'Delete quotation'}
+                  className={`${canDelete('quotation') ? 'text-destructive hover:bg-destructive hover:text-destructive-foreground' : 'text-muted-foreground/50 cursor-not-allowed'}`}
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
@@ -448,7 +452,7 @@ export function ViewQuotationModal({
         <AlertDialogAction
           onClick={handleDeleteConfirm}
           className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-          disabled={deleteQuotation.isPending}
+          disabled={deleteQuotation.isPending || !canDelete('quotation')}
         >
           {deleteQuotation.isPending ? 'Deleting...' : 'Delete'}
         </AlertDialogAction>

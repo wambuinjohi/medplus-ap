@@ -28,6 +28,7 @@ import {
 import { useQuotations, useCompanies } from '@/hooks/useDatabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDeleteQuotation } from '@/hooks/useQuotationItems';
+import usePermissions from '@/hooks/usePermissions';
 import { toast } from 'sonner';
 import { CreateQuotationModal } from '@/components/quotations/CreateQuotationModal';
 import { ViewQuotationModal } from '@/components/quotations/ViewQuotationModal';
@@ -93,6 +94,7 @@ export default function Quotations() {
   const currentCompany = companies?.[0];
   const { data: quotations, isLoading, error, refetch } = useQuotations(currentCompany?.id);
   const deleteQuotation = useDeleteQuotation();
+  const { canDelete, canEdit } = usePermissions();
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-KE', {
@@ -428,7 +430,9 @@ Website: www.biolegendscientific.co.ke`;
                             variant="ghost"
                             size="icon"
                             onClick={() => handleEditQuotation(quotation)}
-                            title="Edit quotation"
+                            disabled={!canEdit('quotation')}
+                            title={!canEdit('quotation') ? 'You do not have permission to edit quotations' : 'Edit quotation'}
+                            className={!canEdit('quotation') ? 'text-muted-foreground/50 cursor-not-allowed' : ''}
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
@@ -444,8 +448,9 @@ Website: www.biolegendscientific.co.ke`;
                             variant="ghost"
                             size="icon"
                             onClick={() => handleDeleteQuotation(quotation)}
-                            title="Delete quotation"
-                            className="text-destructive hover:bg-destructive/10"
+                            disabled={!canDelete('quotation')}
+                            title={!canDelete('quotation') ? 'You do not have permission to delete quotations' : 'Delete quotation'}
+                            className={`${canDelete('quotation') ? 'text-destructive hover:bg-destructive/10' : 'text-muted-foreground/50 cursor-not-allowed'}`}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>

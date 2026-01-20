@@ -18,8 +18,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Loader2, User, Phone, Building, MapPin } from 'lucide-react';
-import { UserProfile, UserRole, UserStatus } from '@/contexts/AuthContext';
+import { UserProfile, UserRole, UserStatus, useAuth } from '@/contexts/AuthContext';
 import { UpdateUserData } from '@/hooks/useUserManagement';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { RoleDefinition } from '@/types/permissions';
 
 interface EditUserModalProps {
   open: boolean;
@@ -36,6 +39,7 @@ export function EditUserModal({
   onUpdateUser,
   loading = false,
 }: EditUserModalProps) {
+  const { profile: currentUser } = useAuth();
   const [formData, setFormData] = useState<UpdateUserData>({
     full_name: '',
     role: 'user',
@@ -45,6 +49,38 @@ export function EditUserModal({
     position: '',
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [roles, setRoles] = useState<RoleDefinition[]>([]);
+  const [rolesLoading, setRolesLoading] = useState(false);
+
+  // Fetch roles from database when modal opens
+  useEffect(() => {
+    if (open && currentUser?.company_id) {
+      fetchRoles();
+    }
+  }, [open, currentUser?.company_id]);
+
+  const fetchRoles = async () => {
+    if (!currentUser?.company_id) return;
+
+    setRolesLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('roles')
+        .select('*')
+        .eq('company_id', currentUser.company_id)
+        .order('is_default', { ascending: false })
+        .order('name', { ascending: true });
+
+      if (error) throw error;
+
+      setRoles(data || []);
+    } catch (err) {
+      console.error('Error fetching roles:', err);
+      toast.error('Failed to load roles');
+    } finally {
+      setRolesLoading(false);
+    }
+  };
 
   // Update form data when user changes
   useEffect(() => {
@@ -121,13 +157,6 @@ export function EditUserModal({
     }
   };
 
-  const roleOptions = [
-    { value: 'user', label: 'User', description: 'Basic access to view and create quotations' },
-    { value: 'stock_manager', label: 'Stock Manager', description: 'Manage inventory and stock movements' },
-    { value: 'accountant', label: 'Accountant', description: 'Access to financial reports and records' },
-    { value: 'admin', label: 'Administrator', description: 'Full access to all system features' },
-  ];
-
   const statusOptions = [
     { value: 'active', label: 'Active', description: 'User can sign in and access the system' },
     { value: 'inactive', label: 'Inactive', description: 'User cannot sign in' },
@@ -180,19 +209,27 @@ export function EditUserModal({
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="role">Role *</Label>
-              <Select value={formData.role} onValueChange={handleRoleChange} disabled={loading}>
+              <Select value={formData.role} onValueChange={handleRoleChange} disabled={loading || rolesLoading || roles.length === 0}>
                 <SelectTrigger className={formErrors.role ? 'border-destructive' : ''}>
-                  <SelectValue placeholder="Select a role" />
+                  <SelectValue placeholder={rolesLoading ? 'Loading roles...' : 'Select a role'} />
                 </SelectTrigger>
                 <SelectContent>
-                  {roleOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      <div className="flex flex-col">
-                        <span className="font-medium">{option.label}</span>
-                        <span className="text-xs text-muted-foreground">{option.description}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
+                  {rolesLoading ? (
+                    <div className="px-2 py-2 text-sm text-muted-foreground">Loading roles...</div>
+                  ) : roles.length === 0 ? (
+                    <div className="px-2 py-2 text-sm text-muted-foreground">No roles available</div>
+                  ) : (
+                    roles.map((role) => (
+                      <SelectItem key={role.id} value={role.name}>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{role.name}</span>
+                          {role.description && (
+                            <span className="text-xs text-muted-foreground">{role.description}</span>
+                          )}
+                        </div>
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
               {formErrors.role && (
