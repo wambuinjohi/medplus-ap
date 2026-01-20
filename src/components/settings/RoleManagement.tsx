@@ -238,6 +238,8 @@ export function RoleManagement() {
         <Button
           variant="primary-gradient"
           size="lg"
+          disabled={!canEditRoles}
+          title={!canEditRoles ? 'You do not have permission to create roles' : ''}
           onClick={() => {
             setEditingRole(null);
             setFormData({ name: '', description: '', permissions: [], company_id: currentCompanyId || profile?.company_id || '' });
