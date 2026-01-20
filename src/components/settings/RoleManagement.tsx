@@ -527,7 +527,8 @@ export function RoleManagement() {
             <Button
               type="button"
               onClick={editingRole ? handleEditRole : handleCreateRole}
-              disabled={submitting || !formData.name.trim()}
+              disabled={submitting || !formData.name.trim() || !canEditRoles}
+              title={!canEditRoles ? 'You do not have permission to save changes' : ''}
             >
               {submitting ? (
                 <>
