@@ -74,30 +74,51 @@ export const generateProductSchema = (product: {
   url?: string;
   category?: string;
   price?: number;
-}) => ({
-  '@context': 'https://schema.org',
-  '@type': 'Product',
-  name: product.name,
-  description: product.description,
-  image: product.image || SITE_CONFIG.logo,
-  url: product.url,
-  category: product.category,
-  brand: {
-    '@type': 'Brand',
-    name: SITE_CONFIG.siteName,
-  },
-  offers: {
-    '@type': 'AggregateOffer',
-    availability: 'https://schema.org/InStock',
-    priceCurrency: 'KES',
-    ...(product.price && { highPrice: product.price.toString() }),
-  },
-  aggregateRating: {
-    '@type': 'AggregateRating',
-    ratingValue: '4.8',
-    reviewCount: '150',
-  },
-});
+  sku?: string;
+  availability?: 'InStock' | 'OutOfStock' | 'PreOrder';
+  ratingValue?: number;
+  reviewCount?: number;
+}) => {
+  const schema: any = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.name,
+    description: product.description,
+    image: product.image || SITE_CONFIG.logo,
+    url: product.url,
+    brand: {
+      '@type': 'Brand',
+      name: SITE_CONFIG.siteName,
+    },
+    offers: {
+      '@type': 'AggregateOffer',
+      availability: `https://schema.org/${product.availability || 'InStock'}`,
+      priceCurrency: 'KES',
+      ...(product.price && { highPrice: product.price.toString(), lowPrice: product.price.toString() }),
+    },
+  };
+
+  // Only add category if provided
+  if (product.category) {
+    schema.category = product.category;
+  }
+
+  // Only add SKU if provided
+  if (product.sku) {
+    schema.sku = product.sku;
+  }
+
+  // Only add rating if actual values provided (not hardcoded)
+  if (product.ratingValue && product.reviewCount) {
+    schema.aggregateRating = {
+      '@type': 'AggregateRating',
+      ratingValue: product.ratingValue.toString(),
+      reviewCount: product.reviewCount.toString(),
+    };
+  }
+
+  return schema;
+};
 
 /**
  * Generate structured data for LocalBusiness
