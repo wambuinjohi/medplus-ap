@@ -19,6 +19,7 @@ import { sendQuotationEmailSafe } from '@/utils/emailjsQuotation';
 import { VariantImagesModal } from '@/components/web-manager/VariantImagesModal';
 import { SubmissionMethodDialog } from '@/components/quotations/SubmissionMethodDialog';
 import { EmailConfirmationDialog } from '@/components/quotations/EmailConfirmationDialog';
+import { EmailQuotationFormDialog, EmailQuotationFormData } from '@/components/quotations/EmailQuotationFormDialog';
 
 export default function ProductDetail() {
   const { productSlug } = useParams<{ productSlug: string }>();
