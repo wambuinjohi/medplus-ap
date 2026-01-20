@@ -446,8 +446,9 @@ Website: www.biolegendscientific.co.ke`;
                             variant="ghost"
                             size="icon"
                             onClick={() => handleDeleteQuotation(quotation)}
-                            title="Delete quotation"
-                            className="text-destructive hover:bg-destructive/10"
+                            disabled={!canDelete('quotation')}
+                            title={!canDelete('quotation') ? 'You do not have permission to delete quotations' : 'Delete quotation'}
+                            className={`${canDelete('quotation') ? 'text-destructive hover:bg-destructive/10' : 'text-muted-foreground/50 cursor-not-allowed'}`}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
