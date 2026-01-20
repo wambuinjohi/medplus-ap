@@ -266,13 +266,23 @@ const updateOrCreateCanonical = (url: string) => {
 
 /**
  * Add structured data script to head
+ * Appends a new script instead of replacing to allow multiple schemas
  */
 export const addStructuredData = (schema: any) => {
-  let script = document.querySelector('script[type="application/ld+json"]') as HTMLScriptElement;
-  if (!script) {
-    script = document.createElement('script');
-    script.type = 'application/ld+json';
-    document.head.appendChild(script);
-  }
+  const script = document.createElement('script');
+  script.type = 'application/ld+json';
+  script.setAttribute('data-schema-type', schema['@type'] || 'Unknown');
   script.textContent = JSON.stringify(schema);
+  document.head.appendChild(script);
+};
+
+/**
+ * Remove structured data scripts of a specific type
+ * Useful for preventing duplicate schemas when updating the same type
+ */
+export const removeStructuredDataByType = (schemaType: string) => {
+  const scripts = document.querySelectorAll(
+    `script[type="application/ld+json"][data-schema-type="${schemaType}"]`
+  ) as NodeListOf<HTMLScriptElement>;
+  scripts.forEach(script => script.remove());
 };
