@@ -456,11 +456,17 @@ export function RoleManagement() {
                           <Checkbox
                             id={`group-${group}`}
                             checked={allIncluded || someIncluded}
-                            onCheckedChange={() => togglePermissionGroup(permissions)}
+                            disabled={!canEditRoles}
+                            title={!canEditRoles ? 'You do not have permission to modify permissions' : ''}
+                            onCheckedChange={() => {
+                              if (canEditRoles) {
+                                togglePermissionGroup(permissions);
+                              }
+                            }}
                           />
                           <Label
                             htmlFor={`group-${group}`}
-                            className="font-semibold cursor-pointer"
+                            className={`font-semibold ${canEditRoles ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}`}
                           >
                             {group}
                           </Label>
@@ -472,11 +478,17 @@ export function RoleManagement() {
                               <Checkbox
                                 id={permission}
                                 checked={formData.permissions.includes(permission)}
-                                onCheckedChange={() => togglePermission(permission)}
+                                disabled={!canEditRoles}
+                                title={!canEditRoles ? 'You do not have permission to modify permissions' : ''}
+                                onCheckedChange={() => {
+                                  if (canEditRoles) {
+                                    togglePermission(permission);
+                                  }
+                                }}
                               />
                               <Label
                                 htmlFor={permission}
-                                className="text-sm font-normal cursor-pointer flex-1"
+                                className={`text-sm font-normal flex-1 ${canEditRoles ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}`}
                               >
                                 <div className="flex flex-col">
                                   <span className="capitalize">
