@@ -102,6 +102,8 @@ export default function ProductDetail() {
 
   const [submissionMethod, setSubmissionMethod] = useState<'whatsapp' | 'email'>('whatsapp');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedVariantForQuotation, setSelectedVariantForQuotation] = useState<typeof variants[0] | null>(null);
+  const [showSubmissionMethodDialog, setShowSubmissionMethodDialog] = useState(false);
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
