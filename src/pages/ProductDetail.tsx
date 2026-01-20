@@ -405,6 +405,14 @@ export default function ProductDetail() {
           />
         )}
 
+        <SubmissionMethodDialog
+          open={showSubmissionMethodDialog}
+          onOpenChange={setShowSubmissionMethodDialog}
+          onWhatsAppSelect={handleWhatsAppSelection}
+          onEmailSelect={handleEmailSelection}
+          productName={selectedVariantForQuotation?.name}
+        />
+
         <PublicFooter />
       </div>
     );
