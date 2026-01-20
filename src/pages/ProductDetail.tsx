@@ -480,10 +480,10 @@ export default function ProductDetail() {
       </section>
 
       {/* Quotation Form */}
-      <section className="bg-gray-50 py-16">
+      <section className="bg-gray-50 py-16" id="quotation-form">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl font-bold text-gray-900 mb-2 text-center">Request a Quotation</h2>
-          <p className="text-gray-600 text-center mb-12">Fill in the details below and we'll send you a quotation via WhatsApp</p>
+          <p className="text-gray-600 text-center mb-12">Fill in the details below and we'll send you a quotation</p>
 
           <form className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 space-y-6 scroll-smooth" style={{ scrollBehavior: 'auto' }}>
             {/* Product Display */}
