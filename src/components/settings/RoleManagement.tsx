@@ -314,7 +314,11 @@ export function RoleManagement() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => openEditDialog(role)}>
+                          <DropdownMenuItem
+                            onClick={() => openEditDialog(role)}
+                            disabled={!canEditRoles}
+                            title={!canEditRoles ? 'You do not have permission to edit roles' : ''}
+                          >
                             <Edit className="mr-2 h-4 w-4" />
                             Edit
                           </DropdownMenuItem>
@@ -330,6 +334,8 @@ export function RoleManagement() {
                           {!role.is_default && (
                             <DropdownMenuItem
                               className="text-destructive"
+                              disabled={!canDeleteRoles}
+                              title={!canDeleteRoles ? 'You do not have permission to delete roles' : ''}
                               onClick={() => {
                                 setDeletingRole(role);
                                 setDeleteDialogOpen(true);
