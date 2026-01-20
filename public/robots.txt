@@ -7,7 +7,6 @@ Allow: /
 Disallow: /app/
 Disallow: /admin/
 Disallow: /private/
-Disallow: /*?*
 Disallow: /auth-test
 Disallow: /manual-setup
 Disallow: /database-fix-page
@@ -16,15 +15,16 @@ Disallow: /audit
 Disallow: /auto-payment-sync
 Disallow: /payment-sync
 
-# Specific rules for different crawlers
+# Specific rules for Googlebot (allow faster crawling)
 User-agent: Googlebot
 Allow: /
 Disallow: /app/
 Disallow: /admin/
 Disallow: /private/
 Crawl-delay: 0
-Request-rate: 1/1
+Request-rate: 10/1
 
+# Specific rules for Bingbot
 User-agent: Bingbot
 Allow: /
 Disallow: /app/
@@ -32,9 +32,13 @@ Disallow: /admin/
 Disallow: /private/
 Crawl-delay: 1
 
-# Prevent crawling of PDF documents if needed
-User-agent: *
-Disallow: /*.pdf$
+# Specific rules for other bots
+User-agent: msnbot
+Allow: /
+Disallow: /app/
+Disallow: /admin/
+Disallow: /private/
 
 # Sitemap location
 Sitemap: https://medplusafrica.com/sitemap.xml
+Sitemap: https://medplusafrica.com/sitemap-index.xml
