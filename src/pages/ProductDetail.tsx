@@ -19,6 +19,7 @@ import { sendQuotationEmailSafe } from '@/utils/emailjsQuotation';
 import { VariantImagesModal } from '@/components/web-manager/VariantImagesModal';
 import { SubmissionMethodDialog } from '@/components/quotations/SubmissionMethodDialog';
 import { EmailConfirmationDialog } from '@/components/quotations/EmailConfirmationDialog';
+import { EmailQuotationFormDialog, EmailQuotationFormData } from '@/components/quotations/EmailQuotationFormDialog';
 
 export default function ProductDetail() {
   const { productSlug } = useParams<{ productSlug: string }>();
@@ -106,6 +107,7 @@ export default function ProductDetail() {
   const [selectedVariantForQuotation, setSelectedVariantForQuotation] = useState<typeof variants[0] | null>(null);
   const [showSubmissionMethodDialog, setShowSubmissionMethodDialog] = useState(false);
   const [showEmailConfirmationDialog, setShowEmailConfirmationDialog] = useState(false);
+  const [showEmailFormDialog, setShowEmailFormDialog] = useState(false);
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -154,19 +156,7 @@ export default function ProductDetail() {
 
     setSubmissionMethod('email');
     setShowSubmissionMethodDialog(false);
-
-    // Scroll to form after a brief delay to ensure dialog closes
-    setTimeout(() => {
-      const formElement = document.getElementById('quotation-form');
-      if (formElement) {
-        formElement.scrollIntoView({ behavior: 'smooth' });
-      }
-    }, 100);
-
-    // Keep selectedVariantForQuotation for a moment to show in product display
-    setTimeout(() => {
-      setSelectedVariantForQuotation(null);
-    }, 1000);
+    setShowEmailFormDialog(true);
   };
 
   const handleSubmitQuotation = async () => {
@@ -216,6 +206,15 @@ export default function ProductDetail() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleEmailFormSubmit = (formData: EmailQuotationFormData) => {
+    // Update the main quotation form with the data from the email form dialog
+    setQuotationForm(formData);
+    setShowEmailFormDialog(false);
+
+    // Show the confirmation dialog
+    setShowEmailConfirmationDialog(true);
   };
 
   const handleConfirmEmailSubmission = async () => {
@@ -438,6 +437,16 @@ export default function ProductDetail() {
           onWhatsAppSelect={handleWhatsAppSelection}
           onEmailSelect={handleEmailSelection}
           productName={selectedVariantForQuotation?.name}
+        />
+
+        <EmailQuotationFormDialog
+          open={showEmailFormDialog}
+          onOpenChange={setShowEmailFormDialog}
+          onSubmit={handleEmailFormSubmit}
+          isLoading={isSubmitting}
+          productName={selectedVariantForQuotation?.name}
+          productSku={selectedVariantForQuotation?.sku}
+          category={category?.name}
         />
 
         <PublicFooter />
@@ -742,6 +751,16 @@ export default function ProductDetail() {
         onWhatsAppSelect={handleWhatsAppSelection}
         onEmailSelect={handleEmailSelection}
         productName={selectedVariantForQuotation?.name}
+      />
+
+      <EmailQuotationFormDialog
+        open={showEmailFormDialog}
+        onOpenChange={setShowEmailFormDialog}
+        onSubmit={handleEmailFormSubmit}
+        isLoading={isSubmitting}
+        productName={selectedVariantForQuotation?.name}
+        productSku={selectedVariantForQuotation?.sku}
+        category={category?.name}
       />
 
       <EmailConfirmationDialog

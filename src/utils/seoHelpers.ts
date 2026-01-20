@@ -74,30 +74,51 @@ export const generateProductSchema = (product: {
   url?: string;
   category?: string;
   price?: number;
-}) => ({
-  '@context': 'https://schema.org',
-  '@type': 'Product',
-  name: product.name,
-  description: product.description,
-  image: product.image || SITE_CONFIG.logo,
-  url: product.url,
-  category: product.category,
-  brand: {
-    '@type': 'Brand',
-    name: SITE_CONFIG.siteName,
-  },
-  offers: {
-    '@type': 'AggregateOffer',
-    availability: 'https://schema.org/InStock',
-    priceCurrency: 'KES',
-    ...(product.price && { highPrice: product.price.toString() }),
-  },
-  aggregateRating: {
-    '@type': 'AggregateRating',
-    ratingValue: '4.8',
-    reviewCount: '150',
-  },
-});
+  sku?: string;
+  availability?: 'InStock' | 'OutOfStock' | 'PreOrder';
+  ratingValue?: number;
+  reviewCount?: number;
+}) => {
+  const schema: any = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.name,
+    description: product.description,
+    image: product.image || SITE_CONFIG.logo,
+    url: product.url,
+    brand: {
+      '@type': 'Brand',
+      name: SITE_CONFIG.siteName,
+    },
+    offers: {
+      '@type': 'AggregateOffer',
+      availability: `https://schema.org/${product.availability || 'InStock'}`,
+      priceCurrency: 'KES',
+      ...(product.price && { highPrice: product.price.toString(), lowPrice: product.price.toString() }),
+    },
+  };
+
+  // Only add category if provided
+  if (product.category) {
+    schema.category = product.category;
+  }
+
+  // Only add SKU if provided
+  if (product.sku) {
+    schema.sku = product.sku;
+  }
+
+  // Only add rating if actual values provided (not hardcoded)
+  if (product.ratingValue && product.reviewCount) {
+    schema.aggregateRating = {
+      '@type': 'AggregateRating',
+      ratingValue: product.ratingValue.toString(),
+      reviewCount: product.reviewCount.toString(),
+    };
+  }
+
+  return schema;
+};
 
 /**
  * Generate structured data for LocalBusiness
@@ -227,12 +248,19 @@ export const updateMetaTags = (metadata: SEOMetadata) => {
   updateOrCreateMetaTag('property', 'og:description', metadata.description);
   updateOrCreateMetaTag('property', 'og:url', metadata.url || SITE_CONFIG.url);
   updateOrCreateMetaTag('property', 'og:image', metadata.image || SITE_CONFIG.logo);
+  updateOrCreateMetaTag('property', 'og:image:width', '1200');
+  updateOrCreateMetaTag('property', 'og:image:height', '630');
+  updateOrCreateMetaTag('property', 'og:image:alt', metadata.title);
   updateOrCreateMetaTag('property', 'og:type', metadata.type || 'website');
+  updateOrCreateMetaTag('property', 'og:site_name', SITE_CONFIG.siteName);
+  updateOrCreateMetaTag('property', 'og:locale', 'en_KE');
 
-  // Twitter
+  // Twitter Card
+  updateOrCreateMetaTag('name', 'twitter:card', 'summary_large_image');
   updateOrCreateMetaTag('name', 'twitter:title', metadata.title);
   updateOrCreateMetaTag('name', 'twitter:description', metadata.description);
   updateOrCreateMetaTag('name', 'twitter:image', metadata.image || SITE_CONFIG.logo);
+  updateOrCreateMetaTag('name', 'twitter:image:alt', metadata.title);
 
   // Canonical
   updateOrCreateCanonical(metadata.url || SITE_CONFIG.url);
@@ -266,13 +294,23 @@ const updateOrCreateCanonical = (url: string) => {
 
 /**
  * Add structured data script to head
+ * Appends a new script instead of replacing to allow multiple schemas
  */
 export const addStructuredData = (schema: any) => {
-  let script = document.querySelector('script[type="application/ld+json"]') as HTMLScriptElement;
-  if (!script) {
-    script = document.createElement('script');
-    script.type = 'application/ld+json';
-    document.head.appendChild(script);
-  }
+  const script = document.createElement('script');
+  script.type = 'application/ld+json';
+  script.setAttribute('data-schema-type', schema['@type'] || 'Unknown');
   script.textContent = JSON.stringify(schema);
+  document.head.appendChild(script);
+};
+
+/**
+ * Remove structured data scripts of a specific type
+ * Useful for preventing duplicate schemas when updating the same type
+ */
+export const removeStructuredDataByType = (schemaType: string) => {
+  const scripts = document.querySelectorAll(
+    `script[type="application/ld+json"][data-schema-type="${schemaType}"]`
+  ) as NodeListOf<HTMLScriptElement>;
+  scripts.forEach(script => script.remove());
 };

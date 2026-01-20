@@ -84,7 +84,7 @@ export const sendQuotationEmail = async (details: QuotationEmailDetails): Promis
 
   // Template parameters that match your EmailJS template
   const templateParams = {
-    to_email: 'sales@medplusafrica.com', // Your receiving email
+    to_email: 'info@medplusafrica.com', // Your receiving email
     from_email: details.email,
     from_name: details.contactPerson || details.companyName,
     subject: `Quotation Request - ${details.productName}`,

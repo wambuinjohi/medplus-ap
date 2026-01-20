@@ -78,7 +78,7 @@ export default function Contact() {
   const handleEmailSubmit = async () => {
     try {
       const templateParams = {
-        to_email: 'sales@medplusafrica.com',
+        to_email: 'info@medplusafrica.com',
         from_name: formData.name,
         from_email: formData.email,
         phone: formData.phone,
