@@ -452,7 +452,7 @@ export function ViewQuotationModal({
         <AlertDialogAction
           onClick={handleDeleteConfirm}
           className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-          disabled={deleteQuotation.isPending}
+          disabled={deleteQuotation.isPending || !canDelete('quotation')}
         >
           {deleteQuotation.isPending ? 'Deleting...' : 'Delete'}
         </AlertDialogAction>
