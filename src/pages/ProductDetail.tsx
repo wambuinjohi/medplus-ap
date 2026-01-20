@@ -10,12 +10,15 @@ import { ImageGallery } from '@/components/ImageGallery';
 import { useToast } from '@/hooks/use-toast';
 import { useWebCategoryBySlug, useWebVariantBySlug } from '@/hooks/useWebCategories';
 import { useWebManager, VariantImage } from '@/hooks/useWebManager';
-import { MessageCircle, ArrowLeft, Check, ChevronLeft, ChevronRight } from 'lucide-react';
+import { MessageCircle, Mail, ArrowLeft, Check, ChevronLeft, ChevronRight, Loader } from 'lucide-react';
 import { BreadcrumbNav } from '@/components/ui/breadcrumb-nav';
 import { useSEO } from '@/hooks/useSEO';
 import { generateProductSchema, SITE_CONFIG, useBreadcrumbSchema } from '@/utils/seoHelpers';
 import { openWhatsAppQuotation } from '@/utils/whatsappQuotation';
+import { sendQuotationEmailSafe } from '@/utils/emailjsQuotation';
 import { VariantImagesModal } from '@/components/web-manager/VariantImagesModal';
+import { SubmissionMethodDialog } from '@/components/quotations/SubmissionMethodDialog';
+import { EmailConfirmationDialog } from '@/components/quotations/EmailConfirmationDialog';
 
 export default function ProductDetail() {
   const { productSlug } = useParams<{ productSlug: string }>();
@@ -98,6 +101,12 @@ export default function ProductDetail() {
     additionalNotes: ''
   });
 
+  const [submissionMethod, setSubmissionMethod] = useState<'whatsapp' | 'email'>('whatsapp');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedVariantForQuotation, setSelectedVariantForQuotation] = useState<typeof variants[0] | null>(null);
+  const [showSubmissionMethodDialog, setShowSubmissionMethodDialog] = useState(false);
+  const [showEmailConfirmationDialog, setShowEmailConfirmationDialog] = useState(false);
+
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setQuotationForm(prev => ({
@@ -106,7 +115,61 @@ export default function ProductDetail() {
     }));
   };
 
-  const sendToWhatsApp = () => {
+  const resetForm = () => {
+    setQuotationForm({
+      quantity: '',
+      companyName: '',
+      contactPerson: '',
+      email: '',
+      phone: '',
+      additionalNotes: ''
+    });
+  };
+
+  const handleQuotationRequestClick = (variantData: typeof variants[0]) => {
+    setSelectedVariantForQuotation(variantData);
+    setShowSubmissionMethodDialog(true);
+  };
+
+  const handleWhatsAppSelection = () => {
+    if (!selectedVariantForQuotation) return;
+
+    openWhatsAppQuotation({
+      productName: selectedVariantForQuotation.name,
+      productSku: selectedVariantForQuotation.sku,
+      category: category?.name,
+      quantity: '1',
+      companyName: '',
+      contactPerson: '',
+      email: '',
+      phone: ''
+    });
+
+    setShowSubmissionMethodDialog(false);
+    setSelectedVariantForQuotation(null);
+  };
+
+  const handleEmailSelection = () => {
+    if (!selectedVariantForQuotation) return;
+
+    setSubmissionMethod('email');
+    setShowSubmissionMethodDialog(false);
+
+    // Scroll to form after a brief delay to ensure dialog closes
+    setTimeout(() => {
+      const formElement = document.getElementById('quotation-form');
+      if (formElement) {
+        formElement.scrollIntoView({ behavior: 'smooth' });
+      }
+    }, 100);
+
+    // Keep selectedVariantForQuotation for a moment to show in product display
+    setTimeout(() => {
+      setSelectedVariantForQuotation(null);
+    }, 1000);
+  };
+
+  const handleSubmitQuotation = async () => {
     if (!quotationForm.quantity || !quotationForm.companyName || !quotationForm.email || !quotationForm.phone) {
       toast({
         title: "Missing Information",
@@ -116,6 +179,14 @@ export default function ProductDetail() {
       return;
     }
 
+    if (submissionMethod === 'email') {
+      // Show confirmation dialog for email before sending
+      setShowEmailConfirmationDialog(true);
+      return;
+    }
+
+    // Handle WhatsApp submission
+    setIsSubmitting(true);
     try {
       openWhatsAppQuotation({
         productName: variant?.name || category?.name || 'Product',
@@ -134,21 +205,63 @@ export default function ProductDetail() {
         description: "Opening WhatsApp. Please complete your message and send.",
       });
 
-      setQuotationForm({
-        quantity: '',
-        companyName: '',
-        contactPerson: '',
-        email: '',
-        phone: '',
-        additionalNotes: ''
-      });
+      resetForm();
     } catch (error) {
       console.error('Error opening WhatsApp:', error);
       toast({
-        title: "Error",
-        description: "Failed to open WhatsApp. Please try again.",
+        title: "⚠ Submission Error",
+        description: "Failed to submit quotation. Please try again.",
         variant: "destructive"
       });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleConfirmEmailSubmission = async () => {
+    setIsSubmitting(true);
+
+    try {
+      toast({
+        title: "Sending...",
+        description: "Submitting your quotation request via email...",
+      });
+
+      const result = await sendQuotationEmailSafe({
+        productName: variant?.name || category?.name || 'Product',
+        productSku: variant?.sku,
+        category: category?.name,
+        quantity: quotationForm.quantity,
+        companyName: quotationForm.companyName,
+        contactPerson: quotationForm.contactPerson,
+        email: quotationForm.email,
+        phone: quotationForm.phone,
+        additionalNotes: quotationForm.additionalNotes
+      });
+
+      if (result.success) {
+        setShowEmailConfirmationDialog(false);
+        toast({
+          title: "✓ Quotation Sent!",
+          description: `Email sent to our sales team. We'll reply to ${quotationForm.email} with your quotation.`,
+        });
+        resetForm();
+      } else {
+        toast({
+          title: "⚠ Email Submission Failed",
+          description: result.message + " Try using WhatsApp instead, or contact us directly.",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Error submitting quotation:', error);
+      toast({
+        title: "⚠ Submission Error",
+        description: "Email submission failed. Please try WhatsApp or contact us directly.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -285,18 +398,7 @@ export default function ProductDetail() {
 
                     {/* Request Quotation Button */}
                     <button
-                      onClick={() => {
-                        openWhatsAppQuotation({
-                          productName: v.name,
-                          productSku: v.sku,
-                          category: category?.name,
-                          quantity: '1',
-                          companyName: '',
-                          contactPerson: '',
-                          email: '',
-                          phone: ''
-                        });
-                      }}
+                      onClick={() => handleQuotationRequestClick(v)}
                       className="w-full bg-gradient-to-r from-blue-500 to-green-500 text-white font-bold py-2 px-4 rounded-lg hover:shadow-lg transition-all duration-300 hover:scale-105 text-sm flex items-center justify-center gap-2"
                     >
                       <MessageCircle size={16} />
@@ -329,6 +431,14 @@ export default function ProductDetail() {
             images={categoryVariantImages[selectedVariantForImages.id] || []}
           />
         )}
+
+        <SubmissionMethodDialog
+          open={showSubmissionMethodDialog}
+          onOpenChange={setShowSubmissionMethodDialog}
+          onWhatsAppSelect={handleWhatsAppSelection}
+          onEmailSelect={handleEmailSelection}
+          productName={selectedVariantForQuotation?.name}
+        />
 
         <PublicFooter />
       </div>
@@ -397,18 +507,18 @@ export default function ProductDetail() {
       </section>
 
       {/* Quotation Form */}
-      <section className="bg-gray-50 py-16">
+      <section className="bg-gray-50 py-16" id="quotation-form">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl font-bold text-gray-900 mb-2 text-center">Request a Quotation</h2>
-          <p className="text-gray-600 text-center mb-12">Fill in the details below and we'll send you a quotation via WhatsApp</p>
+          <p className="text-gray-600 text-center mb-12">Fill in the details below and we'll send you a quotation</p>
 
           <form className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 space-y-6 scroll-smooth" style={{ scrollBehavior: 'auto' }}>
             {/* Product Display */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <p className="text-sm text-blue-600 font-semibold">Product Category</p>
-              <p className="text-lg text-blue-900 font-bold">{category?.name}</p>
-              <p className="text-sm text-blue-700 mt-2">Variant: {variant?.name}</p>
-              <p className="text-sm text-blue-600">SKU: {variant?.sku}</p>
+              <p className="text-lg text-blue-900 font-bold">{category?.name || (selectedVariantForQuotation && category?.name)}</p>
+              <p className="text-sm text-blue-700 mt-2">Variant: {selectedVariantForQuotation ? selectedVariantForQuotation.name : variant?.name}</p>
+              <p className="text-sm text-blue-600">SKU: {selectedVariantForQuotation ? selectedVariantForQuotation.sku : variant?.sku}</p>
             </div>
 
             <div className="grid md:grid-cols-2 gap-6">
@@ -466,7 +576,7 @@ export default function ProductDetail() {
               {/* Email */}
               <div>
                 <Label htmlFor="email" className="text-gray-700 mb-2 block">
-                  Email Address *
+                  Email Address * <span className="text-xs text-blue-600">(we'll reply here)</span>
                 </Label>
                 <Input
                   id="email"
@@ -479,6 +589,7 @@ export default function ProductDetail() {
                   required
                   className="mt-1"
                 />
+                <p className="text-xs text-gray-500 mt-1">Your email address where we'll send the quotation</p>
               </div>
 
               {/* Phone */}
@@ -517,21 +628,80 @@ export default function ProductDetail() {
               />
             </div>
 
+            {/* Submission Method Selector */}
+            <div>
+              <Label className="text-gray-700 mb-3 block font-semibold">How would you like to submit? *</Label>
+              <div className="flex gap-4">
+                <label className="flex items-center gap-3 p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 flex-1">
+                  <input
+                    type="radio"
+                    name="submissionMethod"
+                    value="whatsapp"
+                    checked={submissionMethod === 'whatsapp'}
+                    onChange={(e) => setSubmissionMethod(e.target.value as 'whatsapp' | 'email')}
+                    className="w-4 h-4"
+                  />
+                  <div className="flex items-center gap-2">
+                    <MessageCircle size={18} className="text-green-600" />
+                    <span className="font-medium">WhatsApp</span>
+                  </div>
+                </label>
+                <label className="flex items-center gap-3 p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 flex-1">
+                  <input
+                    type="radio"
+                    name="submissionMethod"
+                    value="email"
+                    checked={submissionMethod === 'email'}
+                    onChange={(e) => setSubmissionMethod(e.target.value as 'whatsapp' | 'email')}
+                    className="w-4 h-4"
+                  />
+                  <div className="flex items-center gap-2">
+                    <Mail size={18} className="text-blue-600" />
+                    <span className="font-medium">Email</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+
             {/* Submit Button */}
             <div className="flex gap-4">
               <Button
                 type="button"
-                onClick={sendToWhatsApp}
-                className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-lg flex items-center justify-center gap-2"
+                onClick={handleSubmitQuotation}
+                disabled={isSubmitting}
+                className={`flex-1 text-white font-semibold py-3 rounded-lg flex items-center justify-center gap-2 ${
+                  submissionMethod === 'whatsapp'
+                    ? 'bg-green-600 hover:bg-green-700'
+                    : 'bg-blue-600 hover:bg-blue-700'
+                }`}
               >
-                <MessageCircle size={20} />
-                Send via WhatsApp
+                {isSubmitting ? (
+                  <>
+                    <Loader size={20} className="animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    {submissionMethod === 'whatsapp' ? (
+                      <>
+                        <MessageCircle size={20} />
+                        Send via WhatsApp
+                      </>
+                    ) : (
+                      <>
+                        <Mail size={20} />
+                        Send via Email
+                      </>
+                    )}
+                  </>
+                )}
               </Button>
               <Button
                 type="button"
                 onClick={() => navigate('/products')}
                 variant="outline"
                 className="flex-1 py-3"
+                disabled={isSubmitting}
               >
                 <ArrowLeft size={16} className="mr-2" />
                 Back to Products
@@ -565,6 +735,28 @@ export default function ProductDetail() {
           </div>
         </div>
       </section>
+
+      <SubmissionMethodDialog
+        open={showSubmissionMethodDialog}
+        onOpenChange={setShowSubmissionMethodDialog}
+        onWhatsAppSelect={handleWhatsAppSelection}
+        onEmailSelect={handleEmailSelection}
+        productName={selectedVariantForQuotation?.name}
+      />
+
+      <EmailConfirmationDialog
+        open={showEmailConfirmationDialog}
+        onOpenChange={setShowEmailConfirmationDialog}
+        onConfirm={handleConfirmEmailSubmission}
+        onCancel={() => setShowEmailConfirmationDialog(false)}
+        isLoading={isSubmitting}
+        senderEmail={quotationForm.email}
+        senderName={quotationForm.contactPerson}
+        companyName={quotationForm.companyName}
+        phoneNumber={quotationForm.phone}
+        productName={variant?.name || category?.name || 'Product'}
+        quantity={quotationForm.quantity}
+      />
 
       <PublicFooter />
     </div>
