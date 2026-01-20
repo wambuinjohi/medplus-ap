@@ -371,18 +371,7 @@ export default function ProductDetail() {
 
                     {/* Request Quotation Button */}
                     <button
-                      onClick={() => {
-                        openWhatsAppQuotation({
-                          productName: v.name,
-                          productSku: v.sku,
-                          category: category?.name,
-                          quantity: '1',
-                          companyName: '',
-                          contactPerson: '',
-                          email: '',
-                          phone: ''
-                        });
-                      }}
+                      onClick={() => handleQuotationRequestClick(v)}
                       className="w-full bg-gradient-to-r from-blue-500 to-green-500 text-white font-bold py-2 px-4 rounded-lg hover:shadow-lg transition-all duration-300 hover:scale-105 text-sm flex items-center justify-center gap-2"
                     >
                       <MessageCircle size={16} />
