@@ -54,6 +54,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCurrentCompanyId } from '@/contexts/CompanyContext';
 import useRoleManagement from '@/hooks/useRoleManagement';
+import usePermissions from '@/hooks/usePermissions';
 import { Permission, PERMISSION_DESCRIPTIONS, RoleDefinition } from '@/types/permissions';
 import { toast } from 'sonner';
 import { RoleAuditHistory } from '@/components/roles/RoleAuditHistory';
