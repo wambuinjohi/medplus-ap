@@ -18,8 +18,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Loader2, User, Phone, Building, MapPin } from 'lucide-react';
-import { UserProfile, UserRole, UserStatus } from '@/contexts/AuthContext';
+import { UserProfile, UserRole, UserStatus, useAuth } from '@/contexts/AuthContext';
 import { UpdateUserData } from '@/hooks/useUserManagement';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { RoleDefinition } from '@/types/permissions';
 
 interface EditUserModalProps {
   open: boolean;
