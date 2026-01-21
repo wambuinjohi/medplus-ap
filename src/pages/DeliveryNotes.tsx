@@ -12,9 +12,9 @@ import {
   TableHeader, 
   TableRow 
 } from '@/components/ui/table';
-import { 
-  Plus, 
-  Search, 
+import {
+  Plus,
+  Search,
   Filter,
   Eye,
   Edit,
@@ -26,7 +26,9 @@ import {
   CheckCircle,
   Clock,
   AlertTriangle,
-  MapPin
+  MapPin,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { downloadDeliveryNotePDF } from '@/utils/pdfGenerator';
