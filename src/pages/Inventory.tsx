@@ -89,6 +89,8 @@ export default function Inventory() {
   const [showRestockModal, setShowRestockModal] = useState(false);
   const [showAdjustmentModal, setShowAdjustmentModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(15);
 
   // Fetch products from database
   const { data: companies } = useCompanies();
