@@ -87,9 +87,9 @@ const sidebarItems: SidebarItem[] = [
     title: 'Reports',
     icon: BarChart3,
     children: [
-      { title: 'Sales Reports', icon: BarChart3, href: '/app/reports/sales' },
-      { title: 'Inventory Reports', icon: Package, href: '/app/reports/inventory', allowedRoles: ['admin', 'stock_manager'] },
-      { title: 'Customer Statements', icon: FileSpreadsheet, href: '/app/reports/statements' }
+      { title: 'Sales Reports', icon: BarChart3, href: '/app/reports/sales', requiredPermission: 'view_reports' },
+      { title: 'Inventory Reports', icon: Package, href: '/app/reports/inventory', requiredPermission: 'view_reports' },
+      { title: 'Customer Statements', icon: FileSpreadsheet, href: '/app/reports/statements', requiredPermission: 'view_reports' }
     ]
   },
   {
