@@ -64,6 +64,10 @@ function getRoleColor(role: string) {
       return 'bg-primary-light text-primary border-primary/20';
     case 'stock_manager':
       return 'bg-warning-light text-warning border-warning/20';
+    case 'sales':
+      return 'bg-secondary/10 text-secondary border-secondary/20';
+    case 'accounts':
+      return 'bg-accent/10 text-accent-foreground border-accent/20';
     case 'user':
       return 'bg-success-light text-success border-success/20';
     default:
