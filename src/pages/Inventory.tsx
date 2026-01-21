@@ -29,7 +29,9 @@ import {
   AlertTriangle,
   TrendingUp,
   TrendingDown,
-  Lock
+  Lock,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 
 interface InventoryItem {
@@ -87,6 +89,8 @@ export default function Inventory() {
   const [showRestockModal, setShowRestockModal] = useState(false);
   const [showAdjustmentModal, setShowAdjustmentModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(15);
 
   // Fetch products from database
   const { data: companies } = useCompanies();
@@ -163,6 +167,11 @@ export default function Inventory() {
     toast.success('Stock adjustment completed successfully!');
   };
 
+  // Reset to page 1 when search term changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
   // Transform products data to inventory items
   const inventory: InventoryItem[] = products?.map(product => ({
     ...product,
@@ -174,6 +183,18 @@ export default function Inventory() {
     item.product_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (item.product_categories?.name && item.product_categories.name.toLowerCase().includes(searchTerm.toLowerCase()))
   );
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredInventory.length / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedInventory = filteredInventory.slice(startIndex, endIndex);
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+    }
+  };
 
   const totalValue = inventory.reduce((sum, item) => {
     return sum + ((item.stock_quantity || 0) * (item.selling_price || 0));
@@ -399,7 +420,7 @@ export default function Inventory() {
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredInventory.map((item) => (
+                paginatedInventory.map((item) => (
                   <TableRow key={item.id} className="hover:bg-muted/50">
                     <TableCell className="font-medium">{item.product_code}</TableCell>
                     <TableCell className="font-medium">{item.name}</TableCell>
@@ -453,6 +474,50 @@ export default function Inventory() {
               )}
             </TableBody>
           </Table>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between mt-4 pt-4 border-t">
+              <p className="text-sm text-muted-foreground">
+                Showing {startIndex + 1} to {Math.min(endIndex, filteredInventory.length)} of {filteredInventory.length} items
+              </p>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Previous
+                </Button>
+
+                <div className="flex items-center space-x-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <Button
+                      key={page}
+                      variant={currentPage === page ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => handlePageChange(page)}
+                      className="w-8 h-8 p-0"
+                    >
+                      {page}
+                    </Button>
+                  ))}
+                </div>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 

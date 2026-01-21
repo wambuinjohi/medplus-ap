@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { BiolegendLogo } from '@/components/ui/biolegend-logo';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePermissions } from '@/hooks/usePermissions';
 
 interface SidebarItem {
   title: string;
@@ -30,6 +31,7 @@ interface SidebarItem {
   href?: string;
   children?: SidebarItem[];
   allowedRoles?: string[]; // Roles that can see this item
+  requiredPermission?: 'view_quotation' | 'view_invoice' | 'view_credit_note' | 'view_proforma' | 'view_customer' | 'view_inventory' | 'view_delivery_note' | 'view_lpo' | 'view_remittance' | 'view_payment' | 'view_reports' | 'manage_roles' | 'access_settings'; // Permission required to see this item
 }
 
 const sidebarItems: SidebarItem[] = [
@@ -42,51 +44,52 @@ const sidebarItems: SidebarItem[] = [
     title: 'Sales',
     icon: Receipt,
     children: [
-      { title: 'Quotations', icon: FileText, href: '/app/quotations' },
-      { title: 'Proforma Invoices', icon: FileCheck, href: '/app/proforma' },
-      { title: 'Invoices', icon: Receipt, href: '/app/invoices' },
-      { title: 'Credit Notes', icon: RotateCcw, href: '/app/credit-notes' }
+      { title: 'Quotations', icon: FileText, href: '/app/quotations', requiredPermission: 'view_quotation' },
+      { title: 'Proforma Invoices', icon: FileCheck, href: '/app/proforma', requiredPermission: 'view_proforma' },
+      { title: 'Invoices', icon: Receipt, href: '/app/invoices', requiredPermission: 'view_invoice' },
+      { title: 'Credit Notes', icon: RotateCcw, href: '/app/credit-notes', requiredPermission: 'view_credit_note' }
     ]
   },
   {
     title: 'Payments',
     icon: DollarSign,
-    allowedRoles: ['admin', 'accountant', 'accounts', 'stock_manager', 'sales'],
     children: [
-      { title: 'Payments', icon: DollarSign, href: '/app/payments' },
-      { title: 'Remittance Advice', icon: CreditCard, href: '/app/remittance' }
+      { title: 'Payments', icon: DollarSign, href: '/app/payments', requiredPermission: 'view_payment' },
+      { title: 'Remittance Advice', icon: CreditCard, href: '/app/remittance', requiredPermission: 'view_remittance' }
     ]
   },
   {
     title: 'Inventory',
     icon: Package,
-    allowedRoles: ['admin', 'stock_manager', 'sales'],
-    href: '/app/inventory'
+    href: '/app/inventory',
+    requiredPermission: 'view_inventory'
   },
   {
     title: 'Delivery Notes',
     icon: Truck,
     children: [
-      { title: 'Delivery Notes', icon: Truck, href: '/app/delivery-notes' }
+      { title: 'Delivery Notes', icon: Truck, href: '/app/delivery-notes', requiredPermission: 'view_delivery_note' }
     ]
   },
   {
     title: 'Customers',
     icon: Users,
-    href: '/app/customers'
+    href: '/app/customers',
+    requiredPermission: 'view_customer'
   },
   {
     title: 'Purchase Orders',
     icon: ShoppingCart,
-    href: '/app/lpos'
+    href: '/app/lpos',
+    requiredPermission: 'view_lpo'
   },
   {
     title: 'Reports',
     icon: BarChart3,
     children: [
-      { title: 'Sales Reports', icon: BarChart3, href: '/app/reports/sales' },
-      { title: 'Inventory Reports', icon: Package, href: '/app/reports/inventory', allowedRoles: ['admin', 'stock_manager'] },
-      { title: 'Customer Statements', icon: FileSpreadsheet, href: '/app/reports/statements' }
+      { title: 'Sales Reports', icon: BarChart3, href: '/app/reports/sales', requiredPermission: 'view_reports' },
+      { title: 'Inventory Reports', icon: Package, href: '/app/reports/inventory', requiredPermission: 'view_reports' },
+      { title: 'Customer Statements', icon: FileSpreadsheet, href: '/app/reports/statements', requiredPermission: 'view_reports' }
     ]
   },
   {
@@ -100,10 +103,10 @@ const sidebarItems: SidebarItem[] = [
     icon: Settings,
     allowedRoles: ['admin'],
     children: [
-      { title: 'Company Settings', icon: Building2, href: '/app/settings/company' },
-      { title: 'User Management', icon: Users, href: '/app/settings/users' },
-      { title: 'Terms & Conditions', icon: FileText, href: '/app/settings/terms' },
-      { title: 'Database Setup', icon: Package, href: '/database-setup' }
+      { title: 'Company Settings', icon: Building2, href: '/app/settings/company', requiredPermission: 'access_settings' },
+      { title: 'User Management', icon: Users, href: '/app/settings/users', requiredPermission: 'access_settings' },
+      { title: 'Terms & Conditions', icon: FileText, href: '/app/settings/terms', requiredPermission: 'access_settings' },
+      { title: 'Database Setup', icon: Package, href: '/database-setup', requiredPermission: 'access_settings' }
     ]
   }
 ];
@@ -111,6 +114,7 @@ const sidebarItems: SidebarItem[] = [
 export function Sidebar() {
   const location = useLocation();
   const { profile } = useAuth();
+  const { can } = usePermissions();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
   const toggleExpanded = (title: string) => {
@@ -122,12 +126,18 @@ export function Sidebar() {
   };
 
   const isItemVisible = (item: SidebarItem): boolean => {
-    // If no allowed roles specified, item is visible to everyone
-    if (!item.allowedRoles || item.allowedRoles.length === 0) {
-      return true;
+    // Check if user has the required permission
+    if (item.requiredPermission && !can(item.requiredPermission)) {
+      return false;
     }
+
     // Check if user's role is in allowed roles
-    return item.allowedRoles.includes(profile?.role || '');
+    if (item.allowedRoles && item.allowedRoles.length > 0) {
+      return item.allowedRoles.includes(profile?.role || '');
+    }
+
+    // If no restrictions, item is visible
+    return true;
   };
 
   const isItemActive = (href?: string) => {

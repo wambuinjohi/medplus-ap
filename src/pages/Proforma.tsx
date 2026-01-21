@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { useProformas, useDeleteProforma, type ProformaWithItems } from '@/hooks/useProforma';
 import { useCompanies } from '@/hooks/useDatabase';
+import { usePermissions } from '@/hooks/usePermissions';
 import { toast } from 'sonner';
 import { CreateProformaModalOptimized } from '@/components/proforma/CreateProformaModalOptimized';
 import { EditProformaModal } from '@/components/proforma/EditProformaModal';
@@ -52,7 +53,6 @@ export default function Proforma() {
   const [selectedProforma, setSelectedProforma] = useState<ProformaWithItems | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
-
   // Get company data
   const { data: companies } = useCompanies();
   const currentCompany = companies?.[0];
@@ -60,6 +60,7 @@ export default function Proforma() {
   // Use proper proforma hooks
   const { data: proformas = [], isLoading, refetch } = useProformas(currentCompany?.id);
   const deleteProforma = useDeleteProforma();
+  const { canDelete, canEdit, canCreate } = usePermissions();
 
   const filteredProformas = proformas.filter(proforma =>
     proforma.proforma_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -452,34 +453,42 @@ export default function Proforma() {
                         )}
                         <Popover>
                           <PopoverTrigger asChild>
-                            <Button variant="ghost" size="sm" title="Delete proforma" className="text-destructive">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              title={!canDelete('proforma') ? 'You do not have permission to delete proformas' : 'Delete proforma'}
+                              disabled={!canDelete('proforma')}
+                              className={`${canDelete('proforma') ? 'text-destructive hover:bg-destructive/10' : 'text-muted-foreground/50 cursor-not-allowed'}`}
+                            >
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-48">
-                            <div className="text-sm mb-2">Delete proforma {proforma.proforma_number}?</div>
-                            <div className="flex justify-end space-x-2">
-                              <Button variant="ghost" size="sm" onClick={() => {}}>
-                                Cancel
-                              </Button>
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={async () => {
-                                  try {
-                                    await deleteProforma.mutateAsync(proforma.id!);
-                                    refetch();
-                                    toast.success('Proforma deleted');
-                                  } catch (e) {
-                                    console.error('Delete failed:', e);
-                                    toast.error('Failed to delete proforma');
-                                  }
-                                }}
-                              >
-                                Delete
-                              </Button>
-                            </div>
-                          </PopoverContent>
+                          {canDelete('proforma') && (
+                            <PopoverContent className="w-48">
+                              <div className="text-sm mb-2">Delete proforma {proforma.proforma_number}?</div>
+                              <div className="flex justify-end space-x-2">
+                                <Button variant="ghost" size="sm" onClick={() => {}}>
+                                  Cancel
+                                </Button>
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={async () => {
+                                    try {
+                                      await deleteProforma.mutateAsync(proforma.id!);
+                                      refetch();
+                                      toast.success('Proforma deleted');
+                                    } catch (e) {
+                                      console.error('Delete failed:', e);
+                                      toast.error('Failed to delete proforma');
+                                    }
+                                  }}
+                                >
+                                  Delete
+                                </Button>
+                              </div>
+                            </PopoverContent>
+                          )}
                         </Popover>
                       </div>
                     </TableCell>
