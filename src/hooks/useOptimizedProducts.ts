@@ -345,28 +345,143 @@ export const useProductCategories = (companyId?: string) => {
   });
 };
 
-// Optimized products hook (alias for useOptimizedProductSearch)
-export const useOptimizedProducts = (companyId?: string, options?: any) => {
-  const { data: searchResults } = useOptimizedProductSearch(companyId, true);
-  const { data: popularProducts } = usePopularProducts(companyId, 50);
+/**
+ * Optimized hook for loading all products with server-side pagination
+ * Supports pagination, filtering by category, low stock, and search
+ */
+export const useOptimizedProducts = (
+  companyId?: string,
+  options: {
+    page?: number;
+    pageSize?: number;
+    searchTerm?: string;
+    categoryId?: string;
+    lowStockOnly?: boolean;
+  } = {}
+) => {
+  const {
+    page = 1,
+    pageSize = 20,
+    searchTerm = '',
+    categoryId = '',
+    lowStockOnly = false
+  } = options;
 
-  // Return all products (search + popular) for the inventory page
-  const allProducts = useMemo(() => {
-    const products = searchResults || popularProducts || [];
-    return {
-      data: products,
-      total: products.length,
-      page: options?.page || 1,
-      pageSize: options?.pageSize || 20
-    };
-  }, [searchResults, popularProducts, options]);
+  return useQuery({
+    queryKey: ['products-optimized', companyId, page, pageSize, searchTerm, categoryId, lowStockOnly],
+    queryFn: async () => {
+      if (!companyId) return { products: [], totalCount: 0, hasMore: false, currentPage: page };
 
-  return {
-    data: allProducts,
-    isLoading: false,
-    error: null,
-    refetch: () => {}
-  };
+      try {
+        console.log('🔍 Loading products with optimization...');
+        const startTime = performance.now();
+
+        // Start with base query
+        let query = supabase
+          .from('products')
+          .select(`
+            id,
+            name,
+            product_code,
+            unit_of_measure,
+            unit_price,
+            selling_price,
+            stock_quantity,
+            minimum_stock_level,
+            category_id,
+            is_active,
+            created_at,
+            updated_at
+          `, { count: 'exact' });
+
+        // Apply company filter
+        if (companyId) {
+          query = query.eq('company_id', companyId);
+        }
+
+        // Apply active filter
+        query = query.eq('is_active', true);
+
+        // Apply search filter (server-side)
+        if (searchTerm) {
+          query = query.or(`name.ilike.%${searchTerm}%,product_code.ilike.%${searchTerm}%`);
+        }
+
+        // Apply category filter
+        if (categoryId) {
+          query = query.eq('category_id', categoryId);
+        }
+
+        // Apply low stock filter
+        if (lowStockOnly) {
+          query = query.lte('stock_quantity', 'minimum_stock_level');
+        }
+
+        // Apply pagination
+        const from = (page - 1) * pageSize;
+        const to = from + pageSize - 1;
+        query = query.range(from, to);
+
+        // Order by created_at descending (latest first)
+        query = query.order('created_at', { ascending: false });
+
+        const { data, error, count } = await query;
+
+        if (error) {
+          console.error('❌ Products query failed:', error);
+          throw error;
+        }
+
+        // Fetch categories separately for display
+        const { data: categories, error: categoriesError } = await supabase
+          .from('product_categories')
+          .select('id, name')
+          .eq('company_id', companyId);
+
+        if (categoriesError) {
+          console.warn('Warning: Failed to fetch categories:', categoriesError);
+        }
+
+        // Create category lookup map
+        const categoryMap = new Map();
+        (categories || []).forEach(cat => {
+          categoryMap.set(cat.id, cat.name);
+        });
+
+        // Transform data to include category information
+        const transformedData = (data || []).map(product => ({
+          id: product.id,
+          name: product.name,
+          product_code: product.product_code,
+          unit_of_measure: product.unit_of_measure || 'pieces',
+          unit_price: product.unit_price || 0,
+          selling_price: product.selling_price || 0,
+          stock_quantity: product.stock_quantity || 0,
+          minimum_stock_level: product.minimum_stock_level || 0,
+          product_categories: {
+            name: categoryMap.get(product.category_id) || 'Uncategorized'
+          }
+        }));
+
+        const endTime = performance.now();
+        console.log(`✅ Products loaded in ${(endTime - startTime).toFixed(2)}ms`);
+
+        return {
+          products: transformedData,
+          totalCount: count || 0,
+          hasMore: count ? (page * pageSize) < count : false,
+          currentPage: page
+        };
+      } catch (error) {
+        console.error('Error in useOptimizedProducts:', error);
+        throw error;
+      }
+    },
+    enabled: !!companyId,
+    staleTime: 30000, // Cache for 30 seconds
+    refetchOnWindowFocus: false,
+    retry: 2
+  });
 };
 
 // Inventory stats hook
