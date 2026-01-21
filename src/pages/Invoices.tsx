@@ -43,6 +43,7 @@ import {
 } from 'lucide-react';
 import { useCompanies } from '@/hooks/useDatabase';
 import { useInvoicesFixed as useInvoices, useDeleteInvoice } from '@/hooks/useInvoicesFixed';
+import { usePermissions } from '@/hooks/usePermissions';
 import { toast } from 'sonner';
 import { parseErrorMessage } from '@/utils/errorHelpers';
 import { CreateInvoiceModal } from '@/components/invoices/CreateInvoiceModal';
