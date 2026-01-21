@@ -143,15 +143,15 @@ export function EditUserModal({
     }
   };
 
-  const handleRoleChange = (role: UserRole) => {
-    setFormData(prev => ({ ...prev, role }));
+  const handleRoleChange = (role: string) => {
+    setFormData(prev => ({ ...prev, role: role as UpdateUserData['role'] }));
     if (formErrors.role) {
       setFormErrors(prev => ({ ...prev, role: '' }));
     }
   };
 
-  const handleStatusChange = (status: UserStatus) => {
-    setFormData(prev => ({ ...prev, status }));
+  const handleStatusChange = (status: string) => {
+    setFormData(prev => ({ ...prev, status: status as UpdateUserData['status'] }));
     if (formErrors.status) {
       setFormErrors(prev => ({ ...prev, status: '' }));
     }
