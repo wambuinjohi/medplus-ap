@@ -329,7 +329,7 @@ Website: www.biolegendscientific.co.ke`;
               <Input
                 placeholder="Search quotations by customer or number..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => handleSearchChange(e.target.value)}
                 className="pl-10"
               />
             </div>
