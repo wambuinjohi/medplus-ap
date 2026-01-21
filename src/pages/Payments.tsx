@@ -93,6 +93,8 @@ export default function Payments() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<any>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(20);
 
   // Fetch live payments data and company details
   const { data: companies = [] } = useCompanies();
