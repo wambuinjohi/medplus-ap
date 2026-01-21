@@ -44,6 +44,8 @@ export default function DeliveryNotes() {
   const [showViewModal, setShowViewModal] = useState(false);
   const [selectedDeliveryNote, setSelectedDeliveryNote] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(20);
 
   // Database hooks
   const { data: companies } = useCompanies();
