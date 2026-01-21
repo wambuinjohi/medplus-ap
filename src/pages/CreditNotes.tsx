@@ -79,6 +79,8 @@ export default function CreditNotes() {
   const [showApplyModal, setShowApplyModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedCreditNote, setSelectedCreditNote] = useState<CreditNote | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(20);
 
   // Filter states
   const [statusFilter, setStatusFilter] = useState('all');
