@@ -94,6 +94,21 @@ export default function AuditLogsPage() {
     });
   }, [logs, filter, entityTypeFilter, actionFilter]);
 
+  // Pagination calculations
+  const totalPages = useMemo(() => {
+    return Math.ceil(filtered.length / pageSize);
+  }, [filtered.length, pageSize]);
+
+  const paginatedLogs = useMemo(() => {
+    const from = (currentPage - 1) * pageSize;
+    return filtered.slice(from, from + pageSize);
+  }, [filtered, currentPage, pageSize]);
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const exportLogs = () => {
     const csv = [
       ['Date', 'Action', 'Entity Type', 'Record ID', 'Actor', 'Company ID', 'Details'].join(','),
