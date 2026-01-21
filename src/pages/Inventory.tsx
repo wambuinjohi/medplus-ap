@@ -179,6 +179,18 @@ export default function Inventory() {
     (item.product_categories?.name && item.product_categories.name.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
+  // Pagination logic
+  const totalPages = Math.ceil(filteredInventory.length / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedInventory = filteredInventory.slice(startIndex, endIndex);
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+    }
+  };
+
   const totalValue = inventory.reduce((sum, item) => {
     return sum + ((item.stock_quantity || 0) * (item.selling_price || 0));
   }, 0);
