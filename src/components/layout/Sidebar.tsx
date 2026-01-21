@@ -44,10 +44,10 @@ const sidebarItems: SidebarItem[] = [
     title: 'Sales',
     icon: Receipt,
     children: [
-      { title: 'Quotations', icon: FileText, href: '/app/quotations' },
-      { title: 'Proforma Invoices', icon: FileCheck, href: '/app/proforma' },
-      { title: 'Invoices', icon: Receipt, href: '/app/invoices' },
-      { title: 'Credit Notes', icon: RotateCcw, href: '/app/credit-notes' }
+      { title: 'Quotations', icon: FileText, href: '/app/quotations', requiredPermission: 'view_quotation' },
+      { title: 'Proforma Invoices', icon: FileCheck, href: '/app/proforma', requiredPermission: 'view_proforma' },
+      { title: 'Invoices', icon: Receipt, href: '/app/invoices', requiredPermission: 'view_invoice' },
+      { title: 'Credit Notes', icon: RotateCcw, href: '/app/credit-notes', requiredPermission: 'view_credit_note' }
     ]
   },
   {
