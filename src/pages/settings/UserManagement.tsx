@@ -118,6 +118,36 @@ export default function UserManagement() {
     open: boolean;
     user?: UserProfile | null;
   }>({ open: false, user: null });
+  const [rolesMap, setRolesMap] = useState<Record<string, string>>({});
+
+  // Fetch roles and create a mapping for display
+  useEffect(() => {
+    const loadRoles = async () => {
+      if (!currentUser?.company_id) return;
+      try {
+        const { data, error } = await supabase
+          .from('roles')
+          .select('role_type, name')
+          .eq('company_id', currentUser.company_id);
+
+        if (error) throw error;
+
+        const map: Record<string, string> = {};
+        data?.forEach((role) => {
+          map[role.role_type] = role.name;
+        });
+        setRolesMap(map);
+      } catch (err) {
+        console.error('Error loading roles:', err);
+      }
+    };
+
+    loadRoles();
+  }, [currentUser?.company_id]);
+
+  const getRoleDisplayName = (roleType: string) => {
+    return rolesMap[roleType] || roleType;
+  };
 
   const stats = getUserStats();
 
