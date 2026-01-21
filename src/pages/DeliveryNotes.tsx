@@ -55,11 +55,33 @@ export default function DeliveryNotes() {
 
   const mappedDeliveryNotes = deliveryNotes?.map(mapDeliveryNoteForDisplay) || [];
 
-  const filteredDeliveryNotes = mappedDeliveryNotes.filter(note =>
-    (note.delivery_note_number || note.delivery_number || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    note.customers?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    note.tracking_number?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredDeliveryNotes = useMemo(() => {
+    return mappedDeliveryNotes.filter(note =>
+      (note.delivery_note_number || note.delivery_number || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      note.customers?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      note.tracking_number?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [mappedDeliveryNotes, searchTerm]);
+
+  // Pagination calculations
+  const totalPages = useMemo(() => {
+    return Math.ceil(filteredDeliveryNotes.length / pageSize);
+  }, [filteredDeliveryNotes.length, pageSize]);
+
+  const paginatedDeliveryNotes = useMemo(() => {
+    const from = (currentPage - 1) * pageSize;
+    return filteredDeliveryNotes.slice(from, from + pageSize);
+  }, [filteredDeliveryNotes, currentPage, pageSize]);
+
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    setCurrentPage(1); // Reset to first page on search
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
