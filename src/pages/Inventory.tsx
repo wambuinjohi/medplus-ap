@@ -167,6 +167,11 @@ export default function Inventory() {
     toast.success('Stock adjustment completed successfully!');
   };
 
+  // Reset to page 1 when search term changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
   // Transform products data to inventory items
   const inventory: InventoryItem[] = products?.map(product => ({
     ...product,
