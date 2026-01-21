@@ -68,11 +68,33 @@ export default function LPOs() {
 
   // Note: Auto-migration removed - using manual migration guide instead
 
-  const filteredLPOs = lpos?.filter(lpo =>
-    lpo.lpo_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    lpo.suppliers?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    lpo.notes?.toLowerCase().includes(searchTerm.toLowerCase())
-  ) || [];
+  const filteredLPOs = useMemo(() => {
+    return lpos?.filter(lpo =>
+      lpo.lpo_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      lpo.suppliers?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      lpo.notes?.toLowerCase().includes(searchTerm.toLowerCase())
+    ) || [];
+  }, [lpos, searchTerm]);
+
+  // Pagination calculations
+  const totalPages = useMemo(() => {
+    return Math.ceil(filteredLPOs.length / pageSize);
+  }, [filteredLPOs.length, pageSize]);
+
+  const paginatedLPOs = useMemo(() => {
+    const from = (currentPage - 1) * pageSize;
+    return filteredLPOs.slice(from, from + pageSize);
+  }, [filteredLPOs, currentPage, pageSize]);
+
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    setCurrentPage(1); // Reset to first page on search
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
