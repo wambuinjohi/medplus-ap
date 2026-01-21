@@ -301,7 +301,7 @@ export default function DeliveryNotes() {
                 <Input
                   placeholder="Search delivery notes..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={(e) => handleSearchChange(e.target.value)}
                   className="pl-10 w-64"
                 />
               </div>
@@ -340,6 +340,7 @@ export default function DeliveryNotes() {
               )}
             </div>
           ) : (
+            <>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -353,7 +354,7 @@ export default function DeliveryNotes() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredDeliveryNotes.map((note) => (
+                {paginatedDeliveryNotes.map((note) => (
                   <TableRow key={note.id}>
                     <TableCell className="font-medium">
                       {note.delivery_note_number || note.delivery_number}
@@ -438,6 +439,39 @@ export default function DeliveryNotes() {
                 ))}
               </TableBody>
             </Table>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between mt-4 pt-4 border-t">
+                <p className="text-sm text-muted-foreground">
+                  Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, filteredDeliveryNotes.length)} of {filteredDeliveryNotes.length} delivery notes
+                </p>
+                <div className="flex items-center space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1 || isLoading}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    Previous
+                  </Button>
+                  <span className="text-sm text-muted-foreground">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages || isLoading}
+                  >
+                    Next
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+            </>
           )}
         </CardContent>
       </Card>
