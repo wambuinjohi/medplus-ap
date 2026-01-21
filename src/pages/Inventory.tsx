@@ -415,7 +415,7 @@ export default function Inventory() {
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredInventory.map((item) => (
+                paginatedInventory.map((item) => (
                   <TableRow key={item.id} className="hover:bg-muted/50">
                     <TableCell className="font-medium">{item.product_code}</TableCell>
                     <TableCell className="font-medium">{item.name}</TableCell>
