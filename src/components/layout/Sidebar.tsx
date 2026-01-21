@@ -31,6 +31,7 @@ interface SidebarItem {
   href?: string;
   children?: SidebarItem[];
   allowedRoles?: string[]; // Roles that can see this item
+  requiredPermission?: 'view_quotation' | 'view_invoice' | 'view_credit_note' | 'view_proforma' | 'view_customer' | 'view_inventory' | 'view_delivery_note' | 'view_lpo' | 'view_remittance' | 'view_payment' | 'view_reports' | 'manage_roles' | 'access_settings'; // Permission required to see this item
 }
 
 const sidebarItems: SidebarItem[] = [
