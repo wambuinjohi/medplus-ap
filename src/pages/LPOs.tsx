@@ -29,7 +29,9 @@ import {
   FileText,
   User,
   Database,
-  Trash2
+  Trash2,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useLPOs, useUpdateLPO, useCompanies, useDeleteLPO } from '@/hooks/useDatabase';
