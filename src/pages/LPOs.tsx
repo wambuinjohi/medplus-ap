@@ -56,6 +56,8 @@ export default function LPOs() {
   const [showAuditPanel, setShowAuditPanel] = useState(false);
   const [showCustomerSupplierAudit, setShowCustomerSupplierAudit] = useState(false);
   const [deleteRelatedCounts, setDeleteRelatedCounts] = useState<any>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(20);
 
   // Database hooks
   const { data: companies } = useCompanies();
