@@ -103,10 +103,10 @@ const sidebarItems: SidebarItem[] = [
     icon: Settings,
     allowedRoles: ['admin'],
     children: [
-      { title: 'Company Settings', icon: Building2, href: '/app/settings/company' },
-      { title: 'User Management', icon: Users, href: '/app/settings/users' },
-      { title: 'Terms & Conditions', icon: FileText, href: '/app/settings/terms' },
-      { title: 'Database Setup', icon: Package, href: '/database-setup' }
+      { title: 'Company Settings', icon: Building2, href: '/app/settings/company', requiredPermission: 'access_settings' },
+      { title: 'User Management', icon: Users, href: '/app/settings/users', requiredPermission: 'access_settings' },
+      { title: 'Terms & Conditions', icon: FileText, href: '/app/settings/terms', requiredPermission: 'access_settings' },
+      { title: 'Database Setup', icon: Package, href: '/database-setup', requiredPermission: 'access_settings' }
     ]
   }
 ];
