@@ -374,7 +374,7 @@ export default function LPOs() {
                 <Input
                   placeholder="Search LPOs..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={(e) => handleSearchChange(e.target.value)}
                   className="pl-10 w-64"
                 />
               </div>
