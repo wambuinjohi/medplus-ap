@@ -145,6 +145,7 @@ export default function Invoices() {
   // Use the fixed invoices hook
   const { data: invoices, isLoading, error, refetch } = useInvoices(currentCompany?.id);
   const deleteInvoice = useDeleteInvoice();
+  const { canDelete } = usePermissions();
 
   // Auto-reconcile invoices on component mount to fix any status mismatches
   useEffect(() => {
