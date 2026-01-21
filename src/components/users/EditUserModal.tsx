@@ -226,7 +226,7 @@ export function EditUserModal({
                   ) : roles.length === 0 ? (
                     <div className="px-2 py-2 text-sm text-muted-foreground">No roles available</div>
                   ) : (
-                    uniqueRoles.map((role) => (
+                    roles.map((role) => (
                       <SelectItem key={role.id} value={role.role_type}>
                         {role.name}
                       </SelectItem>
