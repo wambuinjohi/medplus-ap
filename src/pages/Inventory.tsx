@@ -29,7 +29,9 @@ import {
   AlertTriangle,
   TrendingUp,
   TrendingDown,
-  Lock
+  Lock,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 
 interface InventoryItem {
