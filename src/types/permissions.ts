@@ -90,7 +90,7 @@ export type Permission =
   | 'manage_permissions'
   | 'access_settings';
 
-export type RoleType = 'admin' | 'accountant' | 'stock_manager' | 'user' | 'custom';
+export type RoleType = 'admin' | 'accountant' | 'stock_manager' | 'sales' | 'accounts' | 'user' | 'custom';
 
 export interface RoleDefinition {
   id: string;
