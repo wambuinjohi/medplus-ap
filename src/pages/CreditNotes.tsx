@@ -37,7 +37,9 @@ import {
   Calendar,
   DollarSign,
   AlertCircle,
-  Trash2
+  Trash2,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { useCompanies } from '@/hooks/useDatabase';
 import { useCreditNotes } from '@/hooks/useCreditNotes';
