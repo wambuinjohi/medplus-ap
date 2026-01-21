@@ -150,6 +150,32 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<Exclude<RoleType, 'custom'>, Permi
     'view_customer', 'create_delivery_note', 'view_delivery_note', 'edit_delivery_note',
     'view_lpo', 'view_payment',
   ],
+  sales: [
+    // Sales team members - can create and view quotations, invoices, proforma without delete permissions
+    'create_quotation', 'view_quotation', 'edit_quotation', 'export_quotation',
+    'view_invoice', 'export_invoice',
+    'create_proforma', 'view_proforma', 'edit_proforma', 'export_proforma',
+    'view_credit_note',
+    'create_customer', 'view_customer', 'edit_customer',
+    'view_delivery_note',
+    'view_reports', 'view_customer_reports', 'view_sales_reports',
+    'view_lpo',
+    'view_payment',
+  ],
+  accounts: [
+    // Accounts team members - can manage payments, invoices, credit notes without delete permissions
+    'create_invoice', 'view_invoice', 'edit_invoice', 'export_invoice',
+    'create_payment', 'view_payment', 'edit_payment',
+    'create_credit_note', 'view_credit_note', 'edit_credit_note', 'export_credit_note',
+    'view_proforma', 'export_proforma',
+    'view_quotation', 'export_quotation',
+    'view_customer',
+    'create_remittance', 'view_remittance', 'edit_remittance',
+    'view_lpo',
+    'view_reports', 'export_reports', 'view_customer_reports', 'view_sales_reports',
+    'view_delivery_note',
+    'view_audit_logs',
+  ],
   user: [
     // Basic users have limited viewing permissions
     'create_quotation', 'view_quotation', 'edit_quotation',
