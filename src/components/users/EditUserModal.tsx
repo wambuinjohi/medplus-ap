@@ -18,7 +18,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Loader2, User, Phone, Building, MapPin } from 'lucide-react';
-import { UserProfile, UserRole, UserStatus, useAuth } from '@/contexts/AuthContext';
+import { UserProfile, useAuth } from '@/contexts/AuthContext';
 import { UpdateUserData } from '@/hooks/useUserManagement';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -143,15 +143,22 @@ export function EditUserModal({
     }
   };
 
-  const handleRoleChange = (role: UserRole) => {
-    setFormData(prev => ({ ...prev, role }));
+  const handleRoleChange = (role: string) => {
+    setFormData(prev => ({ ...prev, role: role as UpdateUserData['role'] }));
     if (formErrors.role) {
       setFormErrors(prev => ({ ...prev, role: '' }));
     }
   };
 
-  const handleStatusChange = (status: UserStatus) => {
-    setFormData(prev => ({ ...prev, status }));
+  // Get the display name for the current role value
+  const getCurrentRoleName = () => {
+    if (!formData.role) return 'Select a role';
+    const currentRole = roles.find(r => r.role_type === formData.role);
+    return currentRole?.name || formData.role;
+  };
+
+  const handleStatusChange = (status: string) => {
+    setFormData(prev => ({ ...prev, status: status as UpdateUserData['status'] }));
     if (formErrors.status) {
       setFormErrors(prev => ({ ...prev, status: '' }));
     }
@@ -209,9 +216,9 @@ export function EditUserModal({
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="role">Role *</Label>
-              <Select value={formData.role} onValueChange={handleRoleChange} disabled={loading || rolesLoading || roles.length === 0}>
+              <Select value={formData.role || ''} onValueChange={handleRoleChange} disabled={loading || rolesLoading || roles.length === 0}>
                 <SelectTrigger className={formErrors.role ? 'border-destructive' : ''}>
-                  <SelectValue placeholder={rolesLoading ? 'Loading roles...' : 'Select a role'} />
+                  <SelectValue placeholder={rolesLoading ? 'Loading roles...' : getCurrentRoleName()} />
                 </SelectTrigger>
                 <SelectContent>
                   {rolesLoading ? (
@@ -220,13 +227,8 @@ export function EditUserModal({
                     <div className="px-2 py-2 text-sm text-muted-foreground">No roles available</div>
                   ) : (
                     roles.map((role) => (
-                      <SelectItem key={role.id} value={role.name}>
-                        <div className="flex flex-col">
-                          <span className="font-medium">{role.name}</span>
-                          {role.description && (
-                            <span className="text-xs text-muted-foreground">{role.description}</span>
-                          )}
-                        </div>
+                      <SelectItem key={role.id} value={role.role_type}>
+                        {role.name}
                       </SelectItem>
                     ))
                   )}
