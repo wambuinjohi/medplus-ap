@@ -116,7 +116,7 @@ export const setupAuditRoles = async (companyId: string): Promise<SetupAuditRole
           description: 'Sales team member with limited access - can create and view quotations, invoices, and proforma without delete permissions',
           permissions: SALES_AUDIT_ROLE_PERMISSIONS,
           company_id: companyId,
-          role_type: 'custom',
+          role_type: 'sales',
           is_default: false,
         })
         .select('id')
@@ -140,7 +140,7 @@ export const setupAuditRoles = async (companyId: string): Promise<SetupAuditRole
           description: 'Accounts team member with limited access - can manage payments, invoices, and credit notes without delete permissions',
           permissions: ACCOUNTS_AUDIT_ROLE_PERMISSIONS,
           company_id: companyId,
-          role_type: 'custom',
+          role_type: 'accounts',
           is_default: false,
         })
         .select('id')
