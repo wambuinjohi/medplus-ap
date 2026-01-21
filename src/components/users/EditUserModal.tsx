@@ -216,9 +216,9 @@ export function EditUserModal({
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="role">Role *</Label>
-              <Select value={formData.role} onValueChange={handleRoleChange} disabled={loading || rolesLoading || roles.length === 0}>
+              <Select value={formData.role || ''} onValueChange={handleRoleChange} disabled={loading || rolesLoading || roles.length === 0}>
                 <SelectTrigger className={formErrors.role ? 'border-destructive' : ''}>
-                  <SelectValue placeholder={rolesLoading ? 'Loading roles...' : 'Select a role'} />
+                  <SelectValue placeholder={rolesLoading ? 'Loading roles...' : getCurrentRoleName()} />
                 </SelectTrigger>
                 <SelectContent>
                   {rolesLoading ? (
