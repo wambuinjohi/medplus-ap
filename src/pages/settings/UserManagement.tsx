@@ -406,7 +406,7 @@ export default function UserManagement() {
                         <TableCell>{user.email}</TableCell>
                         <TableCell>
                           <Badge variant="outline" className={getRoleColor(user.role)}>
-                            {user.role.replace('_', ' ')}
+                            {getRoleDisplayName(user.role)}
                           </Badge>
                         </TableCell>
                         <TableCell>
