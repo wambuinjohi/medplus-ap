@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { BiolegendLogo } from '@/components/ui/biolegend-logo';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePermissions } from '@/hooks/usePermissions';
 
 interface SidebarItem {
   title: string;
