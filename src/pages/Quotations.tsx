@@ -1,16 +1,16 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
 } from '@/components/ui/table';
 import {
   Plus,
@@ -23,7 +23,9 @@ import {
   Calendar,
   Send,
   Receipt,
-  Trash2
+  Trash2,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { useQuotations, useCompanies } from '@/hooks/useDatabase';
 import { useAuth } from '@/contexts/AuthContext';
