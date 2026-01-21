@@ -349,7 +349,7 @@ Website: www.biolegendscientific.co.ke`;
             <span>Quotations List</span>
             {!isLoading && (
               <Badge variant="outline" className="ml-auto">
-                {filteredQuotations.length} quotations
+                {filteredQuotations.length} total {filteredQuotations.length === 1 ? 'quotation' : 'quotations'}
               </Badge>
             )}
           </CardTitle>
