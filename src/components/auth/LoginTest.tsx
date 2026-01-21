@@ -77,6 +77,8 @@ export function LoginTest() {
       case 'admin': return 'bg-purple-100 text-purple-800';
       case 'accountant': return 'bg-blue-100 text-blue-800';
       case 'stock_manager': return 'bg-orange-100 text-orange-800';
+      case 'sales': return 'bg-cyan-100 text-cyan-800';
+      case 'accounts': return 'bg-indigo-100 text-indigo-800';
       case 'user': return 'bg-green-100 text-green-800';
       default: return 'bg-gray-100 text-gray-800';
     }
