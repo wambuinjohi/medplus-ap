@@ -47,6 +47,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth, UserProfile } from '@/contexts/AuthContext';
 import useUserManagement from '@/hooks/useUserManagement';
 import usePermissions from '@/hooks/usePermissions';
+import { supabase } from '@/integrations/supabase/client';
 import { CreateUserModal } from '@/components/users/CreateUserModal';
 import { EditUserModal } from '@/components/users/EditUserModal';
 import { InviteUserModal } from '@/components/users/InviteUserModal';
