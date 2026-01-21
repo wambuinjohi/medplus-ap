@@ -37,10 +37,14 @@ export function Header() {
         return 'Accountant';
       case 'stock_manager':
         return 'Stock Manager';
+      case 'sales':
+        return 'Sales';
+      case 'accounts':
+        return 'Accounts';
       case 'user':
         return 'User';
       default:
-        return 'User';
+        return role.charAt(0).toUpperCase() + role.slice(1);
     }
   };
 
@@ -52,6 +56,10 @@ export function Header() {
         return 'bg-primary-light text-primary border-primary/20';
       case 'stock_manager':
         return 'bg-warning-light text-warning border-warning/20';
+      case 'sales':
+        return 'bg-secondary/10 text-secondary border-secondary/20';
+      case 'accounts':
+        return 'bg-accent/10 text-accent-foreground border-accent/20';
       case 'user':
         return 'bg-success-light text-success border-success/20';
       default:

@@ -51,7 +51,7 @@ const sidebarItems: SidebarItem[] = [
   {
     title: 'Payments',
     icon: DollarSign,
-    allowedRoles: ['admin', 'accountant', 'Accounts Audit', 'stock_manager'],
+    allowedRoles: ['admin', 'accountant', 'accounts', 'stock_manager'],
     children: [
       { title: 'Payments', icon: DollarSign, href: '/app/payments' },
       { title: 'Remittance Advice', icon: CreditCard, href: '/app/remittance' }

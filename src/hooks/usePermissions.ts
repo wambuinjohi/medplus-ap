@@ -33,7 +33,7 @@ export const usePermissions = () => {
     setError(null);
 
     try {
-      // First, get the user's role string
+      // First, get the user's role string (role_type)
       const userRole = currentUser.role;
 
       if (!userRole) {
@@ -43,10 +43,11 @@ export const usePermissions = () => {
       }
 
       // Fetch the full role definition from the roles table
+      // Profile.role now stores role_type, so we query by role_type
       const { data, error: fetchError } = await supabase
         .from('roles')
         .select('*')
-        .eq('name', userRole)
+        .eq('role_type', userRole)
         .eq('company_id', currentUser.company_id)
         .maybeSingle();
 
