@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -37,7 +37,9 @@ import {
   Calendar,
   DollarSign,
   AlertCircle,
-  Trash2
+  Trash2,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { useCompanies } from '@/hooks/useDatabase';
 import { useCreditNotes } from '@/hooks/useCreditNotes';
@@ -77,6 +79,8 @@ export default function CreditNotes() {
   const [showApplyModal, setShowApplyModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedCreditNote, setSelectedCreditNote] = useState<CreditNote | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(20);
 
   // Filter states
   const [statusFilter, setStatusFilter] = useState('all');
@@ -93,28 +97,50 @@ export default function CreditNotes() {
   const deleteCreditNote = useDeleteCreditNote();
 
   // Filter and search logic
-  const filteredCreditNotes = creditNotes?.filter(creditNote => {
-    // Search filter
-    const matchesSearch =
-      creditNote.credit_note_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      creditNote.customers?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      creditNote.customers?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      creditNote.reason?.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredCreditNotes = useMemo(() => {
+    return creditNotes?.filter(creditNote => {
+      // Search filter
+      const matchesSearch =
+        creditNote.credit_note_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        creditNote.customers?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        creditNote.customers?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        creditNote.reason?.toLowerCase().includes(searchTerm.toLowerCase());
 
-    // Status filter
-    const matchesStatus = statusFilter === 'all' || creditNote.status === statusFilter;
+      // Status filter
+      const matchesStatus = statusFilter === 'all' || creditNote.status === statusFilter;
 
-    // Date filter
-    const creditNoteDate = new Date(creditNote.credit_note_date);
-    const matchesDateFrom = !dateFromFilter || creditNoteDate >= new Date(dateFromFilter);
-    const matchesDateTo = !dateToFilter || creditNoteDate <= new Date(dateToFilter);
+      // Date filter
+      const creditNoteDate = new Date(creditNote.credit_note_date);
+      const matchesDateFrom = !dateFromFilter || creditNoteDate >= new Date(dateFromFilter);
+      const matchesDateTo = !dateToFilter || creditNoteDate <= new Date(dateToFilter);
 
-    // Amount filter
-    const matchesAmountFrom = !amountFromFilter || (creditNote.total_amount || 0) >= parseFloat(amountFromFilter);
-    const matchesAmountTo = !amountToFilter || (creditNote.total_amount || 0) <= parseFloat(amountToFilter);
+      // Amount filter
+      const matchesAmountFrom = !amountFromFilter || (creditNote.total_amount || 0) >= parseFloat(amountFromFilter);
+      const matchesAmountTo = !amountToFilter || (creditNote.total_amount || 0) <= parseFloat(amountToFilter);
 
-    return matchesSearch && matchesStatus && matchesDateFrom && matchesDateTo && matchesAmountFrom && matchesAmountTo;
-  }) || [];
+      return matchesSearch && matchesStatus && matchesDateFrom && matchesDateTo && matchesAmountFrom && matchesAmountTo;
+    }) || [];
+  }, [creditNotes, searchTerm, statusFilter, dateFromFilter, dateToFilter, amountFromFilter, amountToFilter]);
+
+  // Pagination calculations
+  const totalPages = useMemo(() => {
+    return Math.ceil(filteredCreditNotes.length / pageSize);
+  }, [filteredCreditNotes.length, pageSize]);
+
+  const paginatedCreditNotes = useMemo(() => {
+    const from = (currentPage - 1) * pageSize;
+    return filteredCreditNotes.slice(from, from + pageSize);
+  }, [filteredCreditNotes, currentPage, pageSize]);
+
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    setCurrentPage(1); // Reset to first page on search
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-KE', {
@@ -249,7 +275,7 @@ export default function CreditNotes() {
               <Input
                 placeholder="Search credit notes by customer or number..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => handleSearchChange(e.target.value)}
                 className="pl-10"
               />
             </div>
@@ -386,6 +412,7 @@ export default function CreditNotes() {
               )}
             </div>
           ) : (
+            <>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -401,7 +428,7 @@ export default function CreditNotes() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredCreditNotes.map((creditNote: CreditNote) => (
+                {paginatedCreditNotes.map((creditNote: CreditNote) => (
                   <TableRow key={creditNote.id} className="hover:bg-muted/50 transition-smooth">
                     <TableCell className="font-medium">
                       <div className="flex items-center space-x-2">
@@ -507,6 +534,39 @@ export default function CreditNotes() {
                 ))}
               </TableBody>
             </Table>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between mt-4 pt-4 border-t">
+                <p className="text-sm text-muted-foreground">
+                  Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, filteredCreditNotes.length)} of {filteredCreditNotes.length} credit notes
+                </p>
+                <div className="flex items-center space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1 || isLoading}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    Previous
+                  </Button>
+                  <span className="text-sm text-muted-foreground">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages || isLoading}
+                  >
+                    Next
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+            </>
           )}
         </CardContent>
       </Card>

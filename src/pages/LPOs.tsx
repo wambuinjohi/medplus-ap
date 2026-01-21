@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -29,7 +29,9 @@ import {
   FileText,
   User,
   Database,
-  Trash2
+  Trash2,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useLPOs, useUpdateLPO, useCompanies, useDeleteLPO } from '@/hooks/useDatabase';
@@ -54,6 +56,8 @@ export default function LPOs() {
   const [showAuditPanel, setShowAuditPanel] = useState(false);
   const [showCustomerSupplierAudit, setShowCustomerSupplierAudit] = useState(false);
   const [deleteRelatedCounts, setDeleteRelatedCounts] = useState<any>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(20);
 
   // Database hooks
   const { data: companies } = useCompanies();
@@ -64,11 +68,33 @@ export default function LPOs() {
 
   // Note: Auto-migration removed - using manual migration guide instead
 
-  const filteredLPOs = lpos?.filter(lpo =>
-    lpo.lpo_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    lpo.suppliers?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    lpo.notes?.toLowerCase().includes(searchTerm.toLowerCase())
-  ) || [];
+  const filteredLPOs = useMemo(() => {
+    return lpos?.filter(lpo =>
+      lpo.lpo_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      lpo.suppliers?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      lpo.notes?.toLowerCase().includes(searchTerm.toLowerCase())
+    ) || [];
+  }, [lpos, searchTerm]);
+
+  // Pagination calculations
+  const totalPages = useMemo(() => {
+    return Math.ceil(filteredLPOs.length / pageSize);
+  }, [filteredLPOs.length, pageSize]);
+
+  const paginatedLPOs = useMemo(() => {
+    const from = (currentPage - 1) * pageSize;
+    return filteredLPOs.slice(from, from + pageSize);
+  }, [filteredLPOs, currentPage, pageSize]);
+
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    setCurrentPage(1); // Reset to first page on search
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -348,7 +374,7 @@ export default function LPOs() {
                 <Input
                   placeholder="Search LPOs..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={(e) => handleSearchChange(e.target.value)}
                   className="pl-10 w-64"
                 />
               </div>
@@ -404,6 +430,7 @@ export default function LPOs() {
               )}
             </div>
           ) : (
+            <>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -417,7 +444,7 @@ export default function LPOs() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredLPOs.map((lpo) => (
+                {paginatedLPOs.map((lpo) => (
                   <TableRow key={lpo.id}>
                     <TableCell className="font-medium">
                       {lpo.lpo_number}
@@ -508,6 +535,39 @@ export default function LPOs() {
                 ))}
               </TableBody>
             </Table>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between mt-4 pt-4 border-t">
+                <p className="text-sm text-muted-foreground">
+                  Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, filteredLPOs.length)} of {filteredLPOs.length} LPOs
+                </p>
+                <div className="flex items-center space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1 || isLoading}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    Previous
+                  </Button>
+                  <span className="text-sm text-muted-foreground">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages || isLoading}
+                  >
+                    Next
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+            </>
           )}
         </CardContent>
       </Card>

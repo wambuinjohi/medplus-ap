@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -14,7 +14,7 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
-import { Download, ChevronDown } from 'lucide-react';
+import { Download, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface AuditLog {
   id: string;
@@ -55,6 +55,8 @@ export default function AuditLogsPage() {
   const [entityTypeFilter, setEntityTypeFilter] = React.useState<string>('');
   const [actionFilter, setActionFilter] = React.useState<string>('');
   const [expandedRows, setExpandedRows] = React.useState<Set<string>>(new Set());
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(25);
 
   const { data: logs = [], isLoading, refetch } = useQuery({
     queryKey: ['audit_logs'],
@@ -91,6 +93,21 @@ export default function AuditLogsPage() {
       return matchesSearch && matchesEntityType && matchesAction;
     });
   }, [logs, filter, entityTypeFilter, actionFilter]);
+
+  // Pagination calculations
+  const totalPages = useMemo(() => {
+    return Math.ceil(filtered.length / pageSize);
+  }, [filtered.length, pageSize]);
+
+  const paginatedLogs = useMemo(() => {
+    const from = (currentPage - 1) * pageSize;
+    return filtered.slice(from, from + pageSize);
+  }, [filtered, currentPage, pageSize]);
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const exportLogs = () => {
     const csv = [
@@ -224,6 +241,7 @@ export default function AuditLogsPage() {
           ) : filtered.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">No audit logs found</div>
           ) : (
+            <>
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
@@ -237,7 +255,7 @@ export default function AuditLogsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filtered.map((log: AuditLog) => (
+                  {paginatedLogs.map((log: AuditLog) => (
                     <React.Fragment key={log.id}>
                       <TableRow className="hover:bg-muted/50">
                         <TableCell>
@@ -292,6 +310,39 @@ export default function AuditLogsPage() {
                 </TableBody>
               </Table>
             </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between mt-4 pt-4 border-t">
+                <p className="text-sm text-muted-foreground">
+                  Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, filtered.length)} of {filtered.length} audit logs
+                </p>
+                <div className="flex items-center space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1 || isLoading}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    Previous
+                  </Button>
+                  <span className="text-sm text-muted-foreground">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages || isLoading}
+                  >
+                    Next
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+            </>
           )}
         </CardContent>
       </Card>

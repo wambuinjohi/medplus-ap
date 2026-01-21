@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -12,9 +12,9 @@ import {
   TableHeader, 
   TableRow 
 } from '@/components/ui/table';
-import { 
-  Plus, 
-  Search, 
+import {
+  Plus,
+  Search,
   Filter,
   Eye,
   Edit,
@@ -26,7 +26,9 @@ import {
   CheckCircle,
   Clock,
   AlertTriangle,
-  MapPin
+  MapPin,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { downloadDeliveryNotePDF } from '@/utils/pdfGenerator';
@@ -42,6 +44,8 @@ export default function DeliveryNotes() {
   const [showViewModal, setShowViewModal] = useState(false);
   const [selectedDeliveryNote, setSelectedDeliveryNote] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(20);
 
   // Database hooks
   const { data: companies } = useCompanies();
@@ -51,11 +55,33 @@ export default function DeliveryNotes() {
 
   const mappedDeliveryNotes = deliveryNotes?.map(mapDeliveryNoteForDisplay) || [];
 
-  const filteredDeliveryNotes = mappedDeliveryNotes.filter(note =>
-    (note.delivery_note_number || note.delivery_number || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    note.customers?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    note.tracking_number?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredDeliveryNotes = useMemo(() => {
+    return mappedDeliveryNotes.filter(note =>
+      (note.delivery_note_number || note.delivery_number || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      note.customers?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      note.tracking_number?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [mappedDeliveryNotes, searchTerm]);
+
+  // Pagination calculations
+  const totalPages = useMemo(() => {
+    return Math.ceil(filteredDeliveryNotes.length / pageSize);
+  }, [filteredDeliveryNotes.length, pageSize]);
+
+  const paginatedDeliveryNotes = useMemo(() => {
+    const from = (currentPage - 1) * pageSize;
+    return filteredDeliveryNotes.slice(from, from + pageSize);
+  }, [filteredDeliveryNotes, currentPage, pageSize]);
+
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    setCurrentPage(1); // Reset to first page on search
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -275,7 +301,7 @@ export default function DeliveryNotes() {
                 <Input
                   placeholder="Search delivery notes..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={(e) => handleSearchChange(e.target.value)}
                   className="pl-10 w-64"
                 />
               </div>
@@ -314,6 +340,7 @@ export default function DeliveryNotes() {
               )}
             </div>
           ) : (
+            <>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -327,7 +354,7 @@ export default function DeliveryNotes() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredDeliveryNotes.map((note) => (
+                {paginatedDeliveryNotes.map((note) => (
                   <TableRow key={note.id}>
                     <TableCell className="font-medium">
                       {note.delivery_note_number || note.delivery_number}
@@ -412,6 +439,39 @@ export default function DeliveryNotes() {
                 ))}
               </TableBody>
             </Table>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between mt-4 pt-4 border-t">
+                <p className="text-sm text-muted-foreground">
+                  Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, filteredDeliveryNotes.length)} of {filteredDeliveryNotes.length} delivery notes
+                </p>
+                <div className="flex items-center space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1 || isLoading}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    Previous
+                  </Button>
+                  <span className="text-sm text-muted-foreground">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages || isLoading}
+                  >
+                    Next
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+            </>
           )}
         </CardContent>
       </Card>
