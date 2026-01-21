@@ -18,7 +18,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Loader2, User, Phone, Building, MapPin } from 'lucide-react';
-import { UserProfile, UserRole, UserStatus, useAuth } from '@/contexts/AuthContext';
+import { UserProfile, useAuth } from '@/contexts/AuthContext';
 import { UpdateUserData } from '@/hooks/useUserManagement';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
