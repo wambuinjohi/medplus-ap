@@ -157,11 +157,6 @@ export function EditUserModal({
     return currentRole?.name || formData.role;
   };
 
-  // Deduplicate roles by role_type, keeping first occurrence
-  const uniqueRoles = Array.from(
-    new Map(roles.map(role => [role.role_type, role])).values()
-  );
-
   const handleStatusChange = (status: string) => {
     setFormData(prev => ({ ...prev, status: status as UpdateUserData['status'] }));
     if (formErrors.status) {
