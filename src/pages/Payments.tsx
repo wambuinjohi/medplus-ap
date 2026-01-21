@@ -358,7 +358,7 @@ export default function Payments() {
               <Input
                 placeholder="Search payments..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => handleSearchChange(e.target.value)}
                 className="pl-10"
               />
             </div>
