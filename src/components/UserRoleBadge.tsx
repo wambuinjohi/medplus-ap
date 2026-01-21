@@ -40,9 +40,9 @@ export function UserRoleBadge() {
       case 'stock_manager':
         return 'bg-warning-light text-warning border-warning/20';
       case 'sales':
-        return 'bg-blue-light text-blue border-blue/20';
+        return 'bg-secondary/10 text-secondary border-secondary/20';
       case 'accounts':
-        return 'bg-purple-light text-purple border-purple/20';
+        return 'bg-accent/10 text-accent-foreground border-accent/20';
       case 'user':
         return 'bg-success-light text-success border-success/20';
       default:
