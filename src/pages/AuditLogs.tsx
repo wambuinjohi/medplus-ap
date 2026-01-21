@@ -55,6 +55,8 @@ export default function AuditLogsPage() {
   const [entityTypeFilter, setEntityTypeFilter] = React.useState<string>('');
   const [actionFilter, setActionFilter] = React.useState<string>('');
   const [expandedRows, setExpandedRows] = React.useState<Set<string>>(new Set());
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(25);
 
   const { data: logs = [], isLoading, refetch } = useQuery({
     queryKey: ['audit_logs'],
