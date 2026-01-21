@@ -97,28 +97,50 @@ export default function CreditNotes() {
   const deleteCreditNote = useDeleteCreditNote();
 
   // Filter and search logic
-  const filteredCreditNotes = creditNotes?.filter(creditNote => {
-    // Search filter
-    const matchesSearch =
-      creditNote.credit_note_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      creditNote.customers?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      creditNote.customers?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      creditNote.reason?.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredCreditNotes = useMemo(() => {
+    return creditNotes?.filter(creditNote => {
+      // Search filter
+      const matchesSearch =
+        creditNote.credit_note_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        creditNote.customers?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        creditNote.customers?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        creditNote.reason?.toLowerCase().includes(searchTerm.toLowerCase());
 
-    // Status filter
-    const matchesStatus = statusFilter === 'all' || creditNote.status === statusFilter;
+      // Status filter
+      const matchesStatus = statusFilter === 'all' || creditNote.status === statusFilter;
 
-    // Date filter
-    const creditNoteDate = new Date(creditNote.credit_note_date);
-    const matchesDateFrom = !dateFromFilter || creditNoteDate >= new Date(dateFromFilter);
-    const matchesDateTo = !dateToFilter || creditNoteDate <= new Date(dateToFilter);
+      // Date filter
+      const creditNoteDate = new Date(creditNote.credit_note_date);
+      const matchesDateFrom = !dateFromFilter || creditNoteDate >= new Date(dateFromFilter);
+      const matchesDateTo = !dateToFilter || creditNoteDate <= new Date(dateToFilter);
 
-    // Amount filter
-    const matchesAmountFrom = !amountFromFilter || (creditNote.total_amount || 0) >= parseFloat(amountFromFilter);
-    const matchesAmountTo = !amountToFilter || (creditNote.total_amount || 0) <= parseFloat(amountToFilter);
+      // Amount filter
+      const matchesAmountFrom = !amountFromFilter || (creditNote.total_amount || 0) >= parseFloat(amountFromFilter);
+      const matchesAmountTo = !amountToFilter || (creditNote.total_amount || 0) <= parseFloat(amountToFilter);
 
-    return matchesSearch && matchesStatus && matchesDateFrom && matchesDateTo && matchesAmountFrom && matchesAmountTo;
-  }) || [];
+      return matchesSearch && matchesStatus && matchesDateFrom && matchesDateTo && matchesAmountFrom && matchesAmountTo;
+    }) || [];
+  }, [creditNotes, searchTerm, statusFilter, dateFromFilter, dateToFilter, amountFromFilter, amountToFilter]);
+
+  // Pagination calculations
+  const totalPages = useMemo(() => {
+    return Math.ceil(filteredCreditNotes.length / pageSize);
+  }, [filteredCreditNotes.length, pageSize]);
+
+  const paginatedCreditNotes = useMemo(() => {
+    const from = (currentPage - 1) * pageSize;
+    return filteredCreditNotes.slice(from, from + pageSize);
+  }, [filteredCreditNotes, currentPage, pageSize]);
+
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    setCurrentPage(1); // Reset to first page on search
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-KE', {
