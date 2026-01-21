@@ -61,14 +61,14 @@ const sidebarItems: SidebarItem[] = [
   {
     title: 'Inventory',
     icon: Package,
-    allowedRoles: ['admin', 'stock_manager', 'sales'],
-    href: '/app/inventory'
+    href: '/app/inventory',
+    requiredPermission: 'view_inventory'
   },
   {
     title: 'Delivery Notes',
     icon: Truck,
     children: [
-      { title: 'Delivery Notes', icon: Truck, href: '/app/delivery-notes' }
+      { title: 'Delivery Notes', icon: Truck, href: '/app/delivery-notes', requiredPermission: 'view_delivery_note' }
     ]
   },
   {
