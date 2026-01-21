@@ -221,12 +221,7 @@ export function EditUserModal({
                   ) : (
                     roles.map((role) => (
                       <SelectItem key={role.id} value={role.role_type}>
-                        <div className="flex flex-col">
-                          <span className="font-medium">{role.name}</span>
-                          {role.description && (
-                            <span className="text-xs text-muted-foreground">{role.description}</span>
-                          )}
-                        </div>
+                        {role.name}
                       </SelectItem>
                     ))
                   )}
