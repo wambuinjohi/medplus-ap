@@ -74,12 +74,14 @@ const sidebarItems: SidebarItem[] = [
   {
     title: 'Customers',
     icon: Users,
-    href: '/app/customers'
+    href: '/app/customers',
+    requiredPermission: 'view_customer'
   },
   {
     title: 'Purchase Orders',
     icon: ShoppingCart,
-    href: '/app/lpos'
+    href: '/app/lpos',
+    requiredPermission: 'view_lpo'
   },
   {
     title: 'Reports',
