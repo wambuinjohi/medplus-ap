@@ -194,6 +194,26 @@ export default function Invoices() {
     return matchesSearch && matchesStatus && matchesDateFrom && matchesDateTo && matchesAmountFrom && matchesAmountTo;
   }) || [];
 
+  // Pagination calculations
+  const totalPages = useMemo(() => {
+    return Math.ceil(filteredInvoices.length / pageSize);
+  }, [filteredInvoices.length, pageSize]);
+
+  const paginatedInvoices = useMemo(() => {
+    const from = (currentPage - 1) * pageSize;
+    return filteredInvoices.slice(from, from + pageSize);
+  }, [filteredInvoices, currentPage, pageSize]);
+
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    setCurrentPage(1); // Reset to first page on search
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-KE', {
       style: 'currency',
