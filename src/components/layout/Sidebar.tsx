@@ -114,6 +114,7 @@ const sidebarItems: SidebarItem[] = [
 export function Sidebar() {
   const location = useLocation();
   const { profile } = useAuth();
+  const { can } = usePermissions();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
   const toggleExpanded = (title: string) => {
@@ -125,12 +126,18 @@ export function Sidebar() {
   };
 
   const isItemVisible = (item: SidebarItem): boolean => {
-    // If no allowed roles specified, item is visible to everyone
-    if (!item.allowedRoles || item.allowedRoles.length === 0) {
-      return true;
+    // Check if user has the required permission
+    if (item.requiredPermission && !can(item.requiredPermission)) {
+      return false;
     }
+
     // Check if user's role is in allowed roles
-    return item.allowedRoles.includes(profile?.role || '');
+    if (item.allowedRoles && item.allowedRoles.length > 0) {
+      return item.allowedRoles.includes(profile?.role || '');
+    }
+
+    // If no restrictions, item is visible
+    return true;
   };
 
   const isItemActive = (href?: string) => {
