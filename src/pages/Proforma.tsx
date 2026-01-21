@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { useProformas, useDeleteProforma, type ProformaWithItems } from '@/hooks/useProforma';
 import { useCompanies } from '@/hooks/useDatabase';
+import { usePermissions } from '@/hooks/usePermissions';
 import { toast } from 'sonner';
 import { CreateProformaModalOptimized } from '@/components/proforma/CreateProformaModalOptimized';
 import { EditProformaModal } from '@/components/proforma/EditProformaModal';
