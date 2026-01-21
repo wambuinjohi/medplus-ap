@@ -114,6 +114,27 @@ export default function Quotations() {
     quotation.quotation_number.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
 
+  // Pagination calculations
+  const totalPages = useMemo(() => {
+    return Math.ceil(filteredQuotations.length / pageSize);
+  }, [filteredQuotations.length, pageSize]);
+
+  const paginatedQuotations = useMemo(() => {
+    const from = (currentPage - 1) * pageSize;
+    const to = from + pageSize;
+    return filteredQuotations.slice(from, to);
+  }, [filteredQuotations, currentPage, pageSize]);
+
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    setCurrentPage(1); // Reset to first page on search
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const handleCreateSuccess = () => {
     refetch();
     toast.success('Quotation created successfully!');
