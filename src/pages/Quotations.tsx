@@ -1,16 +1,16 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
 } from '@/components/ui/table';
 import {
   Plus,
@@ -23,7 +23,9 @@ import {
   Calendar,
   Send,
   Receipt,
-  Trash2
+  Trash2,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { useQuotations, useCompanies } from '@/hooks/useDatabase';
 import { useAuth } from '@/contexts/AuthContext';
@@ -80,6 +82,8 @@ function getStatusColor(status: string) {
 
 export default function Quotations() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(20);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -109,6 +113,27 @@ export default function Quotations() {
     quotation.customers?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     quotation.quotation_number.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
+
+  // Pagination calculations
+  const totalPages = useMemo(() => {
+    return Math.ceil(filteredQuotations.length / pageSize);
+  }, [filteredQuotations.length, pageSize]);
+
+  const paginatedQuotations = useMemo(() => {
+    const from = (currentPage - 1) * pageSize;
+    const to = from + pageSize;
+    return filteredQuotations.slice(from, to);
+  }, [filteredQuotations, currentPage, pageSize]);
+
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    setCurrentPage(1); // Reset to first page on search
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const handleCreateSuccess = () => {
     refetch();
@@ -304,7 +329,7 @@ Website: www.biolegendscientific.co.ke`;
               <Input
                 placeholder="Search quotations by customer or number..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => handleSearchChange(e.target.value)}
                 className="pl-10"
               />
             </div>
@@ -324,7 +349,7 @@ Website: www.biolegendscientific.co.ke`;
             <span>Quotations List</span>
             {!isLoading && (
               <Badge variant="outline" className="ml-auto">
-                {filteredQuotations.length} quotations
+                {filteredQuotations.length} total {filteredQuotations.length === 1 ? 'quotation' : 'quotations'}
               </Badge>
             )}
           </CardTitle>
@@ -365,6 +390,7 @@ Website: www.biolegendscientific.co.ke`;
               )}
             </div>
           ) : (
+            <>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -378,7 +404,7 @@ Website: www.biolegendscientific.co.ke`;
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredQuotations.map((quotation: Quotation) => (
+                {paginatedQuotations.map((quotation: Quotation) => (
                   <TableRow key={quotation.id} className="hover:bg-muted/50 transition-smooth">
                     <TableCell className="font-medium">
                       <div className="flex items-center space-x-2">
@@ -512,6 +538,39 @@ Website: www.biolegendscientific.co.ke`;
                 ))}
               </TableBody>
             </Table>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between mt-4 pt-4 border-t">
+                <p className="text-sm text-muted-foreground">
+                  Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, filteredQuotations.length)} of {filteredQuotations.length} quotations
+                </p>
+                <div className="flex items-center space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1 || isLoading}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    Previous
+                  </Button>
+                  <span className="text-sm text-muted-foreground">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages || isLoading}
+                  >
+                    Next
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+            </>
           )}
         </CardContent>
       </Card>

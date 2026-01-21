@@ -47,6 +47,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth, UserProfile } from '@/contexts/AuthContext';
 import useUserManagement from '@/hooks/useUserManagement';
 import usePermissions from '@/hooks/usePermissions';
+import { supabase } from '@/integrations/supabase/client';
 import { CreateUserModal } from '@/components/users/CreateUserModal';
 import { EditUserModal } from '@/components/users/EditUserModal';
 import { InviteUserModal } from '@/components/users/InviteUserModal';
@@ -118,6 +119,36 @@ export default function UserManagement() {
     open: boolean;
     user?: UserProfile | null;
   }>({ open: false, user: null });
+  const [rolesMap, setRolesMap] = useState<Record<string, string>>({});
+
+  // Fetch roles and create a mapping for display
+  useEffect(() => {
+    const loadRoles = async () => {
+      if (!currentUser?.company_id) return;
+      try {
+        const { data, error } = await supabase
+          .from('roles')
+          .select('role_type, name')
+          .eq('company_id', currentUser.company_id);
+
+        if (error) throw error;
+
+        const map: Record<string, string> = {};
+        data?.forEach((role) => {
+          map[role.role_type] = role.name;
+        });
+        setRolesMap(map);
+      } catch (err) {
+        console.error('Error loading roles:', err);
+      }
+    };
+
+    loadRoles();
+  }, [currentUser?.company_id]);
+
+  const getRoleDisplayName = (roleType: string) => {
+    return rolesMap[roleType] || roleType;
+  };
 
   const stats = getUserStats();
 
@@ -375,7 +406,7 @@ export default function UserManagement() {
                         <TableCell>{user.email}</TableCell>
                         <TableCell>
                           <Badge variant="outline" className={getRoleColor(user.role)}>
-                            {user.role.replace('_', ' ')}
+                            {getRoleDisplayName(user.role)}
                           </Badge>
                         </TableCell>
                         <TableCell>
