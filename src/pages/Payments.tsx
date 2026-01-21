@@ -171,11 +171,33 @@ export default function Payments() {
 
   // Removed inline PDF generation function - now using utility function
 
-  const filteredPayments = payments.filter(payment =>
-    payment.customers?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    payment.payment_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    payment.payment_allocations?.some(alloc => alloc.invoice_number.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const filteredPayments = useMemo(() => {
+    return payments.filter(payment =>
+      payment.customers?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      payment.payment_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      payment.payment_allocations?.some(alloc => alloc.invoice_number.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
+  }, [payments, searchTerm]);
+
+  // Pagination calculations
+  const totalPages = useMemo(() => {
+    return Math.ceil(filteredPayments.length / pageSize);
+  }, [filteredPayments.length, pageSize]);
+
+  const paginatedPayments = useMemo(() => {
+    const from = (currentPage - 1) * pageSize;
+    return filteredPayments.slice(from, from + pageSize);
+  }, [filteredPayments, currentPage, pageSize]);
+
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    setCurrentPage(1); // Reset to first page on search
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   if (isLoading) {
     return (
