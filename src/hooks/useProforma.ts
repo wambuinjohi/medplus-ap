@@ -442,6 +442,29 @@ export const useDeleteProforma = () => {
 
   return useMutation({
     mutationFn: async (proformaId: string) => {
+      // Check permission before deletion
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.id) throw new Error('Not authenticated');
+
+      const { data: userProfile } = await supabase
+        .from('profiles')
+        .select('role, company_id')
+        .eq('id', user.id)
+        .single();
+
+      if (!userProfile) throw new Error('User profile not found');
+
+      const { data: roleData } = await supabase
+        .from('roles')
+        .select('permissions')
+        .eq('role_type', userProfile.role)
+        .eq('company_id', userProfile.company_id)
+        .single();
+
+      if (!roleData?.permissions?.includes('delete_proforma')) {
+        throw new Error('You do not have permission to delete proformas');
+      }
+
       // Snapshot for audit
       let snapshot: any = null;
       let companyId: string | null = null;
