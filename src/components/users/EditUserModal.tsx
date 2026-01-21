@@ -153,7 +153,7 @@ export function EditUserModal({
   // Get the display name for the current role value
   const getCurrentRoleName = () => {
     if (!formData.role) return 'Select a role';
-    const currentRole = roles.find(r => r.role_type === formData.role);
+    const currentRole = roles.find(r => r.name === formData.role);
     return currentRole?.name || formData.role;
   };
 
