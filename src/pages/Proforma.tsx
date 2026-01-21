@@ -53,7 +53,6 @@ export default function Proforma() {
   const [selectedProforma, setSelectedProforma] = useState<ProformaWithItems | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
-
   // Get company data
   const { data: companies } = useCompanies();
   const currentCompany = companies?.[0];
@@ -61,6 +60,7 @@ export default function Proforma() {
   // Use proper proforma hooks
   const { data: proformas = [], isLoading, refetch } = useProformas(currentCompany?.id);
   const deleteProforma = useDeleteProforma();
+  const { canDelete, canEdit, canCreate } = usePermissions();
 
   const filteredProformas = proformas.filter(proforma =>
     proforma.proforma_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
