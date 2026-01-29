@@ -11,7 +11,6 @@ import {
   BarChart3,
   Settings,
   ChevronDown,
-  ChevronRight,
   Home,
   Users,
   FileCheck,
@@ -24,14 +23,26 @@ import {
 import { BiolegendLogo } from '@/components/ui/biolegend-logo';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePermissions } from '@/hooks/usePermissions';
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
+} from '@/components/ui/sidebar';
 
 interface SidebarItem {
   title: string;
   icon: React.ComponentType<{ className?: string }>;
   href?: string;
   children?: SidebarItem[];
-  allowedRoles?: string[]; // Roles that can see this item
-  requiredPermission?: 'view_quotation' | 'view_invoice' | 'view_credit_note' | 'view_proforma' | 'view_customer' | 'view_inventory' | 'view_delivery_note' | 'view_lpo' | 'view_remittance' | 'view_payment' | 'view_reports' | 'manage_roles' | 'access_settings'; // Permission required to see this item
+  allowedRoles?: string[];
+  requiredPermission?: 'view_quotation' | 'view_invoice' | 'view_credit_note' | 'view_proforma' | 'view_customer' | 'view_inventory' | 'view_delivery_note' | 'view_lpo' | 'view_remittance' | 'view_payment' | 'view_reports' | 'manage_roles' | 'access_settings';
 }
 
 const sidebarItems: SidebarItem[] = [
@@ -111,7 +122,7 @@ const sidebarItems: SidebarItem[] = [
   }
 ];
 
-export function Sidebar() {
+export function SidebarComponent() {
   const location = useLocation();
   const { profile } = useAuth();
   const { can } = usePermissions();
@@ -126,17 +137,14 @@ export function Sidebar() {
   };
 
   const isItemVisible = (item: SidebarItem): boolean => {
-    // Check if user has the required permission
     if (item.requiredPermission && !can(item.requiredPermission)) {
       return false;
     }
 
-    // Check if user's role is in allowed roles
     if (item.allowedRoles && item.allowedRoles.length > 0) {
       return item.allowedRoles.includes(profile?.role || '');
     }
 
-    // If no restrictions, item is visible
     return true;
   };
 
@@ -151,7 +159,6 @@ export function Sidebar() {
   };
 
   const renderSidebarItem = (item: SidebarItem) => {
-    // Don't render if not visible to current user
     if (!isItemVisible(item)) {
       return null;
     }
@@ -161,96 +168,92 @@ export function Sidebar() {
     const isActive = isItemActive(item.href);
     const isChildActive = isParentActive(item.children);
 
-    // Filter children based on visibility
     const visibleChildren = item.children?.filter(isItemVisible) || [];
 
     if (hasChildren) {
       return (
-        <div key={item.title} className="space-y-1">
-          <button
-            onClick={() => toggleExpanded(item.title)}
-            className={cn(
-              "w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg transition-smooth hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-              (isChildActive || isExpanded) 
-                ? "bg-sidebar-accent text-sidebar-accent-foreground" 
-                : "text-sidebar-foreground"
+        <SidebarMenuItem key={item.title}>
+          <div>
+            <button
+              onClick={() => toggleExpanded(item.title)}
+              className={cn(
+                "w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg transition-smooth hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                (isChildActive || isExpanded)
+                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                  : "text-sidebar-foreground"
+              )}
+            >
+              <div className="flex items-center space-x-3">
+                <item.icon className="h-5 w-5" />
+                <span>{item.title}</span>
+              </div>
+              <ChevronDown
+                className={cn(
+                  "h-4 w-4 transition-transform",
+                  isExpanded && "rotate-180"
+                )}
+              />
+            </button>
+
+            {isExpanded && visibleChildren.length > 0 && (
+              <SidebarMenuSub>
+                {visibleChildren.map(child => (
+                  <SidebarMenuSubItem key={child.title}>
+                    <SidebarMenuSubButton
+                      asChild
+                      isActive={isItemActive(child.href)}
+                    >
+                      <Link to={child.href!} className="flex items-center gap-2">
+                        <child.icon className="h-4 w-4" />
+                        <span>{child.title}</span>
+                      </Link>
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                ))}
+              </SidebarMenuSub>
             )}
-          >
-            <div className="flex items-center space-x-3">
-              <item.icon className="h-5 w-5" />
-              <span>{item.title}</span>
-            </div>
-            {isExpanded ? (
-              <ChevronDown className="h-4 w-4" />
-            ) : (
-              <ChevronRight className="h-4 w-4" />
-            )}
-          </button>
-          
-          {isExpanded && visibleChildren.length > 0 && (
-            <div className="pl-4 space-y-1">
-              {visibleChildren.map(child => (
-                <Link
-                  key={child.title}
-                  to={child.href!}
-                  className={cn(
-                    "flex items-center space-x-3 px-3 py-2 text-sm rounded-lg transition-smooth hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                    isItemActive(child.href)
-                      ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                      : "text-sidebar-foreground"
-                  )}
-                >
-                  <child.icon className="h-4 w-4" />
-                  <span>{child.title}</span>
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
+          </div>
+        </SidebarMenuItem>
       );
     }
 
     return (
-      <Link
-        key={item.title}
-        to={item.href!}
-        className={cn(
-          "flex items-center space-x-3 px-3 py-2 text-sm font-medium rounded-lg transition-smooth hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-          isActive
-            ? "bg-sidebar-primary text-sidebar-primary-foreground"
-            : "text-sidebar-foreground"
-        )}
-      >
-        <item.icon className="h-5 w-5" />
-        <span>{item.title}</span>
-      </Link>
+      <SidebarMenuItem key={item.title}>
+        <SidebarMenuButton
+          asChild
+          isActive={isActive}
+          tooltip={item.title}
+        >
+          <Link to={item.href!} className="flex items-center gap-2">
+            <item.icon className="h-5 w-5" />
+            <span>{item.title}</span>
+          </Link>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
     );
   };
 
   return (
-    <div className="hidden md:flex h-full w-64 flex-col bg-sidebar border-r border-sidebar-border">
-      {/* Company Logo/Header */}
-      <div className="flex h-16 items-center border-b border-sidebar-border px-6">
+    <Sidebar collapsible="icon">
+      <SidebarHeader className="h-16 border-b border-sidebar-border">
         <BiolegendLogo size="md" showText={true} className="text-sidebar-foreground" />
-      </div>
+      </SidebarHeader>
 
-      {/* Navigation */}
-      <nav className="flex-1 space-y-2 p-4 custom-scrollbar overflow-y-auto">
-        {sidebarItems.map(item => renderSidebarItem(item)).filter(Boolean)}
-      </nav>
+      <SidebarContent>
+        <SidebarMenu>
+          {sidebarItems.map(item => renderSidebarItem(item)).filter(Boolean)}
+        </SidebarMenu>
+      </SidebarContent>
 
-      {/* Company Info */}
-      <div className="border-t border-sidebar-border p-4">
-        <div className="space-y-2">
-          <div className="flex items-center space-x-3 px-3 py-2 text-sm text-sidebar-foreground">
-            <Building2 className="h-4 w-4 text-sidebar-primary" />
-            <div>
-              <div className="font-medium text-sm">Medplus Africa</div>
-              <div className="text-xs text-sidebar-foreground/60">Healthcare & Pharmaceuticals</div>
-            </div>
+      <SidebarFooter className="border-t border-sidebar-border">
+        <div className="flex items-center space-x-3 px-3 py-2 text-sm text-sidebar-foreground">
+          <Building2 className="h-4 w-4 text-sidebar-primary" />
+          <div>
+            <div className="font-medium text-sm">Medplus Africa</div>
+            <div className="text-xs text-sidebar-foreground/60">Healthcare & Pharmaceuticals</div>
           </div>
         </div>
-      </div>
-    </div>
+      </SidebarFooter>
+    </Sidebar>
   );
 }
