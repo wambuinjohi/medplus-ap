@@ -4,6 +4,7 @@ import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { useAuth } from '@/contexts/AuthContext';
 import { EnhancedLogin } from '@/components/auth/EnhancedLogin';
+import { SidebarProvider } from '@/components/ui/sidebar';
 
 interface LayoutProps {
   children: ReactNode;
