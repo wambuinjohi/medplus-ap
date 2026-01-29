@@ -19,6 +19,7 @@ import { ForgotPasswordModal } from '@/components/auth/ForgotPasswordModal';
 
 export function Header() {
   const { user, profile, signOut, isAuthenticated } = useAuth();
+  const { toggleSidebar } = useSidebar();
   const [authModal, setAuthModal] = useState<'signin' | 'forgot' | null>(null);
 
   const getInitials = (name: string) => {
