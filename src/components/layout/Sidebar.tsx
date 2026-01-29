@@ -122,7 +122,7 @@ const sidebarItems: SidebarItem[] = [
   }
 ];
 
-export function SidebarComponent() {
+export function Sidebar() {
   const location = useLocation();
   const { profile } = useAuth();
   const { can } = usePermissions();
