@@ -234,7 +234,7 @@ export function Sidebar() {
   };
 
   return (
-    <Sidebar collapsible="icon">
+    <SidebarPrimitive collapsible="icon">
       <SidebarHeader className="h-16 border-b border-sidebar-border">
         <BiolegendLogo size="md" showText={true} className="text-sidebar-foreground" />
       </SidebarHeader>
@@ -254,6 +254,6 @@ export function Sidebar() {
           </div>
         </div>
       </SidebarFooter>
-    </Sidebar>
+    </SidebarPrimitive>
   );
 }
