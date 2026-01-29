@@ -75,9 +75,11 @@ export function Header() {
 
   return (
     <>
-      <header className="flex h-14 sm:h-16 items-center border-b border-border bg-card px-4 sm:px-6 shadow-card gap-2 sm:gap-4">
+      <header className="flex h-14 sm:h-16 items-center justify-between border-b border-border bg-card px-3 sm:px-6 shadow-card gap-3 sm:gap-4">
         {/* Mobile Sidebar Trigger - Visible only on mobile */}
-        <SidebarTrigger className="md:hidden h-9 w-9 -ml-2" />
+        <div className="md:hidden flex items-center">
+          <SidebarTrigger className="h-8 w-8" />
+        </div>
 
         {/* Search - Hidden on mobile, shown on sm and up */}
         <div className="hidden sm:flex items-center space-x-4 flex-1 max-w-lg">
