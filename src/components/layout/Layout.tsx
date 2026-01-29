@@ -78,7 +78,7 @@ export function Layout({ children }: LayoutProps) {
 
   // Show authenticated layout
   return (
-    <div className="flex h-screen bg-background">
+    <SidebarProvider defaultOpen={true}>
       <Sidebar />
       <div className="flex flex-1 flex-col overflow-hidden min-w-0">
         <Header />
@@ -86,6 +86,6 @@ export function Layout({ children }: LayoutProps) {
           {children}
         </main>
       </div>
-    </div>
+    </SidebarProvider>
   );
 }
