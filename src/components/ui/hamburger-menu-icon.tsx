@@ -26,11 +26,10 @@ export const HamburgerMenuIcon = React.forwardRef<
         y1="6"
         x2="21"
         y2="6"
-        className={`origin-center transition-all duration-300 ease-in-out ${
+        style={{ transformOrigin: '12px 6px' }}
+        className={`transition-all duration-300 ease-in-out ${
           isOpen ? 'rotate-45 translate-y-3' : ''
         }`}
-        strokeDasharray="18"
-        strokeDashoffset={isOpen ? 0 : 0}
       />
 
       {/* Middle line - fades out */}
@@ -50,11 +49,10 @@ export const HamburgerMenuIcon = React.forwardRef<
         y1="18"
         x2="21"
         y2="18"
-        className={`origin-center transition-all duration-300 ease-in-out ${
+        style={{ transformOrigin: '12px 18px' }}
+        className={`transition-all duration-300 ease-in-out ${
           isOpen ? '-rotate-45 -translate-y-3' : ''
         }`}
-        strokeDasharray="18"
-        strokeDashoffset={isOpen ? 0 : 0}
       />
     </svg>
   );
