@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Bell, Search, User, LogOut, LogIn } from 'lucide-react';
+import { Bell, Search, User, LogOut, LogIn, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
