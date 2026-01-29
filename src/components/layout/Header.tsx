@@ -3,6 +3,7 @@ import { Bell, Search, User, LogOut, LogIn, ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
+import { MenuButton } from '@/components/ui/menu-button';
 import {
   DropdownMenu,
   DropdownMenuContent,
