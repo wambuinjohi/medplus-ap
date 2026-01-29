@@ -80,7 +80,7 @@ export function Layout({ children }: LayoutProps) {
   return (
     <SidebarProvider defaultOpen={true}>
       <Sidebar />
-      <div className="flex flex-1 flex-col overflow-hidden min-w-0">
+      <div className="w-full flex flex-col overflow-hidden">
         <Header />
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 custom-scrollbar">
           {children}
