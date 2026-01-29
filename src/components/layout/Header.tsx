@@ -103,7 +103,7 @@ export function Header() {
         </div>
 
         {/* Right side */}
-        <div className="flex items-center space-x-2 sm:space-x-4 ml-auto">
+        <div className="flex items-center space-x-2 sm:space-x-4">
           {isAuthenticated && (
             <>
               {/* Notifications - Hidden on very small screens */}
