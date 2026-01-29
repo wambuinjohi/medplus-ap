@@ -90,6 +90,16 @@ export function Header() {
               className="pl-10 bg-muted/50 border-muted focus:bg-background transition-smooth text-sm"
             />
           </div>
+          {/* Desktop Sidebar Collapse Toggle */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => toggleSidebar()}
+            className="hidden md:flex h-9 w-9"
+            title="Toggle sidebar"
+          >
+            <Search className="h-4 w-4" />
+          </Button>
         </div>
 
         {/* Right side */}
