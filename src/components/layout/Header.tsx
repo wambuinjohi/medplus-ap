@@ -96,9 +96,9 @@ export function Header() {
             size="icon"
             onClick={() => toggleSidebar()}
             className="hidden md:flex h-9 w-9"
-            title="Toggle sidebar"
+            title="Toggle sidebar collapse"
           >
-            <Search className="h-4 w-4" />
+            <ChevronLeft className="h-4 w-4" />
           </Button>
         </div>
 
