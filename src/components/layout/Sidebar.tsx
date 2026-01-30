@@ -128,6 +128,7 @@ export function Sidebar() {
   const location = useLocation();
   const { profile } = useAuth();
   const { can } = usePermissions();
+  const { closeSidebar } = useSidebar();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
   const toggleExpanded = (title: string) => {
