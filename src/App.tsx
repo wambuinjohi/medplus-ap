@@ -273,6 +273,14 @@ const App = () => {
 
           {/* Settings */}
           <Route
+            path="/app/settings/profile"
+            element={
+              <ProtectedRoute>
+                <ProfileSettings />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/app/settings/company"
             element={
               <ProtectedRoute>
