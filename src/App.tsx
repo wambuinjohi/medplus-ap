@@ -27,6 +27,7 @@ import SalesReports from "./pages/reports/SalesReports";
 import InventoryReports from "./pages/reports/InventoryReports";
 import StatementOfAccounts from "./pages/reports/StatementOfAccounts";
 import CompanySettings from "./pages/settings/CompanySettings";
+import ProfileSettings from "./pages/settings/ProfileSettings";
 import UserManagement from "./pages/settings/UserManagement";
 import TermsAndConditionsSettings from "./pages/settings/TermsAndConditionsSettings";
 import RemittanceAdvice from "./pages/RemittanceAdvice";
