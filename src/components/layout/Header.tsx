@@ -158,12 +158,12 @@ export function Header() {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/app/settings/profile')}>
                     <User className="mr-2 h-4 w-4" />
                     Profile Settings
                   </DropdownMenuItem>
                   {profile?.role === 'admin' && (
-                    <DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate('/app/settings/company')}>
                       Company Settings
                     </DropdownMenuItem>
                   )}
