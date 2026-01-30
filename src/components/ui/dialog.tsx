@@ -76,18 +76,28 @@ const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
 >(({ className, children, ...props }, ref) => {
-  // Check if DialogTitle is present in children
+  // Check if DialogTitle is present in children (recursively)
   const hasDialogTitle = React.useMemo(() => {
-    return React.Children.toArray(children).some((child) => {
-      if (!React.isValidElement(child)) return false;
-      // Check if it's a DialogHeader or contains DialogTitle
-      if ((child.type as any).displayName === "DialogHeader") {
-        return React.Children.toArray((child.props as any).children).some(
-          (subChild) => React.isValidElement(subChild) && (subChild.type as any).displayName === DialogTitle.displayName
-        );
+    const checkForTitle = (element: any): boolean => {
+      if (!React.isValidElement(element)) return false;
+
+      const elementType = element.type as any;
+
+      // Found DialogTitle
+      if (elementType.displayName === DialogTitle.displayName) {
+        return true;
       }
-      return (child.type as any).displayName === DialogTitle.displayName;
-    });
+
+      // Check children recursively
+      const childrenToCheck = (element.props as any).children;
+      if (childrenToCheck) {
+        return React.Children.toArray(childrenToCheck).some(checkForTitle);
+      }
+
+      return false;
+    };
+
+    return React.Children.toArray(children).some(checkForTitle);
   }, [children]);
 
   return (
