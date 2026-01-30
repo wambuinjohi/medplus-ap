@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { Bell, Search, User, LogOut, LogIn } from 'lucide-react';
+import { Bell, Search, User, LogOut, LogIn, ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
+import { MenuButton } from '@/components/ui/menu-button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,6 +20,7 @@ import { ForgotPasswordModal } from '@/components/auth/ForgotPasswordModal';
 
 export function Header() {
   const { user, profile, signOut, isAuthenticated } = useAuth();
+  const { toggleSidebar, open } = useSidebar();
   const [authModal, setAuthModal] = useState<'signin' | 'forgot' | null>(null);
 
   const getInitials = (name: string) => {
@@ -73,7 +76,12 @@ export function Header() {
 
   return (
     <>
-      <header className="flex h-14 sm:h-16 items-center justify-between border-b border-border bg-card px-4 sm:px-6 shadow-card gap-4">
+      <header className="flex h-14 sm:h-16 items-center justify-between border-b border-border bg-card px-3 sm:px-6 shadow-card gap-3 sm:gap-4">
+        {/* Mobile Sidebar Trigger - Visible only on mobile */}
+        <div className="md:hidden flex items-center">
+          <MenuButton isOpen={open} onClick={toggleSidebar} />
+        </div>
+
         {/* Search - Hidden on mobile, shown on sm and up */}
         <div className="hidden sm:flex items-center space-x-4 flex-1 max-w-lg">
           <div className="relative flex-1">
@@ -83,10 +91,20 @@ export function Header() {
               className="pl-10 bg-muted/50 border-muted focus:bg-background transition-smooth text-sm"
             />
           </div>
+          {/* Desktop Sidebar Collapse Toggle */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => toggleSidebar()}
+            className="hidden md:flex h-9 w-9"
+            title="Toggle sidebar collapse"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
         </div>
 
         {/* Right side */}
-        <div className="flex items-center space-x-2 sm:space-x-4 ml-auto sm:ml-0">
+        <div className="flex items-center space-x-2 sm:space-x-4">
           {isAuthenticated && (
             <>
               {/* Notifications - Hidden on very small screens */}
