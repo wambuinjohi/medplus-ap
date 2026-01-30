@@ -227,7 +227,7 @@ export function Sidebar() {
           isActive={isActive}
           tooltip={item.title}
         >
-          <Link to={item.href!} className="flex items-center gap-2">
+          <Link to={item.href!} className="flex items-center gap-2" onClick={closeSidebar}>
             <item.icon className="h-5 w-5" />
             <span>{item.title}</span>
           </Link>
