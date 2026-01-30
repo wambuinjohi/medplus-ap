@@ -20,6 +20,7 @@ import { SignInModal } from '@/components/auth/SignInModal';
 import { ForgotPasswordModal } from '@/components/auth/ForgotPasswordModal';
 
 export function Header() {
+  const navigate = useNavigate();
   const { user, profile, signOut, isAuthenticated } = useAuth();
   const { toggleSidebar, open } = useSidebar();
   const [authModal, setAuthModal] = useState<'signin' | 'forgot' | null>(null);
