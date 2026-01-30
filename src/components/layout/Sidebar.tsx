@@ -206,7 +206,7 @@ export function Sidebar() {
                       asChild
                       isActive={isItemActive(child.href)}
                     >
-                      <Link to={child.href!} className="flex items-center gap-2">
+                      <Link to={child.href!} className="flex items-center gap-2" onClick={closeSidebar}>
                         <child.icon className="h-4 w-4" />
                         <span>{child.title}</span>
                       </Link>
