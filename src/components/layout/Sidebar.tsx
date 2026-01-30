@@ -114,7 +114,7 @@ const sidebarItems: SidebarItem[] = [
     title: 'Settings',
     icon: Settings,
     children: [
-      { title: 'Profile Settings', icon: Users, href: '/app/settings/profile' },
+      { title: 'Profile Settings', icon: User, href: '/app/settings/profile' },
       { title: 'Company Settings', icon: Building2, href: '/app/settings/company', allowedRoles: ['admin'], requiredPermission: 'access_settings' },
       { title: 'User Management', icon: Users, href: '/app/settings/users', allowedRoles: ['admin'], requiredPermission: 'access_settings' },
       { title: 'Terms & Conditions', icon: FileText, href: '/app/settings/terms', allowedRoles: ['admin'], requiredPermission: 'access_settings' },
