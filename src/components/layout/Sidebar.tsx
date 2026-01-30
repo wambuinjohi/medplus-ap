@@ -34,6 +34,7 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
+  useSidebar,
 } from '@/components/ui/sidebar';
 
 interface SidebarItem {
@@ -126,6 +127,7 @@ export function Sidebar() {
   const location = useLocation();
   const { profile } = useAuth();
   const { can } = usePermissions();
+  const { setOpenMobile, isMobile } = useSidebar();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
   const toggleExpanded = (title: string) => {
@@ -156,6 +158,12 @@ export function Sidebar() {
   const isParentActive = (children?: SidebarItem[]) => {
     if (!children) return false;
     return children.some(child => isItemActive(child.href));
+  };
+
+  const handleMenuItemClick = () => {
+    if (isMobile) {
+      setOpenMobile(false);
+    }
   };
 
   const renderSidebarItem = (item: SidebarItem) => {
@@ -203,7 +211,11 @@ export function Sidebar() {
                       asChild
                       isActive={isItemActive(child.href)}
                     >
-                      <Link to={child.href!} className="flex items-center gap-2">
+                      <Link
+                        to={child.href!}
+                        className="flex items-center gap-2"
+                        onClick={handleMenuItemClick}
+                      >
                         <child.icon className="h-4 w-4" />
                         <span>{child.title}</span>
                       </Link>
@@ -224,7 +236,11 @@ export function Sidebar() {
           isActive={isActive}
           tooltip={item.title}
         >
-          <Link to={item.href!} className="flex items-center gap-2">
+          <Link
+            to={item.href!}
+            className="flex items-center gap-2"
+            onClick={handleMenuItemClick}
+          >
             <item.icon className="h-5 w-5" />
             <span>{item.title}</span>
           </Link>
