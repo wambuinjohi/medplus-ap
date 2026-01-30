@@ -13,6 +13,7 @@ import {
   ChevronDown,
   Home,
   Users,
+  User,
   FileCheck,
   CreditCard,
   FileSpreadsheet,
