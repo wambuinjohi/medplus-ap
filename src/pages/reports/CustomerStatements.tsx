@@ -336,7 +336,14 @@ export default function CustomerStatements() {
       );
 
       // Also provide an Excel-friendly export (HTML table .xls)
-      exportCustomerStatementsToExcel(statementsToExport, `customer-statements-${new Date().toISOString().split('T')[0]}.xls`);
+      exportCustomerStatementsToExcel(
+        statementsToExport,
+        `customer-statements-${new Date().toISOString().split('T')[0]}.xls`,
+        {
+          title: 'Customer Statements Summary',
+          companyInfo: currentCompany
+        }
+      );
 
       toast.success(`Exported ${statementsToExport.length} customer statements`);
     } catch (error) {

@@ -40,6 +40,7 @@ import { ConvertQuotationToProformaModal } from '@/components/quotations/Convert
 import { ConvertQuotationToInvoiceModal } from '@/components/quotations/ConvertQuotationToInvoiceModal';
 import { downloadQuotationPDF } from '@/utils/pdfGenerator';
 import { applyTermsToQuotationForPDF } from '@/utils/pdfTermsManager';
+import { exportDataToExcel } from '@/utils/csvExporter';
 
 interface Quotation {
   id: string;
@@ -133,6 +134,34 @@ export default function Quotations() {
   const handlePageChange = (newPage: number) => {
     setCurrentPage(newPage);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleExportToExcel = () => {
+    if (!filteredQuotations || filteredQuotations.length === 0) {
+      toast.error('No quotations to export');
+      return;
+    }
+
+    const headers = ['Quote Number', 'Customer', 'Date', 'Amount', 'Valid Until', 'Status'];
+    const data = filteredQuotations.map(quotation => [
+      quotation.quotation_number,
+      quotation.customers?.name || 'Unknown',
+      new Date(quotation.quotation_date).toLocaleDateString(),
+      quotation.total_amount || 0,
+      quotation.valid_until ? new Date(quotation.valid_until).toLocaleDateString() : 'No expiry',
+      quotation.status.toUpperCase()
+    ]);
+
+    exportDataToExcel(
+      data,
+      headers,
+      `quotations_list_${new Date().toISOString().split('T')[0]}.xls`,
+      {
+        title: 'Quotations List',
+        companyInfo: currentCompany
+      }
+    );
+    toast.success('Quotations list exported to Excel');
   };
 
   const handleCreateSuccess = () => {
@@ -310,14 +339,25 @@ Website: www.biolegendscientific.co.ke`;
             Create and manage customer quotations
           </p>
         </div>
-        <Button 
-          className="gradient-primary text-primary-foreground hover:opacity-90 shadow-card"
-          size="lg"
-          onClick={() => setShowCreateModal(true)}
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          New Quotation
-        </Button>
+        <div className="flex items-center space-x-3">
+          <Button
+            variant="outline"
+            size="lg"
+            onClick={handleExportToExcel}
+            className="shadow-card"
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Export Excel
+          </Button>
+          <Button
+            className="gradient-primary text-primary-foreground hover:opacity-90 shadow-card"
+            size="lg"
+            onClick={() => setShowCreateModal(true)}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            New Quotation
+          </Button>
+        </div>
       </div>
 
       {/* Filters and Search */}

@@ -54,6 +54,7 @@ import { SimpleForeignKeyPatch } from '@/components/credit-notes/SimpleForeignKe
 import { CreditNotesConnectionStatus } from '@/components/credit-notes/CreditNotesConnectionStatus';
 import { useCreditNotePDFDownload } from '@/hooks/useCreditNotePDF';
 import { useDeleteCreditNote } from '@/hooks/useCreditNotes';
+import { exportDataToExcel } from '@/utils/csvExporter';
 import type { CreditNote } from '@/hooks/useCreditNotes';
 
 function getStatusColor(status: string) {
@@ -140,6 +141,36 @@ export default function CreditNotes() {
   const handlePageChange = (newPage: number) => {
     setCurrentPage(newPage);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleExportToExcel = () => {
+    if (!filteredCreditNotes || filteredCreditNotes.length === 0) {
+      toast.error('No credit notes to export');
+      return;
+    }
+
+    const headers = ['Credit Note Number', 'Customer', 'Date', 'Reason', 'Total Amount', 'Applied', 'Balance', 'Status'];
+    const data = filteredCreditNotes.map(creditNote => [
+      creditNote.credit_note_number,
+      creditNote.customers?.name || 'Unknown',
+      new Date(creditNote.credit_note_date).toLocaleDateString(),
+      creditNote.reason || 'Not specified',
+      creditNote.total_amount || 0,
+      creditNote.applied_amount || 0,
+      creditNote.balance || 0,
+      creditNote.status.toUpperCase()
+    ]);
+
+    exportDataToExcel(
+      data,
+      headers,
+      `credit_notes_list_${new Date().toISOString().split('T')[0]}.xls`,
+      {
+        title: 'Credit Notes List',
+        companyInfo: currentCompany
+      }
+    );
+    toast.success('Credit notes list exported to Excel');
   };
 
   const formatCurrency = (amount: number) => {
@@ -253,14 +284,24 @@ export default function CreditNotes() {
             Manage customer credit notes and refunds
           </p>
         </div>
-        <Button
-          className="gradient-primary text-primary-foreground hover:opacity-90 shadow-card"
-          size="lg"
-          onClick={() => setShowCreateModal(true)}
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          New Credit Note
-        </Button>
+        <div className="flex items-center space-x-3">
+          <Button
+            variant="outline"
+            size="lg"
+            onClick={handleExportToExcel}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Export Excel
+          </Button>
+          <Button
+            className="gradient-primary text-primary-foreground hover:opacity-90 shadow-card"
+            size="lg"
+            onClick={() => setShowCreateModal(true)}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            New Credit Note
+          </Button>
+        </div>
       </div>
 
       {/* Connection Status Check */}

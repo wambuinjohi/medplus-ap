@@ -54,6 +54,7 @@ import { CreateDeliveryNoteModal } from '@/components/delivery/CreateDeliveryNot
 import { downloadInvoicePDF } from '@/utils/pdfGenerator';
 import { applyTermsToInvoiceForPDF } from '@/utils/pdfTermsManager';
 import { reconcileAllInvoiceBalances } from '@/utils/balanceReconciliation';
+import { exportDataToExcel } from '@/utils/csvExporter';
 import { supabase } from '@/integrations/supabase/client';
 
 interface Invoice {
@@ -392,6 +393,36 @@ Website: www.biolegendscientific.co.ke`;
     toast.success('Filters cleared');
   };
 
+  const handleExportToExcel = () => {
+    if (!filteredInvoices || filteredInvoices.length === 0) {
+      toast.error('No invoices to export');
+      return;
+    }
+
+    const headers = ['Invoice Number', 'Customer', 'Date', 'Due Date', 'Amount', 'Paid', 'Balance', 'Status'];
+    const data = filteredInvoices.map(invoice => [
+      invoice.invoice_number,
+      invoice.customers?.name || 'Unknown',
+      new Date(invoice.invoice_date).toLocaleDateString(),
+      new Date(invoice.due_date).toLocaleDateString(),
+      invoice.total_amount || 0,
+      invoice.paid_amount || 0,
+      invoice.balance_due || 0,
+      calculateActualStatus(invoice).toUpperCase()
+    ]);
+
+    exportDataToExcel(
+      data,
+      headers,
+      `invoices_list_${new Date().toISOString().split('T')[0]}.xls`,
+      {
+        title: 'Invoices List',
+        companyInfo: currentCompany
+      }
+    );
+    toast.success('Invoices list exported to Excel');
+  };
+
   const handleReconcileBalances = async () => {
     if (!currentCompany?.id) {
       toast.error('Company not found');
@@ -460,14 +491,25 @@ Website: www.biolegendscientific.co.ke`;
             Create and manage customer invoices
           </p>
         </div>
-        <Button
-          className="gradient-primary text-primary-foreground hover:opacity-90 shadow-card"
-          size="lg"
-          onClick={() => setShowCreateModal(true)}
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          New Invoice
-        </Button>
+        <div className="flex items-center space-x-3">
+          <Button
+            variant="outline"
+            size="lg"
+            onClick={handleExportToExcel}
+            className="shadow-card"
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Export Excel
+          </Button>
+          <Button
+            className="gradient-primary text-primary-foreground hover:opacity-90 shadow-card"
+            size="lg"
+            onClick={() => setShowCreateModal(true)}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            New Invoice
+          </Button>
+        </div>
       </div>
 
       {/* Filters and Search */}

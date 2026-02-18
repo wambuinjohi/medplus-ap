@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { exportDataToExcel } from '@/utils/csvExporter';
 import {
   Table,
   TableBody,
@@ -31,7 +32,8 @@ import {
   TrendingDown,
   Lock,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Download
 } from 'lucide-react';
 
 interface InventoryItem {
@@ -167,6 +169,36 @@ export default function Inventory() {
     toast.success('Stock adjustment completed successfully!');
   };
 
+  const handleExportToExcel = () => {
+    if (!filteredInventory || filteredInventory.length === 0) {
+      toast.error('No items to export');
+      return;
+    }
+
+    const headers = ['Product Code', 'Product Name', 'Category', 'Current Stock', 'Min Stock', 'Unit Price', 'Total Value', 'Status'];
+    const data = filteredInventory.map(item => [
+      item.product_code,
+      item.name,
+      item.product_categories?.name || '-',
+      item.stock_quantity || 0,
+      item.minimum_stock_level || 0,
+      item.selling_price || 0,
+      (item.stock_quantity || 0) * (item.selling_price || 0),
+      (item.status || 'out_of_stock').replace('_', ' ').toUpperCase()
+    ]);
+
+    exportDataToExcel(
+      data,
+      headers,
+      `inventory_list_${new Date().toISOString().split('T')[0]}.xls`,
+      {
+        title: 'Inventory List',
+        companyInfo: currentCompany
+      }
+    );
+    toast.success('Inventory list exported to Excel');
+  };
+
   // Reset to page 1 when search term changes
   useEffect(() => {
     setCurrentPage(1);
@@ -298,6 +330,10 @@ export default function Inventory() {
           </p>
         </div>
         <div className="flex items-center space-x-3">
+          <Button variant="outline" onClick={handleExportToExcel}>
+            <Download className="h-4 w-4 mr-2" />
+            Export Excel
+          </Button>
           <Button variant="outline" onClick={handleStockAdjustment} disabled={!canManageInventory('manage_inventory')}>
             <Package className="h-4 w-4 mr-2" />
             Stock Adjustment

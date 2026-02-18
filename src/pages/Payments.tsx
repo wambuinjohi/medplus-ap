@@ -36,6 +36,7 @@ import { useInvoicesFixed as useInvoices } from '@/hooks/useInvoicesFixed';
 import { usePermissions } from '@/hooks/usePermissions';
 import { generatePaymentReceiptPDF } from '@/utils/pdfGenerator';
 import { applyTermsToPaymentReceiptForPDF } from '@/utils/pdfTermsManager';
+import { exportDataToExcel } from '@/utils/csvExporter';
 
 interface Payment {
   id: string;
@@ -199,6 +200,35 @@ export default function Payments() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleExportToExcel = () => {
+    if (!filteredPayments || filteredPayments.length === 0) {
+      toast.error('No payments to export');
+      return;
+    }
+
+    const headers = ['Payment Number', 'Customer', 'Invoice', 'Date', 'Amount (KES)', 'Method', 'Status'];
+    const data = filteredPayments.map(payment => [
+      payment.payment_number,
+      payment.customers?.name || 'N/A',
+      payment.payment_allocations?.[0]?.invoice_number || 'N/A',
+      new Date(payment.payment_date).toLocaleDateString(),
+      payment.amount || 0,
+      payment.payment_method.replace('_', ' ').toUpperCase(),
+      'COMPLETED'
+    ]);
+
+    exportDataToExcel(
+      data,
+      headers,
+      `payments_list_${new Date().toISOString().split('T')[0]}.xls`,
+      {
+        title: 'Payments List',
+        companyInfo: currentCompany
+      }
+    );
+    toast.success('Payments list exported to Excel');
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -301,10 +331,21 @@ export default function Payments() {
             Track and manage customer payments (All amounts in KES)
           </p>
         </div>
-        <Button className="gradient-primary text-primary-foreground hover:opacity-90 shadow-card" size="lg" onClick={handleRecordPayment} disabled={!canCreatePayment('create_payment')}>
-          <Plus className="h-4 w-4 mr-2" />
-          Record Payment
-        </Button>
+        <div className="flex items-center space-x-3">
+          <Button
+            variant="outline"
+            size="lg"
+            onClick={handleExportToExcel}
+            className="shadow-card"
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Export Excel
+          </Button>
+          <Button className="gradient-primary text-primary-foreground hover:opacity-90 shadow-card" size="lg" onClick={handleRecordPayment} disabled={!canCreatePayment('create_payment')}>
+            <Plus className="h-4 w-4 mr-2" />
+            Record Payment
+          </Button>
+        </div>
       </div>
 
       {/* System Status Check */}

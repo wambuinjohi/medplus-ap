@@ -33,6 +33,7 @@ import {
 import { toast } from 'sonner';
 import { downloadDeliveryNotePDF } from '@/utils/pdfGenerator';
 import { applyTermsToDeliveryNoteForPDF } from '@/utils/pdfTermsManager';
+import { exportDataToExcel } from '@/utils/csvExporter';
 import { CreateDeliveryNoteModal } from '@/components/delivery/CreateDeliveryNoteModal';
 import { ViewDeliveryNoteModal } from '@/components/delivery/ViewDeliveryNoteModal';
 import { useDeliveryNotes, useUpdateDeliveryNote, useCompanies } from '@/hooks/useDatabase';
@@ -81,6 +82,34 @@ export default function DeliveryNotes() {
   const handlePageChange = (newPage: number) => {
     setCurrentPage(newPage);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleExportToExcel = () => {
+    if (!filteredDeliveryNotes || filteredDeliveryNotes.length === 0) {
+      toast.error('No delivery notes to export');
+      return;
+    }
+
+    const headers = ['Delivery Note #', 'Customer', 'Delivery Date', 'Method', 'Tracking #', 'Status'];
+    const data = filteredDeliveryNotes.map(note => [
+      note.delivery_note_number || note.delivery_number,
+      note.customers?.name || 'Unknown',
+      new Date(note.delivery_date).toLocaleDateString(),
+      getDeliveryMethodDisplay(note.delivery_method),
+      note.tracking_number || '-',
+      note.status.toUpperCase()
+    ]);
+
+    exportDataToExcel(
+      data,
+      headers,
+      `delivery_notes_list_${new Date().toISOString().split('T')[0]}.xls`,
+      {
+        title: 'Delivery Notes List',
+        companyInfo: currentCompany
+      }
+    );
+    toast.success('Delivery notes list exported to Excel');
   };
 
   const getStatusBadge = (status: string) => {
@@ -229,14 +258,24 @@ export default function DeliveryNotes() {
             Track and manage delivery documentation
           </p>
         </div>
-        <Button 
-          variant="default" 
-          size="lg"
-          onClick={() => setShowCreateModal(true)}
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          New Delivery Note
-        </Button>
+        <div className="flex items-center space-x-3">
+          <Button
+            variant="outline"
+            size="lg"
+            onClick={handleExportToExcel}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Export Excel
+          </Button>
+          <Button
+            variant="default"
+            size="lg"
+            onClick={() => setShowCreateModal(true)}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            New Delivery Note
+          </Button>
+        </div>
       </div>
 
       {/* Stats Cards */}

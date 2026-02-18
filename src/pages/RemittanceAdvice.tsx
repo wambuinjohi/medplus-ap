@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { downloadRemittancePDF } from '@/utils/pdfGenerator';
 import { applyTermsToRemittanceForPDF } from '@/utils/pdfTermsManager';
+import { exportDataToExcel } from '@/utils/csvExporter';
 import { toast } from 'sonner';
 import { useRemittanceAdvice, useCompanies } from '@/hooks/useDatabase';
 import { CreateRemittanceModal } from '@/components/remittance/CreateRemittanceModalFixed';
@@ -101,6 +102,34 @@ const RemittanceAdvice = () => {
     }
   };
 
+  const handleExportToExcel = () => {
+    if (!filteredRemittances || filteredRemittances.length === 0) {
+      toast.error('No remittance advice to export');
+      return;
+    }
+
+    const headers = ['Advice Number', 'Customer', 'Date', 'Items', 'Total Payment', 'Status'];
+    const data = filteredRemittances.map(remittance => [
+      remittance.advice_number || remittance.adviceNumber,
+      remittance.customers?.name || remittance.customerName || 'N/A',
+      new Date(remittance.advice_date || remittance.date).toLocaleDateString(),
+      (remittance.remittance_advice_items?.length || remittance.items?.length || 0),
+      remittance.total_payment || remittance.totalPayment || 0,
+      (remittance.status || 'DRAFT').toUpperCase()
+    ]);
+
+    exportDataToExcel(
+      data,
+      headers,
+      `remittance_advice_list_${new Date().toISOString().split('T')[0]}.xls`,
+      {
+        title: 'Remittance Advice List',
+        companyInfo: currentCompany
+      }
+    );
+    toast.success('Remittance advice list exported to Excel');
+  };
+
   const filteredRemittances = remittances.filter(remittance => {
     const matchesSearch = (remittance.customers?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
                          (remittance.advice_number || '').toLowerCase().includes(searchTerm.toLowerCase());
@@ -155,13 +184,23 @@ const RemittanceAdvice = () => {
             Manage payment advice and remittance documents for customers
           </p>
         </div>
-        <Button
-          className="shadow-card"
-          onClick={() => setShowCreateModal(true)}
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          Create Remittance Advice
-        </Button>
+        <div className="flex items-center space-x-3">
+          <Button
+            variant="outline"
+            className="shadow-card"
+            onClick={handleExportToExcel}
+          >
+            <Download className="mr-2 h-4 w-4" />
+            Export Excel
+          </Button>
+          <Button
+            className="shadow-card"
+            onClick={() => setShowCreateModal(true)}
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Create Remittance Advice
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}

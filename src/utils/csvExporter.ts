@@ -11,6 +11,20 @@ export interface CustomerStatementData {
   invoice_count: number;
 }
 
+export interface ExcelExportOptions {
+  title?: string;
+  companyInfo?: {
+    name: string;
+    address?: string;
+    city?: string;
+    country?: string;
+    phone?: string;
+    email?: string;
+    tax_number?: string;
+    logo_url?: string;
+  };
+}
+
 export const exportCustomerStatementsToCSV = (statements: CustomerStatementData[], filename?: string) => {
   const headers = [
     'Customer Name',
@@ -56,7 +70,7 @@ export const exportCustomerStatementsToCSV = (statements: CustomerStatementData[
 };
 
 // Simple Excel-friendly export using HTML table and MS Excel MIME type (.xls)
-export const exportCustomerStatementsToExcel = (statements: CustomerStatementData[], filename?: string) => {
+export const exportCustomerStatementsToExcel = (statements: CustomerStatementData[], filename?: string, options?: ExcelExportOptions) => {
   if (!statements || statements.length === 0) return;
 
   const headers = [
@@ -83,14 +97,65 @@ export const exportCustomerStatementsToExcel = (statements: CustomerStatementDat
     s.invoice_count.toString()
   ]);
 
+  exportDataToExcel(rows, headers, filename || `customer-statements-${new Date().toISOString().split('T')[0]}.xls`, options);
+};
+
+// Generic Excel-friendly export using HTML table and MS Excel MIME type (.xls)
+export const exportDataToExcel = (data: any[][], headers: string[], filename: string, options?: ExcelExportOptions) => {
+  if (!data || data.length === 0) return;
+
+  const { title, companyInfo } = options || {};
+
+  // Build Company Header Rows
+  let headerRows = '';
+  if (companyInfo) {
+    headerRows = `
+      <tr>
+        <td colspan="${headers.length}" style="font-size: 18pt; font-weight: bold; color: #2BB673; text-align: center;">${companyInfo.name}</td>
+      </tr>
+      ${companyInfo.tax_number ? `<tr><td colspan="${headers.length}" style="text-align: center;"><b>PIN:</b> ${companyInfo.tax_number}</td></tr>` : ''}
+      <tr>
+        <td colspan="${headers.length}" style="text-align: center;">
+          ${[companyInfo.address, companyInfo.city, companyInfo.country].filter(Boolean).join(', ')}
+        </td>
+      </tr>
+      <tr>
+        <td colspan="${headers.length}" style="text-align: center;">
+          ${companyInfo.phone ? `<b>Tel:</b> ${companyInfo.phone} ` : ''}
+          ${companyInfo.email ? `<b>Email:</b> ${companyInfo.email}` : ''}
+        </td>
+      </tr>
+      <tr><td colspan="${headers.length}">&nbsp;</td></tr>
+    `;
+  }
+
+  // Build Title Row
+  let titleRow = '';
+  if (title) {
+    titleRow = `
+      <tr>
+        <td colspan="${headers.length}" style="font-size: 14pt; font-weight: bold; color: #2DAAE1; text-align: center; border-bottom: 1pt solid #2DAAE1;">${title.toUpperCase()}</td>
+      </tr>
+      <tr><td colspan="${headers.length}">&nbsp;</td></tr>
+    `;
+  }
+
   // Build HTML table
   const table = `
     <table>
       <thead>
-        <tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>
+        ${headerRows}
+        ${titleRow}
+        <tr style="background-color: #f3f4f6; font-weight: bold; border: 0.5pt solid #cccccc;">
+          ${headers.map(h => `<th style="border: 0.5pt solid #cccccc; padding: 5pt; text-align: left;">${h}</th>`).join('')}
+        </tr>
       </thead>
       <tbody>
-        ${rows.map(r => `<tr>${r.map(cell => `<td>${cell}</td>`).join('')}</tr>`).join('')}
+        ${data.map(r => `
+          <tr>
+            ${r.map(cell => `<td style="border: 0.5pt solid #cccccc; padding: 5pt;">${cell}</td>`).join('')}
+          </tr>
+        `).join('')}
       </tbody>
     </table>
   `;
@@ -98,7 +163,12 @@ export const exportCustomerStatementsToExcel = (statements: CustomerStatementDat
   const html = `
     <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
       <head>
+        <meta charset="utf-8">
         <!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Sheet1</x:Name><x:WorksheetOptions><x:Print><x:ValidPrinterInfo/></x:Print></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
+        <style>
+          table { border-collapse: collapse; width: 100%; }
+          th, td { border: 0.5pt solid #cccccc; }
+        </style>
       </head>
       <body>
         ${table}
@@ -110,7 +180,7 @@ export const exportCustomerStatementsToExcel = (statements: CustomerStatementDat
   const link = document.createElement('a');
   const url = URL.createObjectURL(blob);
   link.href = url;
-  link.setAttribute('download', filename || `customer-statements-${new Date().toISOString().split('T')[0]}.xls`);
+  link.setAttribute('download', filename);
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
