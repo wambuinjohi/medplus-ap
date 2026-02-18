@@ -117,6 +117,44 @@ export const exportCustomerStatementsToExcel = (statements: CustomerStatementDat
   URL.revokeObjectURL(url);
 };
 
+// Generic Excel-friendly export using HTML table and MS Excel MIME type (.xls)
+export const exportDataToExcel = (data: any[][], headers: string[], filename: string) => {
+  if (!data || data.length === 0) return;
+
+  // Build HTML table
+  const table = `
+    <table>
+      <thead>
+        <tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>
+      </thead>
+      <tbody>
+        ${data.map(r => `<tr>${r.map(cell => `<td>${cell}</td>`).join('')}</tr>`).join('')}
+      </tbody>
+    </table>
+  `;
+
+  const html = `
+    <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+      <head>
+        <!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Sheet1</x:Name><x:WorksheetOptions><x:Print><x:ValidPrinterInfo/></x:Print></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
+      </head>
+      <body>
+        ${table}
+      </body>
+    </html>
+  `;
+
+  const blob = new Blob([html], { type: 'application/vnd.ms-excel' });
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  link.href = url;
+  link.setAttribute('download', filename);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+};
+
 export const exportCustomerStatementSummaryToCSV = (statements: CustomerStatementData[], filename?: string) => {
   const totalOutstanding = statements.reduce((sum, s) => sum + s.total_outstanding, 0);
   const totalOverdue = statements.reduce((sum, s) => sum + s.overdue_amount, 0);

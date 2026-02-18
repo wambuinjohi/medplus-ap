@@ -38,11 +38,13 @@ import {
   DollarSign,
   Building2,
   MapPin,
-  Trash2
+  Trash2,
+  Download
 } from 'lucide-react';
 import { useCustomers, useCreateCustomer, useCompanies, useCustomerInvoices, useCustomerPayments, useDeleteCustomer } from '@/hooks/useDatabase';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { exportDataToExcel } from '@/utils/csvExporter';
 import { EditCustomerModal } from '@/components/customers/EditCustomerModal';
 import { ViewCustomerModal } from '@/components/customers/ViewCustomerModal';
 import { CreateCustomerModal } from '@/components/customers/CreateCustomerModal';
@@ -223,6 +225,29 @@ export default function Customers() {
     }
   };
 
+  const handleExportToExcel = () => {
+    if (!filteredCustomers || filteredCustomers.length === 0) {
+      toast.error('No customers to export');
+      return;
+    }
+
+    const headers = ['Customer Code', 'Name', 'Email', 'Phone', 'City', 'Country', 'Credit Limit', 'Payment Terms', 'Status'];
+    const data = filteredCustomers.map(customer => [
+      customer.customer_code,
+      customer.name,
+      customer.email || 'N/A',
+      customer.phone || 'N/A',
+      customer.city || 'N/A',
+      customer.country || 'Kenya',
+      customer.credit_limit || 0,
+      customer.payment_terms === 0 ? 'Cash' : `${customer.payment_terms} days`,
+      customer.is_active !== false ? 'Active' : 'Inactive'
+    ]);
+
+    exportDataToExcel(data, headers, `customers_list_${new Date().toISOString().split('T')[0]}.xls`);
+    toast.success('Customers list exported to Excel');
+  };
+
   const handleDeleteCustomer = async (customer: Customer) => {
     setSelectedCustomer(customer);
     setShowDeleteModal(true);
@@ -279,14 +304,25 @@ export default function Customers() {
             Manage your customer database and relationships
           </p>
         </div>
-        <Button
-          className="gradient-primary text-primary-foreground hover:opacity-90 shadow-card"
-          size="lg"
-          onClick={handleCreateCustomer}
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          New Customer
-        </Button>
+        <div className="flex items-center space-x-3">
+          <Button
+            variant="outline"
+            size="lg"
+            onClick={handleExportToExcel}
+            className="shadow-card"
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Export Excel
+          </Button>
+          <Button
+            className="gradient-primary text-primary-foreground hover:opacity-90 shadow-card"
+            size="lg"
+            onClick={handleCreateCustomer}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            New Customer
+          </Button>
+        </div>
       </div>
 
       {/* Filters and Search */}
