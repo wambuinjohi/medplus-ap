@@ -40,6 +40,7 @@ import { ChangeProformaStatusModal } from '@/components/proforma/ChangeProformaS
 import { ConvertProformaToInvoiceModal } from '@/components/proforma/ConvertProformaToInvoiceModal';
 import { downloadInvoicePDF, downloadQuotationPDF } from '@/utils/pdfGenerator';
 import { applyTermsToProformaForPDF } from '@/utils/pdfTermsManager';
+import { exportDataToExcel } from '@/utils/csvExporter';
 import { formatCurrency } from '@/utils/taxCalculation';
 import { ensureProformaSchema } from '@/utils/proformaDatabaseSetup';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -198,6 +199,34 @@ export default function Proforma() {
     setShowEditModal(false);
   };
 
+  const handleExportToExcel = () => {
+    if (!filteredProformas || filteredProformas.length === 0) {
+      toast.error('No proformas to export');
+      return;
+    }
+
+    const headers = ['Proforma #', 'Customer', 'Date', 'Valid Until', 'Amount', 'Status'];
+    const data = filteredProformas.map(proforma => [
+      proforma.proforma_number,
+      proforma.customers?.name || 'Unknown',
+      new Date(proforma.proforma_date).toLocaleDateString(),
+      new Date(proforma.valid_until).toLocaleDateString(),
+      proforma.total_amount || 0,
+      proforma.status.toUpperCase()
+    ]);
+
+    exportDataToExcel(
+      data,
+      headers,
+      `proformas_list_${new Date().toISOString().split('T')[0]}.xls`,
+      {
+        title: 'Proforma Invoices List',
+        companyInfo: currentCompany
+      }
+    );
+    toast.success('Proforma invoices list exported to Excel');
+  };
+
   return (
     <div className="space-y-6">
       {/* Database Setup Banner */}
@@ -210,14 +239,24 @@ export default function Proforma() {
             Create and manage proforma invoices for prepayment scenarios
           </p>
         </div>
-        <Button 
-          variant="default" 
-          size="lg"
-          onClick={() => setShowCreateModal(true)}
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          New Proforma
-        </Button>
+        <div className="flex items-center space-x-3">
+          <Button
+            variant="outline"
+            size="lg"
+            onClick={handleExportToExcel}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Export Excel
+          </Button>
+          <Button
+            variant="default"
+            size="lg"
+            onClick={() => setShowCreateModal(true)}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            New Proforma
+          </Button>
+        </div>
       </div>
 
       {/* Stats Cards */}

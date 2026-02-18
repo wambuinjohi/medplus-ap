@@ -43,6 +43,7 @@ import { useInvoicesFixed as useInvoices } from '@/hooks/useInvoicesFixed';
 import { useCurrentCompanyId } from '@/contexts/CompanyContext';
 import { usePermissions } from '@/hooks/usePermissions';
 import useUserManagement from '@/hooks/useUserManagement';
+import { exportDataToExcel } from '@/utils/csvExporter';
 import { toast } from 'sonner';
 import { useMemo } from 'react';
 
@@ -290,29 +291,27 @@ export default function SalesReports() {
 
     const filteredInvoices = getFilteredInvoices();
 
-    // Build CSV
-    const headers = ['Invoice Number','Invoice Date','Customer','Created By','Status','Total Amount'];
-    const rows = filteredInvoices.map(inv => [
+    const headers = ['Invoice Number', 'Invoice Date', 'Customer', 'Created By', 'Status', 'Total Amount'];
+    const data = filteredInvoices.map(inv => [
       inv.invoice_number,
       new Date(inv.invoice_date).toLocaleDateString(),
       inv.customers?.name || inv.customer_id || 'Unknown',
       inv.created_by_profile?.full_name || inv.created_by || 'System',
       inv.status || '',
-      formatCurrency(inv.total_amount || 0)
+      inv.total_amount || 0
     ]);
 
-    const csvContent = [headers, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `sales-report-${dateRange}-${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    exportDataToExcel(
+      data,
+      headers,
+      `sales-report-${dateRange}-${new Date().toISOString().split('T')[0]}.xls`,
+      {
+        title: `Sales Report (${dateRange.replace('_', ' ').toUpperCase()})`,
+        companyInfo: { name: 'MedPlus Africa' } // Or pass real company info if available
+      }
+    );
 
-    toast.success('Sales report exported successfully!');
+    toast.success('Sales report exported to Excel successfully!');
   };
 
   const handleDateRangeChange = (value: string) => {

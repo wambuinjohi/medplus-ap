@@ -43,6 +43,7 @@ import {
 } from 'recharts';
 import { useProducts, useStockMovements } from '@/hooks/useDatabase';
 import { usePermissions } from '@/hooks/usePermissions';
+import { exportDataToExcel } from '@/utils/csvExporter';
 import { toast } from 'sonner';
 
 // No sample data - using real database data only
@@ -242,20 +243,29 @@ export default function InventoryReports() {
       return;
     }
 
-    // Export full products inventory as CSV with useful columns
-    const rows = (products || []).map((p: any) => ({
-      product_code: p.product_code || '',
-      name: p.name || '',
-      category: p.category || '',
-      current_stock: p.stock_quantity || 0,
-      minimum_stock_level: p.minimum_stock_level || 0,
-      reorder_point: p.reorder_point || 0,
-      cost_price: p.cost_price || 0,
-      total_value: ((p.stock_quantity || 0) * (p.cost_price || 0)) || 0
-    }));
+    const headers = ['Product Code', 'Name', 'Category', 'Current Stock', 'Min Stock', 'Reorder Point', 'Cost Price', 'Total Value'];
+    const data = (products || []).map((p: any) => [
+      p.product_code || '',
+      p.name || '',
+      p.category || '',
+      p.stock_quantity || 0,
+      p.minimum_stock_level || 0,
+      p.reorder_point || 0,
+      p.cost_price || 0,
+      ((p.stock_quantity || 0) * (p.cost_price || 0)) || 0
+    ]);
 
-    generateCSVAndDownload(rows, `inventory_export_${new Date().toISOString().slice(0,10)}.csv`);
-    toast.success('Inventory exported');
+    exportDataToExcel(
+      data,
+      headers,
+      `inventory_export_${new Date().toISOString().slice(0,10)}.xls`,
+      {
+        title: 'Inventory Valuation Report',
+        companyInfo: { name: 'MedPlus Africa' }
+      }
+    );
+
+    toast.success('Inventory exported to Excel');
   };
 
   const handleGenerateReorderReport = () => {
@@ -268,16 +278,26 @@ export default function InventoryReports() {
       return;
     }
 
-    const rows = reorderItems.map((p: any) => ({
-      product_code: p.product_code || '',
-      name: p.name || '',
-      current_stock: p.stock_quantity || 0,
-      minimum_stock_level: p.minimum_stock_level || 0,
-      reorder_point: p.reorder_point || 0,
-      suggested_order_qty: Math.max(0, (p.reorder_point || 0) - (p.stock_quantity || 0))
-    }));
+    const headers = ['Product Code', 'Name', 'Current Stock', 'Min Level', 'Reorder Point', 'Suggested Order Qty'];
+    const data = reorderItems.map((p: any) => [
+      p.product_code || '',
+      p.name || '',
+      p.stock_quantity || 0,
+      p.minimum_stock_level || 0,
+      p.reorder_point || 0,
+      Math.max(0, (p.reorder_point || 0) - (p.stock_quantity || 0))
+    ]);
 
-    generateCSVAndDownload(rows, `reorder_report_${new Date().toISOString().slice(0,10)}.csv`);
+    exportDataToExcel(
+      data,
+      headers,
+      `reorder_report_${new Date().toISOString().slice(0,10)}.xls`,
+      {
+        title: 'Inventory Reorder Report',
+        companyInfo: { name: 'MedPlus Africa' }
+      }
+    );
+
     toast.success(`Generated reorder report for ${reorderItems.length} items`);
   };
 

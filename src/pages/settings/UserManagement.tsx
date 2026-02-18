@@ -54,6 +54,7 @@ import { InviteUserModal } from '@/components/users/InviteUserModal';
 import { CompleteInvitationModal } from '@/components/users/CompleteInvitationModal';
 import { UserAuditLog } from '@/components/users/UserAuditLog';
 import { RoleManagement } from '@/components/settings/RoleManagement';
+import { exportDataToExcel } from '@/utils/csvExporter';
 import { toast } from 'sonner';
 
 function getRoleColor(role: string) {
@@ -156,6 +157,34 @@ export default function UserManagement() {
 
   const stats = getUserStats();
 
+  const handleExportToExcel = () => {
+    if (!filteredUsers || filteredUsers.length === 0) {
+      toast.error('No users to export');
+      return;
+    }
+
+    const headers = ['Name', 'Email', 'Role', 'Status', 'Department', 'Last Login'];
+    const data = filteredUsers.map(user => [
+      user.full_name || 'No name',
+      user.email,
+      getRoleDisplayName(user.role),
+      user.status.toUpperCase(),
+      user.department || '-',
+      user.last_login ? new Date(user.last_login).toLocaleDateString() : 'Never'
+    ]);
+
+    exportDataToExcel(
+      data,
+      headers,
+      `users_list_${new Date().toISOString().split('T')[0]}.xls`,
+      {
+        title: 'Users List',
+        companyInfo: currentUser?.company_id ? { name: 'MedPlus Africa' } : undefined // Fallback if company info not easily accessible here
+      }
+    );
+    toast.success('Users list exported to Excel');
+  };
+
   const filteredUsers = users.filter(user =>
     user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -257,6 +286,13 @@ export default function UserManagement() {
               </p>
             </div>
             <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                onClick={handleExportToExcel}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export Excel
+              </Button>
               <Button
                 variant="outline"
                 onClick={() => setModalState({ type: 'invite' })}

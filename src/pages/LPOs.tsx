@@ -37,6 +37,7 @@ import { toast } from 'sonner';
 import { useLPOs, useUpdateLPO, useCompanies, useDeleteLPO } from '@/hooks/useDatabase';
 import { downloadLPOPDF } from '@/utils/pdfGenerator';
 import { applyTermsToLPOForPDF } from '@/utils/pdfTermsManager';
+import { exportDataToExcel } from '@/utils/csvExporter';
 import { parseErrorMessageWithCodes } from '@/utils/errorHelpers';
 import { CreateLPOModal } from '@/components/lpo/CreateLPOModal';
 import { ViewLPOModal } from '@/components/lpo/ViewLPOModal';
@@ -94,6 +95,34 @@ export default function LPOs() {
   const handlePageChange = (newPage: number) => {
     setCurrentPage(newPage);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleExportToExcel = () => {
+    if (!filteredLPOs || filteredLPOs.length === 0) {
+      toast.error('No LPOs to export');
+      return;
+    }
+
+    const headers = ['LPO #', 'Supplier', 'Date', 'Delivery Date', 'Total Amount', 'Status'];
+    const data = filteredLPOs.map(lpo => [
+      lpo.lpo_number,
+      lpo.suppliers?.name || 'Unknown',
+      new Date(lpo.lpo_date).toLocaleDateString(),
+      lpo.delivery_date ? new Date(lpo.delivery_date).toLocaleDateString() : '-',
+      lpo.total_amount || 0,
+      lpo.status.toUpperCase()
+    ]);
+
+    exportDataToExcel(
+      data,
+      headers,
+      `lpos_list_${new Date().toISOString().split('T')[0]}.xls`,
+      {
+        title: 'Local Purchase Orders List',
+        companyInfo: currentCompany
+      }
+    );
+    toast.success('LPOs list exported to Excel');
   };
 
   const getStatusBadge = (status: string) => {
@@ -280,14 +309,24 @@ export default function LPOs() {
             Create and manage purchase orders to suppliers
           </p>
         </div>
-        <Button 
-          variant="default" 
-          size="lg"
-          onClick={() => setShowCreateModal(true)}
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          New LPO
-        </Button>
+        <div className="flex items-center space-x-3">
+          <Button
+            variant="outline"
+            size="lg"
+            onClick={handleExportToExcel}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Export Excel
+          </Button>
+          <Button
+            variant="default"
+            size="lg"
+            onClick={() => setShowCreateModal(true)}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            New LPO
+          </Button>
+        </div>
       </div>
 
       {/* Database Audit Panel */}

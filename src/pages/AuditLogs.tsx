@@ -15,6 +15,8 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
 import { Download, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { exportDataToExcel } from '@/utils/csvExporter';
+import { toast } from 'sonner';
 
 interface AuditLog {
   id: string;
@@ -110,30 +112,32 @@ export default function AuditLogsPage() {
   };
 
   const exportLogs = () => {
-    const csv = [
-      ['Date', 'Action', 'Entity Type', 'Record ID', 'Actor', 'Company ID', 'Details'].join(','),
-      ...filtered.map((log: AuditLog) =>
-        [
-          new Date(log.created_at).toLocaleString(),
-          log.action,
-          log.entity_type,
-          log.record_id || '',
-          log.actor_email || log.actor_user_id || 'System',
-          log.company_id || '',
-          JSON.stringify(log.details || {}),
-        ]
-          .map(field => `"${String(field).replace(/"/g, '""')}"`)
-          .join(',')
-      ),
-    ].join('\n');
+    if (!filtered || filtered.length === 0) {
+      toast.error('No audit logs to export');
+      return;
+    }
 
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `audit-logs-${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    window.URL.revokeObjectURL(url);
+    const headers = ['Date', 'Action', 'Entity Type', 'Record ID', 'Actor', 'Company ID', 'Details'];
+    const data = filtered.map((log: AuditLog) => [
+      new Date(log.created_at).toLocaleString(),
+      log.action,
+      log.entity_type,
+      log.record_id || '',
+      log.actor_email || log.actor_user_id || 'System',
+      log.company_id || '',
+      JSON.stringify(log.details || {})
+    ]);
+
+    exportDataToExcel(
+      data,
+      headers,
+      `audit-logs-${new Date().toISOString().split('T')[0]}.xls`,
+      {
+        title: 'Audit Logs',
+        companyInfo: { name: 'MedPlus Africa' }
+      }
+    );
+    toast.success('Audit logs exported to Excel');
   };
 
   const toggleRowExpansion = (logId: string) => {
@@ -156,7 +160,7 @@ export default function AuditLogsPage() {
         {!isLoading && logs.length > 0 && (
           <Button variant="outline" onClick={exportLogs}>
             <Download className="h-4 w-4 mr-2" />
-            Export CSV
+            Export Excel
           </Button>
         )}
       </div>
