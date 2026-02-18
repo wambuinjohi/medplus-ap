@@ -244,7 +244,15 @@ export default function Customers() {
       customer.is_active !== false ? 'Active' : 'Inactive'
     ]);
 
-    exportDataToExcel(data, headers, `customers_list_${new Date().toISOString().split('T')[0]}.xls`);
+    exportDataToExcel(
+      data,
+      headers,
+      `customers_list_${new Date().toISOString().split('T')[0]}.xls`,
+      {
+        title: 'Customers List',
+        companyInfo: currentCompany
+      }
+    );
     toast.success('Customers list exported to Excel');
   };
 

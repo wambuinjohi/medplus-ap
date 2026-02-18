@@ -179,7 +179,15 @@ const StatementOfAccounts = () => {
         trans.balance.toFixed(2)
       ]);
 
-      exportDataToExcel(data, headers, `statement_${statement.customerName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.xls`);
+      exportDataToExcel(
+        data,
+        headers,
+        `statement_${statement.customerName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.xls`,
+        {
+          title: `Statement of Account - ${statement.customerName}`,
+          companyInfo: currentCompany
+        }
+      );
       toast.success(`Statement Excel exported for ${statement.customerName}`);
     } catch (error) {
       console.error('Error exporting statement to Excel:', error);
@@ -203,7 +211,15 @@ const StatementOfAccounts = () => {
       s.creditLimit.toFixed(2)
     ]);
 
-    exportDataToExcel(data, headers, `all_customer_statements_summary_${new Date().toISOString().split('T')[0]}.xls`);
+    exportDataToExcel(
+      data,
+      headers,
+      `all_customer_statements_summary_${new Date().toISOString().split('T')[0]}.xls`,
+      {
+        title: 'All Customer Statements Summary',
+        companyInfo: currentCompany
+      }
+    );
     toast.success('Summary of all statements exported to Excel');
   };
 
