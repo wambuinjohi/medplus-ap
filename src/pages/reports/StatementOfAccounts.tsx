@@ -28,6 +28,7 @@ import { generateCustomerStatementPDF } from '@/utils/pdfGenerator';
 import { toast } from 'sonner';
 import { useCustomers, usePayments, useCompanies } from '@/hooks/useDatabase';
 import { useInvoicesFixed as useInvoices } from '@/hooks/useInvoicesFixed';
+import { exportDataToExcel } from '@/utils/csvExporter';
 
 // Helper function to compute customer statements from real data
 const computeCustomerStatements = (customers: any[], invoices: any[], payments: any[]) => {
@@ -165,6 +166,47 @@ const StatementOfAccounts = () => {
     }
   };
 
+  const handleDownloadExcel = (statement: any) => {
+    try {
+      const headers = ['Date', 'Type', 'Reference', 'Description', 'Debit', 'Credit', 'Balance'];
+      const data = statement.transactions.map((trans: any) => [
+        new Date(trans.date).toLocaleDateString(),
+        trans.type,
+        trans.reference,
+        trans.description,
+        trans.debit.toFixed(2),
+        trans.credit.toFixed(2),
+        trans.balance.toFixed(2)
+      ]);
+
+      exportDataToExcel(data, headers, `statement_${statement.customerName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.xls`);
+      toast.success(`Statement Excel exported for ${statement.customerName}`);
+    } catch (error) {
+      console.error('Error exporting statement to Excel:', error);
+      toast.error('Failed to export statement to Excel');
+    }
+  };
+
+  const handleExportAllExcel = () => {
+    if (filteredStatements.length === 0) {
+      toast.error('No data to export');
+      return;
+    }
+
+    const headers = ['Customer Code', 'Customer Name', 'Email', 'Current Balance', 'Overdue Amount', 'Credit Limit'];
+    const data = filteredStatements.map(s => [
+      s.customerCode,
+      s.customerName,
+      s.email,
+      s.currentBalance.toFixed(2),
+      s.overdueAmount.toFixed(2),
+      s.creditLimit.toFixed(2)
+    ]);
+
+    exportDataToExcel(data, headers, `all_customer_statements_summary_${new Date().toISOString().split('T')[0]}.xls`);
+    toast.success('Summary of all statements exported to Excel');
+  };
+
   const filteredStatements = computedStatements.filter(statement => {
     const matchesSearch = statement.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          statement.customerCode.toLowerCase().includes(searchTerm.toLowerCase());
@@ -205,7 +247,7 @@ const StatementOfAccounts = () => {
           </p>
         </div>
         <div className="flex space-x-2">
-          <Button variant="outline">
+          <Button variant="outline" onClick={handleExportAllExcel}>
             <Download className="mr-2 h-4 w-4" />
             Export All
           </Button>
@@ -351,6 +393,14 @@ const StatementOfAccounts = () => {
                           <Button variant="outline" size="sm">
                             <FileText className="mr-1 h-3 w-3" />
                             View Statement
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDownloadExcel(statement)}
+                          >
+                            <Download className="mr-1 h-3 w-3" />
+                            Excel
                           </Button>
                           <Button
                             variant="outline"
