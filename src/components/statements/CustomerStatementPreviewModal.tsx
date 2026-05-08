@@ -3,10 +3,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Download, Send, X, AlertCircle, CheckCircle, Clock } from 'lucide-react';
+import { Download, Send, X, AlertCircle, CheckCircle, Clock, FileSpreadsheet } from 'lucide-react';
 import { usePayments, useCompanies } from '@/hooks/useDatabase';
 import { useInvoicesFixed as useInvoices } from '@/hooks/useInvoicesFixed';
 import { generateCustomerStatementPDF } from '@/utils/pdfGenerator';
+import { exportCustomerStatementDetailToExcel } from '@/utils/csvExporter';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
@@ -128,9 +129,40 @@ export default function CustomerStatementPreviewModal({
       toast.error('Customer has no email address');
       return;
     }
-    
+
     // TODO: Implement actual email sending
     toast.success(`Statement would be sent to ${customer.customer_email}`);
+  };
+
+  const handleExportExcel = async () => {
+    try {
+      const companyDetails = companies?.[0] ? {
+        name: companies[0].name,
+        address: companies[0].address,
+        city: companies[0].city,
+        country: companies[0].country,
+        phone: companies[0].phone,
+        email: companies[0].email,
+        tax_number: companies[0].tax_number,
+        logo_url: companies[0].logo_url
+      } : undefined;
+
+      exportCustomerStatementDetailToExcel(
+        customer.customer_name,
+        customerInvoices,
+        customerPayments,
+        undefined,
+        {
+          title: `Customer Statement - ${statementDate}`,
+          companyInfo: companyDetails
+        }
+      );
+
+      toast.success('Statement exported to Excel successfully!');
+    } catch (error) {
+      console.error('Error exporting to Excel:', error);
+      toast.error('Failed to export statement to Excel');
+    }
   };
 
   return (
@@ -339,6 +371,10 @@ export default function CustomerStatementPreviewModal({
           <div className="flex justify-end space-x-3 pt-4 border-t">
             <Button variant="outline" onClick={onClose}>
               Close
+            </Button>
+            <Button variant="outline" onClick={handleExportExcel}>
+              <FileSpreadsheet className="h-4 w-4 mr-2" />
+              Export to Excel
             </Button>
             <Button variant="outline" onClick={handleGeneratePDF}>
               <Download className="h-4 w-4 mr-2" />
