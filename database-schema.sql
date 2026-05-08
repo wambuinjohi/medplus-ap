@@ -20,6 +20,12 @@ CREATE TABLE companies (
     logo_url TEXT,
     currency VARCHAR(3) DEFAULT 'KES',
     fiscal_year_start INTEGER DEFAULT 1, -- January = 1
+    bank_name VARCHAR(255),
+    bank_account_number VARCHAR(50),
+    bank_account_name VARCHAR(255),
+    swift_code VARCHAR(20),
+    branch_code VARCHAR(20),
+    paybill_number VARCHAR(20),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

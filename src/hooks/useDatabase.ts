@@ -18,6 +18,12 @@ export interface Company {
   currency?: string;
   logo_url?: string;
   fiscal_year_start?: number;
+  bank_name?: string;
+  bank_account_number?: string;
+  bank_account_name?: string;
+  swift_code?: string;
+  branch_code?: string;
+  paybill_number?: string;
   tax_settings?: TaxSetting[];
   created_at?: string;
   updated_at?: string;

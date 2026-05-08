@@ -41,7 +41,13 @@ export default function CompanySettings() {
     country: 'Kenya',
     currency: 'KES',
     fiscal_year_start: 1,
-    logo_url: ''
+    logo_url: '',
+    bank_name: '',
+    bank_account_number: '',
+    bank_account_name: '',
+    swift_code: '',
+    branch_code: '',
+    paybill_number: ''
   });
 
   const { data: companies, isLoading: companiesLoading, error: companiesError } = useCompanies();
@@ -91,7 +97,13 @@ export default function CompanySettings() {
         country: currentCompany.country || 'Kenya',
         currency: currentCompany.currency || 'KES',
         fiscal_year_start: currentCompany.fiscal_year_start || 1,
-        logo_url: currentCompany.logo_url || ''
+        logo_url: currentCompany.logo_url || '',
+        bank_name: currentCompany.bank_name || '',
+        bank_account_number: currentCompany.bank_account_number || '',
+        bank_account_name: currentCompany.bank_account_name || '',
+        swift_code: currentCompany.swift_code || '',
+        branch_code: currentCompany.branch_code || '',
+        paybill_number: currentCompany.paybill_number || ''
       });
     }
   }, [currentCompany]);
@@ -404,7 +416,13 @@ export default function CompanySettings() {
         state: companyData.state?.trim() || null,
         postal_code: companyData.postal_code?.trim() || null,
         country: companyData.country?.trim() || 'Kenya',
-        logo_url: companyData.logo_url?.trim() || null
+        logo_url: companyData.logo_url?.trim() || null,
+        bank_name: companyData.bank_name?.trim() || null,
+        bank_account_number: companyData.bank_account_number?.trim() || null,
+        bank_account_name: companyData.bank_account_name?.trim() || null,
+        swift_code: companyData.swift_code?.trim() || null,
+        branch_code: companyData.branch_code?.trim() || null,
+        paybill_number: companyData.paybill_number?.trim() || null
       };
 
       // Only include optional columns if they might exist in the database
@@ -926,6 +944,77 @@ export default function CompanySettings() {
                   id="postal-code"
                   value={companyData.postal_code || ''}
                   onChange={(e) => setCompanyData(prev => ({ ...prev, postal_code: e.target.value }))}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Bank Details */}
+        <Card className="shadow-card">
+          <CardHeader>
+            <CardTitle>Bank Details</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="bank-name">Bank Name</Label>
+                <Input
+                  id="bank-name"
+                  value={companyData.bank_name || ''}
+                  onChange={(e) => setCompanyData(prev => ({ ...prev, bank_name: e.target.value }))}
+                  placeholder="e.g., ABSA BANK"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="bank-account-name">Account Name</Label>
+                <Input
+                  id="bank-account-name"
+                  value={companyData.bank_account_name || ''}
+                  onChange={(e) => setCompanyData(prev => ({ ...prev, bank_account_name: e.target.value }))}
+                  placeholder="e.g., MEDPLUS AFRICA LIMITED"
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="bank-account-number">Account Number</Label>
+                <Input
+                  id="bank-account-number"
+                  value={companyData.bank_account_number || ''}
+                  onChange={(e) => setCompanyData(prev => ({ ...prev, bank_account_number: e.target.value }))}
+                  placeholder="e.g., 2047138798"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="swift-code">Swift Code</Label>
+                <Input
+                  id="swift-code"
+                  value={companyData.swift_code || ''}
+                  onChange={(e) => setCompanyData(prev => ({ ...prev, swift_code: e.target.value }))}
+                  placeholder="e.g., BARCKENX"
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="branch-code">Branch Code</Label>
+                <Input
+                  id="branch-code"
+                  value={companyData.branch_code || ''}
+                  onChange={(e) => setCompanyData(prev => ({ ...prev, branch_code: e.target.value }))}
+                  placeholder="e.g., 52"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="paybill-number">Paybill Number</Label>
+                <Input
+                  id="paybill-number"
+                  value={companyData.paybill_number || ''}
+                  onChange={(e) => setCompanyData(prev => ({ ...prev, paybill_number: e.target.value }))}
+                  placeholder="e.g., 303030"
                 />
               </div>
             </div>

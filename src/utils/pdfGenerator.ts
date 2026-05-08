@@ -110,6 +110,12 @@ interface CompanyDetails {
   email?: string;
   tax_number?: string;
   logo_url?: string;
+  bank_name?: string;
+  bank_account_number?: string;
+  bank_account_name?: string;
+  swift_code?: string;
+  branch_code?: string;
+  paybill_number?: string;
 }
 
 // Default company details (fallback) - logo will be determined dynamically
@@ -125,6 +131,25 @@ const DEFAULT_COMPANY: CompanyDetails = {
 };
 
 // Terms and conditions are now loaded dynamically from termsManager
+
+// Helper function to build bank details HTML
+const buildBankDetailsHTML = (company: CompanyDetails): string => {
+  const parts: string[] = [];
+
+  if (company.bank_account_name) parts.push(`Account Name: ${company.bank_account_name}`);
+  if (company.bank_name) parts.push(`Bank: ${company.bank_name}`);
+  if (company.bank_account_number) parts.push(`Account No: ${company.bank_account_number}`);
+  if (company.branch_code) parts.push(`Branch Code: ${company.branch_code}`);
+  if (company.swift_code) parts.push(`Swift Code: ${company.swift_code}`);
+  if (company.paybill_number) parts.push(`Paybill No: ${company.paybill_number}`);
+
+  // If no bank details are available, use the original hardcoded fallback
+  if (parts.length === 0) {
+    return 'Account Name: MEDPLUS AFRICA LIMITED • Bank: ABSA BANK • Account No: 2047138798 • Branch Code: 52 • Swift Code: BARCKENX • Paybill No: 303030';
+  }
+
+  return parts.join(' • ');
+};
 
 // Helper function to determine which columns have values
 const analyzeColumns = (items: DocumentData['items']) => {
@@ -967,7 +992,7 @@ export const generatePDF = (data: DocumentData) => {
         ${data.type === 'invoice' ? `
         <div class="bank-details">
           <div class="section-subtitle">Banking Details</div>
-          <div class="notes-content">Account Name: MEDPLUS AFRICA LIMITED • Bank: ABSA BANK • Account No: 2047138798 • Branch: RONGAI • Bank Code: 03 • Branch Code: 52 • Swift Code: BARCKENX • Paybill No: 303030</div>
+          <div class="notes-content">${buildBankDetailsHTML(company)}</div>
         </div>
         ` : ''}
 

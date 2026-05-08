@@ -97,7 +97,128 @@ export const exportCustomerStatementsToExcel = (statements: CustomerStatementDat
     s.invoice_count.toString()
   ]);
 
-  exportDataToExcel(rows, headers, filename || `customer-statements-${new Date().toISOString().split('T')[0]}.xls`, options);
+  exportDataToExcelWithAgingSummary(rows, headers, filename || `customer-statements-${new Date().toISOString().split('T')[0]}.xls`, statements, options);
+};
+
+// Excel export with aging summary
+export const exportDataToExcelWithAgingSummary = (data: any[][], headers: string[], filename: string, statements: CustomerStatementData[], options?: ExcelExportOptions) => {
+  if (!data || data.length === 0) return;
+
+  const { title, companyInfo } = options || {};
+
+  // Calculate aging totals
+  const totalOutstanding = statements.reduce((sum, s) => sum + s.total_outstanding, 0);
+  const totalCurrent = statements.reduce((sum, s) => sum + s.current_due, 0);
+  const totalOverdue = statements.reduce((sum, s) => sum + s.overdue_amount, 0);
+
+  // Build Company Header Rows
+  let headerRows = '';
+  if (companyInfo) {
+    headerRows = `
+      <tr>
+        <td colspan="${headers.length}" style="font-size: 18pt; font-weight: bold; color: #2BB673; text-align: center;">${companyInfo.name}</td>
+      </tr>
+      ${companyInfo.tax_number ? `<tr><td colspan="${headers.length}" style="text-align: center;"><b>PIN:</b> ${companyInfo.tax_number}</td></tr>` : ''}
+      <tr>
+        <td colspan="${headers.length}" style="text-align: center;">
+          ${[companyInfo.address, companyInfo.city, companyInfo.country].filter(Boolean).join(', ')}
+        </td>
+      </tr>
+      <tr>
+        <td colspan="${headers.length}" style="text-align: center;">
+          ${companyInfo.phone ? `<b>Tel:</b> ${companyInfo.phone} ` : ''}
+          ${companyInfo.email ? `<b>Email:</b> ${companyInfo.email}` : ''}
+        </td>
+      </tr>
+      <tr><td colspan="${headers.length}">&nbsp;</td></tr>
+    `;
+  }
+
+  // Build Title Row
+  let titleRow = '';
+  if (title) {
+    titleRow = `
+      <tr>
+        <td colspan="${headers.length}" style="font-size: 14pt; font-weight: bold; color: #2DAAE1; text-align: center; border-bottom: 1pt solid #2DAAE1;">${title.toUpperCase()}</td>
+      </tr>
+      <tr><td colspan="${headers.length}">&nbsp;</td></tr>
+    `;
+  }
+
+  // Build Aging Summary Section
+  const agingSummaryRow = `
+    <tr><td colspan="${headers.length}" style="font-size: 12pt; font-weight: bold; color: #1F2937;">AGING SUMMARY</td></tr>
+    <tr>
+      <td style="border: 0.5pt solid #cccccc; padding: 5pt;"><b>Category</b></td>
+      <td style="border: 0.5pt solid #cccccc; padding: 5pt; text-align: right;"><b>Amount</b></td>
+      <td colspan="${headers.length - 2}" style="border: 0.5pt solid #cccccc; padding: 5pt;">&nbsp;</td>
+    </tr>
+    <tr>
+      <td style="border: 0.5pt solid #cccccc; padding: 5pt;">Current</td>
+      <td style="border: 0.5pt solid #cccccc; padding: 5pt; text-align: right;">$${totalCurrent.toFixed(2)}</td>
+      <td colspan="${headers.length - 2}" style="border: 0.5pt solid #cccccc; padding: 5pt;">&nbsp;</td>
+    </tr>
+    <tr>
+      <td style="border: 0.5pt solid #cccccc; padding: 5pt;">Overdue</td>
+      <td style="border: 0.5pt solid #cccccc; padding: 5pt; text-align: right; color: #DC2626;"><b>$${totalOverdue.toFixed(2)}</b></td>
+      <td colspan="${headers.length - 2}" style="border: 0.5pt solid #cccccc; padding: 5pt;">&nbsp;</td>
+    </tr>
+    <tr>
+      <td style="border: 0.5pt solid #cccccc; padding: 5pt; font-weight: bold;">Total Outstanding</td>
+      <td style="border: 0.5pt solid #cccccc; padding: 5pt; text-align: right; font-weight: bold;">$${totalOutstanding.toFixed(2)}</td>
+      <td colspan="${headers.length - 2}" style="border: 0.5pt solid #cccccc; padding: 5pt;">&nbsp;</td>
+    </tr>
+    <tr><td colspan="${headers.length}">&nbsp;</td></tr>
+    <tr><td colspan="${headers.length}" style="font-size: 12pt; font-weight: bold; color: #1F2937;">CUSTOMER DETAILS</td></tr>
+    <tr><td colspan="${headers.length}">&nbsp;</td></tr>
+  `;
+
+  // Build HTML table
+  const table = `
+    <table>
+      <thead>
+        ${headerRows}
+        ${titleRow}
+        ${agingSummaryRow}
+        <tr style="background-color: #f3f4f6; font-weight: bold; border: 0.5pt solid #cccccc;">
+          ${headers.map(h => `<th style="border: 0.5pt solid #cccccc; padding: 5pt; text-align: left;">${h}</th>`).join('')}
+        </tr>
+      </thead>
+      <tbody>
+        ${data.map(r => `
+          <tr>
+            ${r.map(cell => `<td style="border: 0.5pt solid #cccccc; padding: 5pt;">${cell}</td>`).join('')}
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+
+  const html = `
+    <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+      <head>
+        <meta charset="utf-8">
+        <!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Sheet1</x:Name><x:WorksheetOptions><x:Print><x:ValidPrinterInfo/></x:Print></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
+        <style>
+          table { border-collapse: collapse; width: 100%; }
+          th, td { border: 0.5pt solid #cccccc; }
+        </style>
+      </head>
+      <body>
+        ${table}
+      </body>
+    </html>
+  `;
+
+  const blob = new Blob([html], { type: 'application/vnd.ms-excel' });
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  link.href = url;
+  link.setAttribute('download', filename);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 };
 
 // Generic Excel-friendly export using HTML table and MS Excel MIME type (.xls)
@@ -219,7 +340,7 @@ export const exportCustomerStatementSummaryToCSV = (statements: CustomerStatemen
 
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a');
-  
+
   if (link.download !== undefined) {
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
@@ -229,4 +350,133 @@ export const exportCustomerStatementSummaryToCSV = (statements: CustomerStatemen
     link.click();
     document.body.removeChild(link);
   }
+};
+
+export const exportCustomerStatementSummaryToExcel = (statements: CustomerStatementData[], filename?: string, options?: ExcelExportOptions) => {
+  const totalOutstanding = statements.reduce((sum, s) => sum + s.total_outstanding, 0);
+  const totalOverdue = statements.reduce((sum, s) => sum + s.overdue_amount, 0);
+  const totalCurrent = statements.reduce((sum, s) => sum + s.current_due, 0);
+  const overdueCustomers = statements.filter(s => s.overdue_amount > 0).length;
+
+  const { title, companyInfo } = options || {};
+
+  // Build Company Header Rows
+  let headerRows = '';
+  if (companyInfo) {
+    headerRows = `
+      <tr>
+        <td colspan="2" style="font-size: 18pt; font-weight: bold; color: #2BB673; text-align: center;">${companyInfo.name}</td>
+      </tr>
+      ${companyInfo.tax_number ? `<tr><td colspan="2" style="text-align: center;"><b>PIN:</b> ${companyInfo.tax_number}</td></tr>` : ''}
+      <tr>
+        <td colspan="2" style="text-align: center;">
+          ${[companyInfo.address, companyInfo.city, companyInfo.country].filter(Boolean).join(', ')}
+        </td>
+      </tr>
+      <tr>
+        <td colspan="2" style="text-align: center;">
+          ${companyInfo.phone ? `<b>Tel:</b> ${companyInfo.phone} ` : ''}
+          ${companyInfo.email ? `<b>Email:</b> ${companyInfo.email}` : ''}
+        </td>
+      </tr>
+      <tr><td colspan="2">&nbsp;</td></tr>
+    `;
+  }
+
+  // Build Title Row
+  let titleRow = '';
+  if (title) {
+    titleRow = `
+      <tr>
+        <td colspan="2" style="font-size: 14pt; font-weight: bold; color: #2DAAE1; text-align: center; border-bottom: 1pt solid #2DAAE1;">${title.toUpperCase()}</td>
+      </tr>
+      <tr><td colspan="2">&nbsp;</td></tr>
+    `;
+  }
+
+  // Build HTML table
+  const table = `
+    <table>
+      <thead>
+        ${headerRows}
+        ${titleRow}
+      </thead>
+      <tbody>
+        <tr>
+          <td style="border: 0.5pt solid #cccccc; padding: 5pt; font-weight: bold;">Generated Date</td>
+          <td style="border: 0.5pt solid #cccccc; padding: 5pt;">${new Date().toLocaleDateString()}</td>
+        </tr>
+        <tr><td colspan="2">&nbsp;</td></tr>
+        <tr>
+          <td style="border: 0.5pt solid #cccccc; padding: 5pt; font-weight: bold;">SUMMARY TOTALS</td>
+          <td style="border: 0.5pt solid #cccccc; padding: 5pt;">&nbsp;</td>
+        </tr>
+        <tr>
+          <td style="border: 0.5pt solid #cccccc; padding: 5pt;">Total Customers</td>
+          <td style="border: 0.5pt solid #cccccc; padding: 5pt; text-align: right;">${statements.length}</td>
+        </tr>
+        <tr>
+          <td style="border: 0.5pt solid #cccccc; padding: 5pt;">Total Outstanding</td>
+          <td style="border: 0.5pt solid #cccccc; padding: 5pt; text-align: right; font-weight: bold;">$${totalOutstanding.toFixed(2)}</td>
+        </tr>
+        <tr>
+          <td style="border: 0.5pt solid #cccccc; padding: 5pt;">Total Current Due</td>
+          <td style="border: 0.5pt solid #cccccc; padding: 5pt; text-align: right; color: #2BB673;">$${totalCurrent.toFixed(2)}</td>
+        </tr>
+        <tr>
+          <td style="border: 0.5pt solid #cccccc; padding: 5pt;">Total Overdue</td>
+          <td style="border: 0.5pt solid #cccccc; padding: 5pt; text-align: right; color: #DC2626; font-weight: bold;">$${totalOverdue.toFixed(2)}</td>
+        </tr>
+        <tr>
+          <td style="border: 0.5pt solid #cccccc; padding: 5pt;">Customers with Overdue</td>
+          <td style="border: 0.5pt solid #cccccc; padding: 5pt; text-align: right;">${overdueCustomers}</td>
+        </tr>
+        <tr><td colspan="2">&nbsp;</td></tr>
+        <tr>
+          <td colspan="2" style="font-size: 12pt; font-weight: bold; color: #1F2937; border: none;">CUSTOMER BREAKDOWN</td>
+        </tr>
+        <tr><td colspan="2">&nbsp;</td></tr>
+        <tr style="background-color: #f3f4f6; font-weight: bold;">
+          <td style="border: 0.5pt solid #cccccc; padding: 5pt;">Customer Name</td>
+          <td style="border: 0.5pt solid #cccccc; padding: 5pt; text-align: right;">Total Outstanding</td>
+        </tr>
+        ${statements.map(s => `
+          <tr>
+            <td style="border: 0.5pt solid #cccccc; padding: 5pt;">${s.customer_name}</td>
+            <td style="border: 0.5pt solid #cccccc; padding: 5pt; text-align: right;">$${s.total_outstanding.toFixed(2)}</td>
+          </tr>
+        `).join('')}
+        <tr style="background-color: #f3f4f6; font-weight: bold;">
+          <td style="border: 0.5pt solid #cccccc; padding: 5pt;">TOTAL</td>
+          <td style="border: 0.5pt solid #cccccc; padding: 5pt; text-align: right;">$${totalOutstanding.toFixed(2)}</td>
+        </tr>
+      </tbody>
+    </table>
+  `;
+
+  const html = `
+    <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+      <head>
+        <meta charset="utf-8">
+        <!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Sheet1</x:Name><x:WorksheetOptions><x:Print><x:ValidPrinterInfo/></x:Print></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
+        <style>
+          table { border-collapse: collapse; width: 100%; }
+          th, td { border: 0.5pt solid #cccccc; }
+        </style>
+      </head>
+      <body>
+        ${table}
+      </body>
+    </html>
+  `;
+
+  const blob = new Blob([html], { type: 'application/vnd.ms-excel' });
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  link.href = url;
+  link.setAttribute('download', filename || `customer-statements-summary-${new Date().toISOString().split('T')[0]}.xls`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 };
