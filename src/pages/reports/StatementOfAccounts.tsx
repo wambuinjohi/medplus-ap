@@ -151,7 +151,13 @@ const StatementOfAccounts = () => {
         phone: currentCompany.phone,
         email: currentCompany.email,
         tax_number: currentCompany.tax_number,
-        logo_url: currentCompany.logo_url
+        logo_url: currentCompany.logo_url,
+        bank_name: currentCompany.bank_name,
+        bank_account_number: currentCompany.bank_account_number,
+        bank_account_name: currentCompany.bank_account_name,
+        swift_code: currentCompany.swift_code,
+        branch_code: currentCompany.branch_code,
+        paybill_number: currentCompany.paybill_number
       } : undefined;
 
       // Generate PDF with real data
