@@ -103,7 +103,13 @@ export default function CustomerStatementPreviewModal({
         phone: companies[0].phone,
         email: companies[0].email,
         tax_number: companies[0].tax_number,
-        logo_url: companies[0].logo_url
+        logo_url: companies[0].logo_url,
+        bank_name: companies[0].bank_name,
+        bank_account_number: companies[0].bank_account_number,
+        bank_account_name: companies[0].bank_account_name,
+        swift_code: companies[0].swift_code,
+        branch_code: companies[0].branch_code,
+        paybill_number: companies[0].paybill_number
       } : undefined;
 
       await generateCustomerStatementPDF(customerData, customerInvoices, customerPayments, {
@@ -276,6 +282,55 @@ export default function CustomerStatementPreviewModal({
                       ))}
                   </TableBody>
                 </Table>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Bank Details */}
+          {companies?.[0] && (companies[0].bank_name || companies[0].bank_account_number || companies[0].bank_account_name) && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Banking Details</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4">
+                  {companies[0].bank_account_name && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">Account Name</p>
+                      <p className="font-medium">{companies[0].bank_account_name}</p>
+                    </div>
+                  )}
+                  {companies[0].bank_name && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">Bank</p>
+                      <p className="font-medium">{companies[0].bank_name}</p>
+                    </div>
+                  )}
+                  {companies[0].bank_account_number && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">Account Number</p>
+                      <p className="font-medium">{companies[0].bank_account_number}</p>
+                    </div>
+                  )}
+                  {companies[0].swift_code && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">Swift Code</p>
+                      <p className="font-medium">{companies[0].swift_code}</p>
+                    </div>
+                  )}
+                  {companies[0].branch_code && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">Branch Code</p>
+                      <p className="font-medium">{companies[0].branch_code}</p>
+                    </div>
+                  )}
+                  {companies[0].paybill_number && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">Paybill Number</p>
+                      <p className="font-medium">{companies[0].paybill_number}</p>
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
           )}
