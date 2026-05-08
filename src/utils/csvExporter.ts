@@ -352,6 +352,189 @@ export const exportCustomerStatementSummaryToCSV = (statements: CustomerStatemen
   }
 };
 
+// Export individual customer statement with aging detail by invoice
+export const exportCustomerStatementDetailToExcel = (
+  customerName: string,
+  invoices: any[],
+  payments: any[],
+  filename?: string,
+  options?: ExcelExportOptions
+) => {
+  const today = new Date();
+  const { title, companyInfo } = options || {};
+
+  // Calculate aging buckets
+  const aging = {
+    current: 0,
+    days30: 0,
+    days60: 0,
+    days90: 0,
+    over90: 0
+  };
+
+  // Get outstanding invoices with aging classification
+  const outstandingInvoices = invoices
+    .filter(inv => (inv.total_amount - (inv.paid_amount || 0)) > 0)
+    .map(inv => {
+      const outstanding = inv.total_amount - (inv.paid_amount || 0);
+      const dueDate = new Date(inv.due_date);
+      const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+
+      let agingBucket = 'Current';
+      if (daysOverdue > 90) {
+        aging.over90 += outstanding;
+        agingBucket = 'Over 90 Days';
+      } else if (daysOverdue > 60) {
+        aging.days90 += outstanding;
+        agingBucket = '61-90 Days';
+      } else if (daysOverdue > 30) {
+        aging.days60 += outstanding;
+        agingBucket = '31-60 Days';
+      } else if (daysOverdue > 0) {
+        aging.days30 += outstanding;
+        agingBucket = '1-30 Days';
+      } else {
+        aging.current += outstanding;
+      }
+
+      return {
+        invoiceNumber: inv.invoice_number,
+        invoiceDate: new Date(inv.invoice_date).toLocaleDateString(),
+        dueDate: new Date(inv.due_date).toLocaleDateString(),
+        amount: inv.total_amount.toFixed(2),
+        paid: (inv.paid_amount || 0).toFixed(2),
+        outstanding: outstanding.toFixed(2),
+        daysOverdue: Math.max(0, daysOverdue),
+        agingBucket
+      };
+    })
+    .sort((a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime());
+
+  // Build HTML table
+  const headers = ['Invoice #', 'Invoice Date', 'Due Date', 'Amount', 'Paid', 'Outstanding', 'Days Overdue', 'Aging Bucket'];
+
+  let headerRows = '';
+  if (companyInfo) {
+    headerRows = `
+      <tr>
+        <td colspan="${headers.length}" style="font-size: 18pt; font-weight: bold; color: #2BB673; text-align: center;">${companyInfo.name}</td>
+      </tr>
+      ${companyInfo.tax_number ? `<tr><td colspan="${headers.length}" style="text-align: center;"><b>PIN:</b> ${companyInfo.tax_number}</td></tr>` : ''}
+      <tr>
+        <td colspan="${headers.length}" style="text-align: center;">
+          ${[companyInfo.address, companyInfo.city, companyInfo.country].filter(Boolean).join(', ')}
+        </td>
+      </tr>
+      <tr>
+        <td colspan="${headers.length}" style="text-align: center;">
+          ${companyInfo.phone ? `<b>Tel:</b> ${companyInfo.phone} ` : ''}
+          ${companyInfo.email ? `<b>Email:</b> ${companyInfo.email}` : ''}
+        </td>
+      </tr>
+      <tr><td colspan="${headers.length}">&nbsp;</td></tr>
+    `;
+  }
+
+  const totalOutstanding = outstandingInvoices.reduce((sum, inv) => sum + parseFloat(inv.outstanding), 0);
+
+  const agingSummaryRow = `
+    <tr><td colspan="${headers.length}" style="font-size: 12pt; font-weight: bold; color: #1F2937; margin-top: 10pt;">CUSTOMER STATEMENT: ${customerName}</td></tr>
+    <tr><td colspan="${headers.length}" style="font-size: 11pt; color: #666; padding: 5pt;">As of ${today.toLocaleDateString()}</td></tr>
+    <tr><td colspan="${headers.length}">&nbsp;</td></tr>
+    <tr><td colspan="${headers.length}" style="font-size: 11pt; font-weight: bold; color: #1F2937;">AGING SUMMARY</td></tr>
+    <tr>
+      <td style="border: 0.5pt solid #cccccc; padding: 5pt;"><b>Category</b></td>
+      <td style="border: 0.5pt solid #cccccc; padding: 5pt; text-align: right;"><b>Amount</b></td>
+      <td colspan="${headers.length - 2}" style="border: 0.5pt solid #cccccc; padding: 5pt;">&nbsp;</td>
+    </tr>
+    <tr>
+      <td style="border: 0.5pt solid #cccccc; padding: 5pt;">Current</td>
+      <td style="border: 0.5pt solid #cccccc; padding: 5pt; text-align: right; color: #2BB673; font-weight: bold;">$${aging.current.toFixed(2)}</td>
+      <td colspan="${headers.length - 2}" style="border: 0.5pt solid #cccccc; padding: 5pt;">&nbsp;</td>
+    </tr>
+    <tr>
+      <td style="border: 0.5pt solid #cccccc; padding: 5pt;">1-30 Days Overdue</td>
+      <td style="border: 0.5pt solid #cccccc; padding: 5pt; text-align: right;">$${aging.days30.toFixed(2)}</td>
+      <td colspan="${headers.length - 2}" style="border: 0.5pt solid #cccccc; padding: 5pt;">&nbsp;</td>
+    </tr>
+    <tr>
+      <td style="border: 0.5pt solid #cccccc; padding: 5pt;">31-60 Days Overdue</td>
+      <td style="border: 0.5pt solid #cccccc; padding: 5pt; text-align: right;">$${aging.days60.toFixed(2)}</td>
+      <td colspan="${headers.length - 2}" style="border: 0.5pt solid #cccccc; padding: 5pt;">&nbsp;</td>
+    </tr>
+    <tr>
+      <td style="border: 0.5pt solid #cccccc; padding: 5pt;">61-90 Days Overdue</td>
+      <td style="border: 0.5pt solid #cccccc; padding: 5pt; text-align: right;">$${aging.days90.toFixed(2)}</td>
+      <td colspan="${headers.length - 2}" style="border: 0.5pt solid #cccccc; padding: 5pt;">&nbsp;</td>
+    </tr>
+    <tr>
+      <td style="border: 0.5pt solid #cccccc; padding: 5pt;">Over 90 Days Overdue</td>
+      <td style="border: 0.5pt solid #cccccc; padding: 5pt; text-align: right; color: #DC2626; font-weight: bold;">$${aging.over90.toFixed(2)}</td>
+      <td colspan="${headers.length - 2}" style="border: 0.5pt solid #cccccc; padding: 5pt;">&nbsp;</td>
+    </tr>
+    <tr>
+      <td style="border: 0.5pt solid #cccccc; padding: 5pt; font-weight: bold;">TOTAL OUTSTANDING</td>
+      <td style="border: 0.5pt solid #cccccc; padding: 5pt; text-align: right; font-weight: bold; color: #1F2937;">$${totalOutstanding.toFixed(2)}</td>
+      <td colspan="${headers.length - 2}" style="border: 0.5pt solid #cccccc; padding: 5pt;">&nbsp;</td>
+    </tr>
+    <tr><td colspan="${headers.length}">&nbsp;</td></tr>
+    <tr><td colspan="${headers.length}" style="font-size: 11pt; font-weight: bold; color: #1F2937;">OUTSTANDING INVOICES</td></tr>
+    <tr><td colspan="${headers.length}">&nbsp;</td></tr>
+  `;
+
+  const table = `
+    <table>
+      <thead>
+        ${headerRows}
+        ${agingSummaryRow}
+        <tr style="background-color: #f3f4f6; font-weight: bold; border: 0.5pt solid #cccccc;">
+          ${headers.map(h => `<th style="border: 0.5pt solid #cccccc; padding: 5pt; text-align: left;">${h}</th>`).join('')}
+        </tr>
+      </thead>
+      <tbody>
+        ${outstandingInvoices.map(inv => `
+          <tr>
+            <td style="border: 0.5pt solid #cccccc; padding: 5pt;">${inv.invoiceNumber}</td>
+            <td style="border: 0.5pt solid #cccccc; padding: 5pt;">${inv.invoiceDate}</td>
+            <td style="border: 0.5pt solid #cccccc; padding: 5pt;">${inv.dueDate}</td>
+            <td style="border: 0.5pt solid #cccccc; padding: 5pt; text-align: right;">$${inv.amount}</td>
+            <td style="border: 0.5pt solid #cccccc; padding: 5pt; text-align: right;">$${inv.paid}</td>
+            <td style="border: 0.5pt solid #cccccc; padding: 5pt; text-align: right; font-weight: bold;">$${inv.outstanding}</td>
+            <td style="border: 0.5pt solid #cccccc; padding: 5pt; text-align: right;">${inv.daysOverdue}</td>
+            <td style="border: 0.5pt solid #cccccc; padding: 5pt;">${inv.agingBucket}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+
+  const html = `
+    <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+      <head>
+        <meta charset="utf-8">
+        <!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Sheet1</x:Name><x:WorksheetOptions><x:Print><x:ValidPrinterInfo/></x:Print></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
+        <style>
+          table { border-collapse: collapse; width: 100%; }
+          th, td { border: 0.5pt solid #cccccc; }
+        </style>
+      </head>
+      <body>
+        ${table}
+      </body>
+    </html>
+  `;
+
+  const blob = new Blob([html], { type: 'application/vnd.ms-excel' });
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  link.href = url;
+  link.setAttribute('download', filename || `statement-${customerName.replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.xls`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+};
+
 export const exportCustomerStatementSummaryToExcel = (statements: CustomerStatementData[], filename?: string, options?: ExcelExportOptions) => {
   const totalOutstanding = statements.reduce((sum, s) => sum + s.total_outstanding, 0);
   const totalOverdue = statements.reduce((sum, s) => sum + s.overdue_amount, 0);
