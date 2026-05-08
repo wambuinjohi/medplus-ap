@@ -3,6 +3,7 @@
 // In a real app, you'd want to use a proper PDF library like jsPDF or react-pdf
 
 import { getFormattedTermsForPDF } from './termsManager';
+import { getAgingNarrative } from './ageCalculations';
 import { supabase } from '@/integrations/supabase/client';
 
 // Helper to detect if a string looks like a UUID
@@ -849,12 +850,13 @@ export const generatePDF = (data: DocumentData) => {
                 <th style="width: 15%;">Unit</th>
                 <th style="width: 10%;">Status</th>
                 ` : data.type === 'statement' ? `
-                <th style="width: 12%;">Date</th>
-                <th style="width: 25%;">Description</th>
-                <th style="width: 15%;">Reference</th>
-                <th style="width: 12%;">Debit</th>
-                <th style="width: 12%;">Credit</th>
+                <th style="width: 10%;">Date</th>
+                <th style="width: 20%;">Description</th>
+                <th style="width: 12%;">Reference</th>
+                <th style="width: 10%;">Debit</th>
+                <th style="width: 10%;">Credit</th>
                 <th style="width: 12%;">Balance</th>
+                <th style="width: 16%;">Aging Status</th>
                 ` : data.type === 'remittance' ? `
                 <th style="width: 15%;">Date</th>
                 <th style="width: 15%;">Document Type</th>
@@ -887,6 +889,7 @@ export const generatePDF = (data: DocumentData) => {
                   <td class="amount-cell">${(item as any).debit > 0 ? formatCurrency((item as any).debit) : ''}</td>
                   <td class="amount-cell">${(item as any).credit > 0 ? formatCurrency((item as any).credit) : ''}</td>
                   <td class="amount-cell">${formatCurrency(item.line_total)}</td>
+                  <td style="font-size: 11px;">${(item as any).aging_narrative || ''}</td>
                   ` : data.type === 'remittance' ? `
                   <td>${formatDate((item as any).document_date)}</td>
                   <td>${(item as any).description ? (item as any).description.split(':')[0] : 'Payment'}</td>
@@ -1265,7 +1268,8 @@ export const generateCustomerStatementPDF = async (customer: any, invoices: any[
       debit: Number(transaction.debit || 0),
       credit: Number(transaction.credit || 0),
       due_date: transaction.due_date,
-      days_overdue: transaction.due_date ? Math.max(0, Math.floor((today.getTime() - new Date(transaction.due_date).getTime()) / (1000 * 60 * 60 * 24))) : 0
+      days_overdue: transaction.due_date ? Math.max(0, Math.floor((today.getTime() - new Date(transaction.due_date).getTime()) / (1000 * 60 * 60 * 24))) : 0,
+      aging_narrative: transaction.due_date ? getAgingNarrative(transaction.due_date, statementDate) : ''
     };
   });
 

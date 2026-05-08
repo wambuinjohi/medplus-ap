@@ -1,3 +1,5 @@
+import { getAgingNarrative } from './ageCalculations';
+
 export interface CustomerStatementData {
   customer_id: string;
   customer_name: string;
@@ -373,6 +375,7 @@ export const exportCustomerStatementDetailToExcel = (
   };
 
   // Get outstanding invoices with aging classification
+  const statementDate = today.toISOString().split('T')[0];
   const outstandingInvoices = invoices
     .filter(inv => (inv.total_amount - (inv.paid_amount || 0)) > 0)
     .map(inv => {
@@ -405,13 +408,14 @@ export const exportCustomerStatementDetailToExcel = (
         paid: (inv.paid_amount || 0).toFixed(2),
         outstanding: outstanding.toFixed(2),
         daysOverdue: Math.max(0, daysOverdue),
-        agingBucket
+        agingBucket,
+        agingNarrative: getAgingNarrative(inv.due_date, statementDate)
       };
     })
     .sort((a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime());
 
   // Build HTML table
-  const headers = ['Invoice #', 'Invoice Date', 'Due Date', 'Amount', 'Paid', 'Outstanding', 'Days Overdue', 'Aging Bucket'];
+  const headers = ['Invoice #', 'Invoice Date', 'Due Date', 'Amount', 'Paid', 'Outstanding', 'Days Overdue', 'Aging Status', 'Aging Bucket'];
 
   let headerRows = '';
   if (companyInfo) {
@@ -501,6 +505,7 @@ export const exportCustomerStatementDetailToExcel = (
             <td style="border: 0.5pt solid #cccccc; padding: 5pt; text-align: right;">$${inv.paid}</td>
             <td style="border: 0.5pt solid #cccccc; padding: 5pt; text-align: right; font-weight: bold;">$${inv.outstanding}</td>
             <td style="border: 0.5pt solid #cccccc; padding: 5pt; text-align: right;">${inv.daysOverdue}</td>
+            <td style="border: 0.5pt solid #cccccc; padding: 5pt; font-size: 10pt;">${inv.agingNarrative}</td>
             <td style="border: 0.5pt solid #cccccc; padding: 5pt;">${inv.agingBucket}</td>
           </tr>
         `).join('')}

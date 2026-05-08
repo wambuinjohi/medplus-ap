@@ -8,8 +8,8 @@ import { usePayments, useCompanies } from '@/hooks/useDatabase';
 import { useInvoicesFixed as useInvoices } from '@/hooks/useInvoicesFixed';
 import { generateCustomerStatementPDF } from '@/utils/pdfGenerator';
 import { exportCustomerStatementDetailToExcel } from '@/utils/csvExporter';
+import { getAgingNarrative } from '@/utils/ageCalculations';
 import { toast } from 'sonner';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface CustomerStatementPreviewModalProps {
   isOpen: boolean;
@@ -258,6 +258,7 @@ export default function CustomerStatementPreviewModal({
                       <TableHead>Amount</TableHead>
                       <TableHead>Paid</TableHead>
                       <TableHead>Outstanding</TableHead>
+                      <TableHead>Aging Status</TableHead>
                       <TableHead>Status</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -265,7 +266,8 @@ export default function CustomerStatementPreviewModal({
                     {outstandingInvoices.map((invoice) => {
                       const outstanding = invoice.total_amount - (invoice.paid_amount || 0);
                       const daysOverdue = Math.max(0, Math.floor((today.getTime() - new Date(invoice.due_date).getTime()) / (1000 * 60 * 60 * 24)));
-                      
+                      const agingNarrative = getAgingNarrative(invoice.due_date, statementDate);
+
                       return (
                         <TableRow key={invoice.id}>
                           <TableCell className="font-medium">{invoice.invoice_number}</TableCell>
@@ -274,6 +276,7 @@ export default function CustomerStatementPreviewModal({
                           <TableCell>${invoice.total_amount.toFixed(2)}</TableCell>
                           <TableCell>${(invoice.paid_amount || 0).toFixed(2)}</TableCell>
                           <TableCell className="font-medium">${outstanding.toFixed(2)}</TableCell>
+                          <TableCell className="text-sm">{agingNarrative}</TableCell>
                           <TableCell>{getStatusBadge(daysOverdue, outstanding)}</TableCell>
                         </TableRow>
                       );
