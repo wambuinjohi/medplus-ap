@@ -3,7 +3,7 @@
 // In a real app, you'd want to use a proper PDF library like jsPDF or react-pdf
 
 import { getFormattedTermsForPDF } from './termsManager';
-import { getAgingNarrative } from './ageCalculations';
+import { getAgingNarrative, getAgingCategory } from './ageCalculations';
 import { supabase } from '@/integrations/supabase/client';
 
 // Helper to detect if a string looks like a UUID
@@ -991,8 +991,8 @@ export const generatePDF = (data: DocumentData) => {
         </div>
         ` : ''}
 
-        <!-- Bank Details (invoice only) -->
-        ${data.type === 'invoice' ? `
+        <!-- Bank Details -->
+        ${data.type === 'invoice' || data.type === 'statement' ? `
         <div class="bank-details">
           <div class="section-subtitle">Banking Details</div>
           <div class="notes-content">${buildBankDetailsHTML(company)}</div>
@@ -1253,6 +1253,8 @@ export const generateCustomerStatementPDF = async (customer: any, invoices: any[
   const statementItems = allTransactions.map((transaction, index) => {
     runningBalance += transaction.debit - transaction.credit;
 
+    const daysOverdue = transaction.due_date ? Math.max(0, Math.floor((today.getTime() - new Date(transaction.due_date).getTime()) / (1000 * 60 * 60 * 24))) : 0;
+
     return {
       description: transaction.description,
       quantity: 1,
@@ -1268,8 +1270,9 @@ export const generateCustomerStatementPDF = async (customer: any, invoices: any[
       debit: Number(transaction.debit || 0),
       credit: Number(transaction.credit || 0),
       due_date: transaction.due_date,
-      days_overdue: transaction.due_date ? Math.max(0, Math.floor((today.getTime() - new Date(transaction.due_date).getTime()) / (1000 * 60 * 60 * 24))) : 0,
-      aging_narrative: transaction.due_date ? getAgingNarrative(transaction.due_date, statementDate) : ''
+      days_overdue: daysOverdue,
+      aging_narrative: transaction.due_date ? getAgingNarrative(transaction.due_date, statementDate) : '',
+      aging_category: transaction.due_date ? getAgingCategory(daysOverdue) : ''
     };
   });
 

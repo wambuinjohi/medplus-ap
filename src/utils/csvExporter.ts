@@ -1,5 +1,20 @@
 import { getAgingNarrative } from './ageCalculations';
 
+// Helper function to build bank details HTML row
+const buildBankDetailsHTML = (companyInfo: any): string => {
+  if (!companyInfo) return '';
+
+  const parts: string[] = [];
+  if (companyInfo.bank_account_name) parts.push(`Account Name: ${companyInfo.bank_account_name}`);
+  if (companyInfo.bank_name) parts.push(`Bank: ${companyInfo.bank_name}`);
+  if (companyInfo.bank_account_number) parts.push(`Account No: ${companyInfo.bank_account_number}`);
+  if (companyInfo.branch_code) parts.push(`Branch Code: ${companyInfo.branch_code}`);
+  if (companyInfo.swift_code) parts.push(`Swift Code: ${companyInfo.swift_code}`);
+  if (companyInfo.paybill_number) parts.push(`Paybill No: ${companyInfo.paybill_number}`);
+
+  return parts.length > 0 ? parts.join(' • ') : '';
+};
+
 export interface CustomerStatementData {
   customer_id: string;
   customer_name: string;
@@ -24,6 +39,12 @@ export interface ExcelExportOptions {
     email?: string;
     tax_number?: string;
     logo_url?: string;
+    bank_name?: string;
+    bank_account_number?: string;
+    bank_account_name?: string;
+    swift_code?: string;
+    branch_code?: string;
+    paybill_number?: string;
   };
 }
 
@@ -116,6 +137,7 @@ export const exportDataToExcelWithAgingSummary = (data: any[][], headers: string
   // Build Company Header Rows
   let headerRows = '';
   if (companyInfo) {
+    const bankDetails = buildBankDetailsHTML(companyInfo);
     headerRows = `
       <tr>
         <td colspan="${headers.length}" style="font-size: 18pt; font-weight: bold; color: #2BB673; text-align: center;">${companyInfo.name}</td>
@@ -132,6 +154,7 @@ export const exportDataToExcelWithAgingSummary = (data: any[][], headers: string
           ${companyInfo.email ? `<b>Email:</b> ${companyInfo.email}` : ''}
         </td>
       </tr>
+      ${bankDetails ? `<tr><td colspan="${headers.length}" style="text-align: center;"><b>Banking Details:</b> ${bankDetails}</td></tr>` : ''}
       <tr><td colspan="${headers.length}">&nbsp;</td></tr>
     `;
   }
@@ -171,6 +194,11 @@ export const exportDataToExcelWithAgingSummary = (data: any[][], headers: string
       <td colspan="${headers.length - 2}" style="border: 0.5pt solid #cccccc; padding: 5pt;">&nbsp;</td>
     </tr>
     <tr><td colspan="${headers.length}">&nbsp;</td></tr>
+    ${buildBankDetailsHTML(companyInfo) ? `
+    <tr><td colspan="${headers.length}" style="font-size: 12pt; font-weight: bold; color: #1F2937;">BANKING DETAILS</td></tr>
+    <tr><td colspan="${headers.length}" style="border: 0.5pt solid #cccccc; padding: 5pt;">${buildBankDetailsHTML(companyInfo)}</td></tr>
+    <tr><td colspan="${headers.length}">&nbsp;</td></tr>
+    ` : ''}
     <tr><td colspan="${headers.length}" style="font-size: 12pt; font-weight: bold; color: #1F2937;">CUSTOMER DETAILS</td></tr>
     <tr><td colspan="${headers.length}">&nbsp;</td></tr>
   `;
@@ -232,6 +260,7 @@ export const exportDataToExcel = (data: any[][], headers: string[], filename: st
   // Build Company Header Rows
   let headerRows = '';
   if (companyInfo) {
+    const bankDetails = buildBankDetailsHTML(companyInfo);
     headerRows = `
       <tr>
         <td colspan="${headers.length}" style="font-size: 18pt; font-weight: bold; color: #2BB673; text-align: center;">${companyInfo.name}</td>
@@ -248,6 +277,7 @@ export const exportDataToExcel = (data: any[][], headers: string[], filename: st
           ${companyInfo.email ? `<b>Email:</b> ${companyInfo.email}` : ''}
         </td>
       </tr>
+      ${bankDetails ? `<tr><td colspan="${headers.length}" style="text-align: center;"><b>Banking Details:</b> ${bankDetails}</td></tr>` : ''}
       <tr><td colspan="${headers.length}">&nbsp;</td></tr>
     `;
   }
@@ -419,6 +449,7 @@ export const exportCustomerStatementDetailToExcel = (
 
   let headerRows = '';
   if (companyInfo) {
+    const bankDetails = buildBankDetailsHTML(companyInfo);
     headerRows = `
       <tr>
         <td colspan="${headers.length}" style="font-size: 18pt; font-weight: bold; color: #2BB673; text-align: center;">${companyInfo.name}</td>
@@ -435,6 +466,7 @@ export const exportCustomerStatementDetailToExcel = (
           ${companyInfo.email ? `<b>Email:</b> ${companyInfo.email}` : ''}
         </td>
       </tr>
+      ${bankDetails ? `<tr><td colspan="${headers.length}" style="text-align: center;"><b>Banking Details:</b> ${bankDetails}</td></tr>` : ''}
       <tr><td colspan="${headers.length}">&nbsp;</td></tr>
     `;
   }
@@ -551,6 +583,7 @@ export const exportCustomerStatementSummaryToExcel = (statements: CustomerStatem
   // Build Company Header Rows
   let headerRows = '';
   if (companyInfo) {
+    const bankDetails = buildBankDetailsHTML(companyInfo);
     headerRows = `
       <tr>
         <td colspan="2" style="font-size: 18pt; font-weight: bold; color: #2BB673; text-align: center;">${companyInfo.name}</td>
@@ -567,6 +600,7 @@ export const exportCustomerStatementSummaryToExcel = (statements: CustomerStatem
           ${companyInfo.email ? `<b>Email:</b> ${companyInfo.email}` : ''}
         </td>
       </tr>
+      ${bankDetails ? `<tr><td colspan="2" style="text-align: center;"><b>Banking Details:</b> ${bankDetails}</td></tr>` : ''}
       <tr><td colspan="2">&nbsp;</td></tr>
     `;
   }

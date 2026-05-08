@@ -144,7 +144,13 @@ export default function CustomerStatementPreviewModal({
         phone: companies[0].phone,
         email: companies[0].email,
         tax_number: companies[0].tax_number,
-        logo_url: companies[0].logo_url
+        logo_url: companies[0].logo_url,
+        bank_name: companies[0].bank_name,
+        bank_account_number: companies[0].bank_account_number,
+        bank_account_name: companies[0].bank_account_name,
+        swift_code: companies[0].swift_code,
+        branch_code: companies[0].branch_code,
+        paybill_number: companies[0].paybill_number
       } : undefined;
 
       exportCustomerStatementDetailToExcel(
