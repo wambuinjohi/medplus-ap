@@ -112,6 +112,8 @@ export interface Product {
   reorder_point?: number;
   is_active?: boolean;
   track_inventory?: boolean;
+  batch_no?: string;
+  expiry_date?: string;
   created_at?: string;
   updated_at?: string;
 }
