@@ -29,22 +29,49 @@ interface CustomerStatementPreviewModalProps {
   statementDate?: string;
 }
 
+interface CustomerStatementPreviewModalPropsWithDateRange extends CustomerStatementPreviewModalProps {
+  dateRange?: string;
+}
+
 export default function CustomerStatementPreviewModal({
   isOpen,
   onClose,
   customer,
-  statementDate = new Date().toISOString().split('T')[0]
-}: CustomerStatementPreviewModalProps) {
+  statementDate = new Date().toISOString().split('T')[0],
+  dateRange = 'all_time'
+}: CustomerStatementPreviewModalPropsWithDateRange) {
   const { data: companies } = useCompanies();
   const { data: invoices } = useInvoices();
   const { data: payments } = usePayments();
 
+  // Helper to filter invoices by date range
+  const invoiceInRange = (inv: any) => {
+    if (!inv || !inv.invoice_date) return false;
+    const invDate = new Date(inv.invoice_date);
+    const today = new Date();
+
+    switch (dateRange) {
+      case 'last_30_days':
+        return invDate >= new Date(today.getFullYear(), today.getMonth(), today.getDate() - 30);
+      case 'last_90_days':
+        return invDate >= new Date(today.getFullYear(), today.getMonth(), today.getDate() - 90);
+      case 'this_year':
+        return invDate.getFullYear() === today.getFullYear();
+      case 'custom':
+      case 'all_time':
+      default:
+        return true;
+    }
+  };
+
   // Get customer's invoices and payments
-  const customerInvoices = invoices?.filter(inv => inv.customer_id === customer.customer_id) || [];
+  const customerInvoices = invoices?.filter(inv =>
+    inv.customer_id === customer.customer_id && invoiceInRange(inv)
+  ) || [];
   const customerPayments = payments?.filter(pay => pay.customer_id === customer.customer_id) || [];
-  
+
   // Get outstanding invoices
-  const outstandingInvoices = customerInvoices.filter(inv => 
+  const outstandingInvoices = customerInvoices.filter(inv =>
     (inv.total_amount - (inv.paid_amount || 0)) > 0
   );
 

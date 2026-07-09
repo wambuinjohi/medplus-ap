@@ -102,8 +102,13 @@ export default function CustomerStatements() {
       // Get customer invoices (apply date range filter)
       const customerInvoices = invoices.filter(inv => inv.customer_id === customer.id && invoiceInRange(inv));
 
+      // Filter to only outstanding invoices (exclude fully paid)
+      const outstandingInvoices = customerInvoices.filter(inv =>
+        (inv.total_amount || 0) - (inv.paid_amount || 0) > 0
+      );
+
       // Calculate totals
-      const totalOutstanding = customerInvoices.reduce((sum, inv) =>
+      const totalOutstanding = outstandingInvoices.reduce((sum, inv) =>
         sum + ((inv.total_amount || 0) - (inv.paid_amount || 0)), 0
       );
 
@@ -112,16 +117,14 @@ export default function CustomerStatements() {
       let overdueAmount = 0;
       let maxDaysOverdue = 0;
 
-      customerInvoices.forEach(inv => {
+      outstandingInvoices.forEach(inv => {
         const dueDate = new Date(inv.due_date);
         const daysOverdue = Math.max(0, Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24)));
-        
+
         if (daysOverdue > 0) {
           const outstanding = (inv.total_amount || 0) - (inv.paid_amount || 0);
-          if (outstanding > 0) {
-            overdueAmount += outstanding;
-            maxDaysOverdue = Math.max(maxDaysOverdue, daysOverdue);
-          }
+          overdueAmount += outstanding;
+          maxDaysOverdue = Math.max(maxDaysOverdue, daysOverdue);
         }
       });
 
@@ -143,10 +146,10 @@ export default function CustomerStatements() {
         days_overdue: maxDaysOverdue,
         last_payment_date: lastPayment?.payment_date,
         last_payment_amount: lastPayment?.amount,
-        invoice_count: customerInvoices.length,
+        invoice_count: outstandingInvoices.length,
         selected: selectedCustomers.includes(customer.id)
       };
-    }).filter(statement => statement.total_outstanding > 0 || statement.invoice_count > 0);
+    }).filter(statement => statement.total_outstanding > 0);
   };
 
   const customerStatements = calculateCustomerStatements();
@@ -239,7 +242,10 @@ export default function CustomerStatements() {
       for (const statement of targetStatements) {
         const customer = customers?.find(c => c.id === statement.customer_id);
         if (customer) {
-          const customerInvoices = invoices?.filter(inv => inv.customer_id === customer.id) || [];
+          // Apply date range filter to invoices
+          const customerInvoices = invoices?.filter(inv =>
+            inv.customer_id === customer.id && invoiceInRange(inv)
+          ) || [];
           const customerPayments = payments?.filter(pay => pay.customer_id === customer.id) || [];
 
           // Apply dynamic company terms before generating statement
@@ -291,7 +297,10 @@ export default function CustomerStatements() {
       for (const statement of selectedWithEmail) {
         const customer = customers?.find(c => c.id === statement.customer_id);
         if (customer) {
-          const customerInvoices = invoices?.filter(inv => inv.customer_id === customer.id) || [];
+          // Apply date range filter to invoices
+          const customerInvoices = invoices?.filter(inv =>
+            inv.customer_id === customer.id && invoiceInRange(inv)
+          ) || [];
           const customerPayments = payments?.filter(pay => pay.customer_id === customer.id) || [];
 
           // Apply dynamic company terms before generating statement
@@ -703,6 +712,7 @@ export default function CustomerStatements() {
           }}
           customer={previewCustomer}
           statementDate={statementDate}
+          dateRange={dateRange}
         />
       )}
     </div>
