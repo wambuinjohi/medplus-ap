@@ -321,32 +321,41 @@ export function CreateCreditNoteModal({
       return;
     }
 
-    if (items.length === 0) {
-      toast.error('Please add at least one item');
-      return;
-    }
-
     if (!reason.trim()) {
       toast.error('Please provide a reason for the credit note');
       return;
     }
 
-    // Validate items
-    const invalidItems = items.filter(item =>
-      !item.description.trim() ||
-      item.quantity <= 0 ||
-      item.unit_price < 0
-    );
+    // Mode-specific validation
+    if (creditNoteMode === 'nominal') {
+      if (!nominalAmount || nominalAmount <= 0) {
+        toast.error('Please enter a valid credit note amount');
+        return;
+      }
+    } else {
+      // fromInvoice mode
+      if (items.length === 0) {
+        toast.error('Please add at least one item');
+        return;
+      }
 
-    if (invalidItems.length > 0) {
-      toast.error('Please ensure all items have valid descriptions, quantities, and prices.');
-      return;
-    }
+      // Validate items
+      const invalidItems = items.filter(item =>
+        !item.description.trim() ||
+        item.quantity <= 0 ||
+        item.unit_price < 0
+      );
 
-    // Validate total amount
-    if (totalAmount <= 0) {
-      toast.error('Credit note total amount must be greater than zero.');
-      return;
+      if (invalidItems.length > 0) {
+        toast.error('Please ensure all items have valid descriptions, quantities, and prices.');
+        return;
+      }
+
+      // Validate total amount
+      if (totalAmount <= 0) {
+        toast.error('Credit note total amount must be greater than zero.');
+        return;
+      }
     }
 
     setIsSubmitting(true);
@@ -354,46 +363,79 @@ export function CreateCreditNoteModal({
       // Generate credit note number
       const creditNoteNumber = await generateCreditNoteNumber.mutateAsync(companyId);
 
+      // Determine totals based on mode
+      let finalSubtotal = 0;
+      let finalTaxAmount = 0;
+      let finalTotalAmount = 0;
+
+      if (creditNoteMode === 'nominal') {
+        finalTotalAmount = nominalAmount || 0;
+        finalSubtotal = nominalAmount || 0;
+        finalTaxAmount = 0;
+      } else {
+        finalSubtotal = subtotal;
+        finalTaxAmount = taxAmount;
+        finalTotalAmount = totalAmount;
+      }
+
       // Create credit note with items
       const creditNoteData = {
         company_id: companyId,
         customer_id: selectedCustomerId,
-        invoice_id: selectedInvoiceId && selectedInvoiceId !== 'none' ? selectedInvoiceId : null,
+        invoice_id: creditNoteMode === 'nominal' ? null : (selectedInvoiceId && selectedInvoiceId !== 'none' ? selectedInvoiceId : null),
         credit_note_number: creditNoteNumber,
         credit_note_date: creditNoteDate,
         status: 'draft' as const,
         reason: reason,
-        subtotal: subtotal,
-        tax_amount: taxAmount,
-        total_amount: totalAmount,
+        subtotal: finalSubtotal,
+        tax_amount: finalTaxAmount,
+        total_amount: finalTotalAmount,
         applied_amount: 0,
-        balance: totalAmount,
-        affects_inventory: affectsInventory,
+        balance: finalTotalAmount,
+        affects_inventory: creditNoteMode === 'nominal' ? false : affectsInventory,
         notes: notes,
         terms_and_conditions: termsAndConditions,
         created_by: null // TODO: Get from auth context when implemented
       };
 
-      const creditNoteItems = items.map((item, index) => ({
-        product_id: item.product_id || null,
-        description: item.description,
-        quantity: item.quantity,
-        unit_price: item.unit_price,
-        tax_percentage: item.tax_percentage,
-        tax_amount: item.tax_amount,
-        tax_inclusive: item.tax_inclusive,
-        tax_setting_id: item.tax_percentage > 0 ? defaultTax?.id || null : null,
-        line_total: item.line_total,
-        sort_order: index
-      }));
+      let creditNoteItems;
+      if (creditNoteMode === 'nominal') {
+        // For nominal mode, create a single line item
+        creditNoteItems = [{
+          product_id: null,
+          description: reason,
+          quantity: 1,
+          unit_price: nominalAmount || 0,
+          tax_percentage: 0,
+          tax_amount: 0,
+          tax_inclusive: false,
+          tax_setting_id: null,
+          line_total: nominalAmount || 0,
+          sort_order: 0
+        }];
+      } else {
+        // For fromInvoice mode, use the added items
+        creditNoteItems = items.map((item, index) => ({
+          product_id: item.product_id || null,
+          description: item.description,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          tax_percentage: item.tax_percentage,
+          tax_amount: item.tax_amount,
+          tax_inclusive: item.tax_inclusive,
+          tax_setting_id: item.tax_percentage > 0 ? defaultTax?.id || null : null,
+          line_total: item.line_total,
+          sort_order: index
+        }));
+      }
 
       const createdCreditNote = await createCreditNoteWithItems.mutateAsync({
         creditNote: creditNoteData,
         items: creditNoteItems
       });
 
-      // Auto-apply if checkbox is selected
-      if (autoApply && selectedInvoiceId && selectedInvoiceId !== 'none') {
+      // Auto-apply if checkbox is selected (only in fromInvoice mode)
+      if (creditNoteMode === 'fromInvoice' && autoApply && selectedInvoiceId && selectedInvoiceId !== 'none') {
         try {
           const authUser = await supabase.auth.getUser();
           const userId = authUser?.data?.user?.id || 'system';
@@ -451,6 +493,8 @@ export function CreateCreditNoteModal({
     setAutoApplyAmount(null);
     setItems([]);
     setSearchProduct('');
+    setCreditNoteMode('fromInvoice');
+    setNominalAmount(null);
   };
 
   return (
@@ -466,6 +510,40 @@ export function CreateCreditNoteModal({
           </DialogDescription>
         </DialogHeader>
 
+        {/* Mode Tabs */}
+        <div className="flex gap-2 border-b">
+          <button
+            onClick={() => {
+              setCreditNoteMode('fromInvoice');
+              setItems([]);
+              setSelectedInvoiceId('none');
+            }}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              creditNoteMode === 'fromInvoice'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            From Invoice
+          </button>
+          <button
+            onClick={() => {
+              setCreditNoteMode('nominal');
+              setItems([]);
+              setNominalAmount(null);
+            }}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              creditNoteMode === 'nominal'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            Nominal
+          </button>
+        </div>
+
+        {creditNoteMode === 'fromInvoice' && (
+        <>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left Column - Credit Note Details */}
           <div className="space-y-4">
@@ -916,14 +994,157 @@ export function CreateCreditNoteModal({
             )}
           </CardContent>
         </Card>
+        </>
+        )}
+
+        {creditNoteMode === 'nominal' && (
+        <div className="max-w-2xl mx-auto py-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Nominal Credit Note</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Customer Selection */}
+              <div className="space-y-2">
+                <Label htmlFor="nominal_customer">Customer *</Label>
+                <Popover open={customerSearchOpen} onOpenChange={setCustomerSearchOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={customerSearchOpen}
+                      className="w-full justify-between"
+                      disabled={loadingCustomers}
+                    >
+                      {selectedCustomerId && customers
+                        ? customers.find(c => c.id === selectedCustomerId)?.name +
+                          ' (' + customers.find(c => c.id === selectedCustomerId)?.customer_code + ')'
+                        : "Select a customer..."}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0" side="bottom" align="start">
+                    <Command>
+                      <CommandInput
+                        placeholder="Search customers..."
+                        value={customerSearchValue}
+                        onValueChange={setCustomerSearchValue}
+                      />
+                      <CommandEmpty>No customers found.</CommandEmpty>
+                      <CommandList>
+                        <CommandGroup>
+                          {customers
+                            ?.filter((customer) =>
+                              customer.name.toLowerCase().includes(customerSearchValue.toLowerCase()) ||
+                              customer.customer_code.toLowerCase().includes(customerSearchValue.toLowerCase())
+                            )
+                            .map((customer) => (
+                              <CommandItem
+                                key={customer.id}
+                                value={customer.id}
+                                onSelect={(currentValue) => {
+                                  setSelectedCustomerId(currentValue === selectedCustomerId ? "" : currentValue);
+                                  setCustomerSearchOpen(false);
+                                  setCustomerSearchValue('');
+                                }}
+                              >
+                                <Check
+                                  className="mr-2 h-4 w-4"
+                                  style={{
+                                    opacity: selectedCustomerId === customer.id ? 1 : 0,
+                                  }}
+                                />
+                                <div className="flex flex-col">
+                                  <span className="font-medium">{customer.name}</span>
+                                  <span className="text-xs text-muted-foreground">{customer.customer_code}</span>
+                                </div>
+                              </CommandItem>
+                            ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              {/* Reason */}
+              <div className="space-y-2">
+                <Label htmlFor="nominal_reason">Reason *</Label>
+                <Select value={reason} onValueChange={setReason}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select reason for credit note" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Product Return">Product Return</SelectItem>
+                    <SelectItem value="Pricing Error">Pricing Error</SelectItem>
+                    <SelectItem value="Billing Error">Billing Error</SelectItem>
+                    <SelectItem value="Damaged Goods">Damaged Goods</SelectItem>
+                    <SelectItem value="Customer Goodwill">Customer Goodwill</SelectItem>
+                    <SelectItem value="Overpayment">Overpayment</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Amount */}
+              <div className="space-y-2">
+                <Label htmlFor="nominal_amount">Amount *</Label>
+                <Input
+                  id="nominal_amount"
+                  type="number"
+                  value={nominalAmount ?? ''}
+                  onChange={(e) => setNominalAmount(e.target.value ? parseFloat(e.target.value) : null)}
+                  placeholder="0.00"
+                  step="0.01"
+                  min="0"
+                />
+              </div>
+
+              {/* Date */}
+              <div className="space-y-2">
+                <Label htmlFor="nominal_date">Credit Note Date *</Label>
+                <Input
+                  id="nominal_date"
+                  type="date"
+                  value={creditNoteDate}
+                  onChange={(e) => setCreditNoteDate(e.target.value)}
+                />
+              </div>
+
+              {/* Notes */}
+              <div className="space-y-2">
+                <Label htmlFor="nominal_notes">Notes</Label>
+                <Textarea
+                  id="nominal_notes"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  rows={3}
+                  placeholder="Additional notes for this credit note..."
+                />
+              </div>
+
+              {/* Terms and Conditions */}
+              <div className="space-y-2">
+                <Label htmlFor="nominal_terms">Terms and Conditions</Label>
+                <Textarea
+                  id="nominal_terms"
+                  value={termsAndConditions}
+                  onChange={(e) => setTermsAndConditions(e.target.value)}
+                  rows={2}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+        )}
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
             Cancel
           </Button>
-          <Button 
-            onClick={handleSubmit} 
-            disabled={isSubmitting || !selectedCustomerId || items.length === 0 || !reason.trim()}
+          <Button
+            onClick={handleSubmit}
+            disabled={isSubmitting || !selectedCustomerId || !reason.trim() || (creditNoteMode === 'fromInvoice' ? items.length === 0 : !nominalAmount || nominalAmount <= 0)}
           >
             <Calculator className="h-4 w-4 mr-2" />
             {isSubmitting ? 'Creating...' : 'Create Credit Note'}
