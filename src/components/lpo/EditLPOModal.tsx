@@ -45,6 +45,8 @@ interface LPOItem {
   tax_amount: number;
   line_total: number;
   unit_of_measure: string;
+  batch_no?: string;
+  expiry_date?: string;
 }
 
 interface EditLPOModalProps {
@@ -110,6 +112,8 @@ export const EditLPOModal = ({
           tax_amount: item.tax_amount,
           line_total: item.line_total,
           unit_of_measure: item.products?.unit_of_measure || 'pcs',
+          batch_no: item.batch_no || '',
+          expiry_date: item.expiry_date || '',
         }));
         setItems(lpoItems);
       }
@@ -133,6 +137,8 @@ export const EditLPOModal = ({
       tax_amount: 0,
       line_total: 0,
       unit_of_measure: product.unit_of_measure || 'pcs',
+      batch_no: '',
+      expiry_date: '',
     };
 
     setItems(prev => [...prev, newItem]);
@@ -222,6 +228,8 @@ export const EditLPOModal = ({
           tax_rate: item.tax_rate,
           tax_amount: item.tax_amount,
           line_total: item.line_total,
+          batch_no: item.batch_no || 'N/A',
+          expiry_date: item.expiry_date || null,
         }))
       });
 
@@ -445,6 +453,8 @@ export const EditLPOModal = ({
                         <TableHead>Qty</TableHead>
                         <TableHead>Unit Price</TableHead>
                         <TableHead>Tax %</TableHead>
+                        <TableHead>Batch No</TableHead>
+                        <TableHead>Expiry Date</TableHead>
                         <TableHead>Total</TableHead>
                         <TableHead></TableHead>
                       </TableRow>
@@ -493,6 +503,23 @@ export const EditLPOModal = ({
                               max="100"
                               step="0.01"
                               className="w-16"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              type="text"
+                              value={item.batch_no || ''}
+                              onChange={(e) => updateItem(item.id, 'batch_no', e.target.value)}
+                              placeholder="Batch"
+                              className="w-24"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              type="date"
+                              value={item.expiry_date || ''}
+                              onChange={(e) => updateItem(item.id, 'expiry_date', e.target.value)}
+                              className="w-28"
                             />
                           </TableCell>
                           <TableCell className="font-medium">

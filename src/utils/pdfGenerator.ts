@@ -81,6 +81,8 @@ export interface DocumentData {
     balance?: number;
     days_overdue?: number;
     due_date?: string;
+    batch_no?: string;
+    expiry_date?: string;
   }>;
   subtotal?: number;
   tax_amount?: number;
@@ -866,7 +868,7 @@ export const generatePDF = (data: DocumentData) => {
                 <th style="width: 18%;">Payment Amount</th>
                 ` : `
                 <th style="width: 5%;">#</th>
-                <th style="width: ${visibleColumns.discountPercentage || visibleColumns.discountBeforeVat || visibleColumns.discountAmount || visibleColumns.taxPercentage || visibleColumns.taxAmount ? '28%' : '38%'};">Description</th>
+                <th style="width: ${visibleColumns.discountPercentage || visibleColumns.discountBeforeVat || visibleColumns.discountAmount || visibleColumns.taxPercentage || visibleColumns.taxAmount ? '22%' : '32%'};">Description</th>
                 <th style="width: 8%;">Qty</th>
                 <th style="width: 8%;">UoM</th>
                 <th style="width: 13%;">Unit Price</th>
@@ -875,6 +877,8 @@ export const generatePDF = (data: DocumentData) => {
                 ${visibleColumns.discountAmount ? '<th style="width: 12%;">Disc Amount</th>' : ''}
                 ${visibleColumns.taxPercentage ? '<th style="width: 10%;">Tax %</th>' : ''}
                 ${visibleColumns.taxAmount ? '<th style="width: 12%;">Tax Amount</th>' : ''}
+                <th style="width: 10%;">Batch No</th>
+                <th style="width: 10%;">Expiry Date</th>
                 <th style="width: 15%;">Total</th>
                 `}
               </tr>
@@ -919,6 +923,8 @@ export const generatePDF = (data: DocumentData) => {
                   ${visibleColumns.discountAmount ? `<td class="amount-cell">${formatCurrency(item.discount_amount || 0)}</td>` : ''}
                   ${visibleColumns.taxPercentage ? `<td>${item.tax_percentage || 0}%</td>` : ''}
                   ${visibleColumns.taxAmount ? `<td class="amount-cell">${formatCurrency(item.tax_amount || 0)}</td>` : ''}
+                  <td>${(item as any).batch_no || '-'}</td>
+                  <td>${(item as any).expiry_date ? formatDate((item as any).expiry_date) : '-'}</td>
                   <td class="amount-cell">${formatCurrency(item.line_total)}</td>
                   `}
                   `}

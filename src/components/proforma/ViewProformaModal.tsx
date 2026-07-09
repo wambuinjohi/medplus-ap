@@ -43,6 +43,8 @@ interface ProformaItem {
   tax_percentage: number;
   tax_amount: number;
   line_total: number;
+  batch_no?: string;
+  expiry_date?: string;
 }
 
 interface Proforma {
@@ -232,6 +234,8 @@ export const ViewProformaModal = ({
                       <TableHead>Unit Price</TableHead>
                       <TableHead>Tax %</TableHead>
                       <TableHead>Tax Amount</TableHead>
+                      <TableHead>Batch No</TableHead>
+                      <TableHead>Expiry Date</TableHead>
                       <TableHead className="text-right">Total</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -244,6 +248,8 @@ export const ViewProformaModal = ({
                         <TableCell>${item.unit_price.toFixed(2)}</TableCell>
                         <TableCell>{item.tax_percentage}%</TableCell>
                         <TableCell>${item.tax_amount.toFixed(2)}</TableCell>
+                        <TableCell>{item.batch_no || '-'}</TableCell>
+                        <TableCell>{item.expiry_date ? new Date(item.expiry_date).toLocaleDateString() : '-'}</TableCell>
                         <TableCell className="text-right">${item.line_total.toFixed(2)}</TableCell>
                       </TableRow>
                     ))}

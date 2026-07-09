@@ -240,6 +240,8 @@ export const ViewLPOModal = ({
                       <TableHead>Unit Price</TableHead>
                       <TableHead>Tax Rate</TableHead>
                       <TableHead>Tax Amount</TableHead>
+                      <TableHead>Batch No</TableHead>
+                      <TableHead>Expiry Date</TableHead>
                       <TableHead>Total</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -261,6 +263,8 @@ export const ViewLPOModal = ({
                         <TableCell>{formatCurrency(item.unit_price)}</TableCell>
                         <TableCell>{item.tax_rate}%</TableCell>
                         <TableCell>{formatCurrency(item.tax_amount)}</TableCell>
+                        <TableCell>{item.batch_no || '-'}</TableCell>
+                        <TableCell>{item.expiry_date ? formatDate(item.expiry_date) : '-'}</TableCell>
                         <TableCell className="font-medium">
                           {formatCurrency(item.line_total)}
                         </TableCell>
