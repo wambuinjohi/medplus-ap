@@ -725,6 +725,8 @@ export const useInvoices = (companyId?: string) => {
             notes,
             terms_and_conditions,
             lpo_number,
+            batch_no,
+            expiry_date,
             created_at,
             updated_at
           `)
@@ -760,6 +762,8 @@ export const useInvoices = (companyId?: string) => {
             tax_inclusive,
             line_total,
             sort_order,
+            batch_no,
+            expiry_date,
             products(id, name, product_code, unit_of_measure)
           `)
           .in('invoice_id', invoiceIds) : { data: [], error: null };
@@ -1824,6 +1828,8 @@ export const useQuotations = (companyId?: string) => {
             total_amount,
             notes,
             terms_and_conditions,
+            batch_no,
+            expiry_date,
             created_at,
             updated_at
           `)
@@ -1857,7 +1863,9 @@ export const useQuotations = (companyId?: string) => {
             tax_amount,
             tax_inclusive,
             line_total,
-            sort_order
+            sort_order,
+            batch_no,
+            expiry_date
           `)
           .in('quotation_id', quotations.map(quot => quot.id));
 
