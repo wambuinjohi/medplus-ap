@@ -104,7 +104,7 @@ export function CreateCreditNoteModal({
 
   const { data: companies, isLoading: loadingCompanies, error: companiesError } = useCompanies();
   const companyId = companies?.[0]?.id;
-  
+
   const { data: customers, isLoading: loadingCustomers } = useCustomers(companyId);
   const { data: products, isLoading: loadingProducts } = useProducts(companyId);
   const { data: taxSettings } = useTaxSettings(companyId);
@@ -112,10 +112,23 @@ export function CreateCreditNoteModal({
   const createCreditNoteWithItems = useCreateCreditNoteWithItems();
   const generateCreditNoteNumber = useGenerateCreditNoteNumber();
   const applyCreditNoteToInvoice = useApplyCreditNoteToInvoice();
-  const { data: customerInvoices = [] } = useCustomerInvoices(selectedCustomerId || undefined, companyId);
+  const { data: customerInvoices = [], isLoading: loadingCustomerInvoices, error: customerInvoicesError } = useCustomerInvoices(selectedCustomerId || undefined, companyId);
   const { data: invoiceItems = [], isLoading: loadingInvoiceItems } = useInvoiceItems(
     selectedInvoiceId && selectedInvoiceId !== 'none' ? selectedInvoiceId : undefined
   );
+
+  // Debug logging
+  useEffect(() => {
+    if (selectedCustomerId && companyId) {
+      console.log('Fetching invoices for customer:', selectedCustomerId, 'company:', companyId);
+    }
+  }, [selectedCustomerId, companyId]);
+
+  useEffect(() => {
+    if (customerInvoicesError) {
+      console.error('Customer invoices error:', customerInvoicesError);
+    }
+  }, [customerInvoicesError]);
 
   // Get default tax rate
   const defaultTax = taxSettings?.find(tax => tax.is_default && tax.is_active);
@@ -135,7 +148,37 @@ export function CreateCreditNoteModal({
   // Clear invoice selection when customer changes
   useEffect(() => {
     setSelectedInvoiceId('none');
+    setItems([]);
   }, [selectedCustomerId]);
+
+  // Auto-populate invoice items when invoice is selected (only in fromInvoice mode)
+  useEffect(() => {
+    console.log('Auto-populate effect - mode:', creditNoteMode, 'invoiceId:', selectedInvoiceId, 'items:', invoiceItems.length, 'loading:', loadingInvoiceItems);
+
+    if (creditNoteMode === 'fromInvoice') {
+      if (selectedInvoiceId && selectedInvoiceId !== 'none') {
+        if (!loadingInvoiceItems && invoiceItems.length > 0) {
+          console.log('Auto-populating invoice items:', invoiceItems.length);
+          // Clear existing items and add all invoice items
+          const newItems = invoiceItems.map((item) => ({
+            id: `invoice-item-${item.id}`,
+            product_id: item.product_id,
+            product_name: item.product_name,
+            description: item.description,
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+            tax_percentage: item.tax_percentage,
+            tax_amount: item.tax_amount,
+            tax_inclusive: item.tax_inclusive,
+            line_total: item.line_total
+          }));
+          setItems(newItems);
+        } else if (!loadingInvoiceItems && invoiceItems.length === 0) {
+          console.log('No invoice items found for invoice:', selectedInvoiceId);
+        }
+      }
+    }
+  }, [creditNoteMode, selectedInvoiceId, invoiceItems, loadingInvoiceItems]);
 
   const filteredProducts = products?.filter(product =>
     product.name.toLowerCase().includes(searchProduct.toLowerCase()) ||
@@ -572,11 +615,12 @@ export function CreateCreditNoteModal({
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-full p-0" side="bottom" align="start">
-                      <Command>
+                      <Command shouldFilter={false}>
                         <CommandInput
-                          placeholder="Search customers..."
+                          placeholder="Search customers by name or code..."
                           value={customerSearchValue}
                           onValueChange={setCustomerSearchValue}
+                          autoFocus
                         />
                         <CommandEmpty>No customers found.</CommandEmpty>
                         <CommandList>
@@ -617,16 +661,26 @@ export function CreateCreditNoteModal({
                 </div>
 
                 {/* Invoice Selection (Optional) */}
-                {selectedCustomerId && customerInvoices.length > 0 && (
+                {selectedCustomerId && (
                   <div className="space-y-3">
                     <div className="space-y-2">
                       <Label htmlFor="invoice">Related Invoice (Optional)</Label>
-                      <Select value={selectedInvoiceId} onValueChange={setSelectedInvoiceId}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select an invoice (optional)" />
+                      <Select value={selectedInvoiceId} onValueChange={setSelectedInvoiceId} disabled={loadingCustomerInvoices}>
+                        <SelectTrigger className={loadingCustomerInvoices ? 'opacity-60' : ''}>
+                          <SelectValue placeholder={loadingCustomerInvoices ? "Loading invoices..." : "Select an invoice (optional)"} />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="none">No specific invoice</SelectItem>
+                          {customerInvoicesError && (
+                            <SelectItem value="error" disabled>
+                              Error loading invoices
+                            </SelectItem>
+                          )}
+                          {customerInvoices.length === 0 && !loadingCustomerInvoices && (
+                            <SelectItem value="no-invoices" disabled>
+                              No invoices with outstanding balance
+                            </SelectItem>
+                          )}
                           {customerInvoices.map((invoice) => (
                             <SelectItem key={invoice.id} value={invoice.id}>
                               {invoice.invoice_number} - {formatCurrency(invoice.balance_due || 0)} due
@@ -639,27 +693,24 @@ export function CreateCreditNoteModal({
                       <>
                         {/* Invoice Products */}
                         {loadingInvoiceItems ? (
-                          <div className="text-sm text-muted-foreground p-3 bg-slate-50 rounded-md">
+                          <div className="text-sm text-muted-foreground p-3 bg-blue-50 rounded-md">
                             Loading invoice items...
                           </div>
                         ) : invoiceItems.length > 0 ? (
-                          <div className="space-y-2 bg-slate-50 p-3 rounded-md">
-                            <Label className="text-sm font-medium">Products from Invoice</Label>
+                          <div className="space-y-2 bg-blue-50 p-3 rounded-md border border-blue-200">
+                            <Label className="text-sm font-medium">
+                              Invoice Items (Auto-populated)
+                            </Label>
                             <div className="space-y-2 max-h-64 overflow-y-auto">
                               {invoiceItems.map((item) => {
                                 const isAdded = items.some(i => i.product_id === item.product_id);
                                 return (
                                   <div
                                     key={item.id}
-                                    className={`p-2 rounded-md border cursor-pointer transition-colors ${
-                                      isAdded
-                                        ? 'bg-green-50 border-green-300'
-                                        : 'bg-white border-slate-200 hover:border-slate-300'
-                                    }`}
-                                    onClick={() => !isAdded && addInvoiceItem(item)}
+                                    className="p-2 rounded-md border bg-white border-slate-200"
                                   >
                                     <div className="flex justify-between items-start">
-                                      <div>
+                                      <div className="flex-1">
                                         <div className="font-medium text-sm">{item.product_name}</div>
                                         <div className="text-xs text-muted-foreground">{item.description}</div>
                                         <div className="text-xs text-muted-foreground mt-1">
@@ -670,8 +721,8 @@ export function CreateCreditNoteModal({
                                       <div className="text-right">
                                         <div className="font-semibold text-sm">{formatCurrency(item.line_total)}</div>
                                         {isAdded && (
-                                          <Badge variant="outline" className="text-xs bg-green-100 text-green-800 border-green-300 mt-1">
-                                            Added
+                                          <Badge className="text-xs bg-green-600 text-white mt-1">
+                                            Included
                                           </Badge>
                                         )}
                                       </div>
@@ -680,6 +731,9 @@ export function CreateCreditNoteModal({
                                 );
                               })}
                             </div>
+                            <p className="text-xs text-muted-foreground italic mt-2">
+                              All invoice items have been automatically added to the credit note. You can edit quantities and prices in the items table below.
+                            </p>
                           </div>
                         ) : null}
 
@@ -868,7 +922,12 @@ export function CreateCreditNoteModal({
           <CardContent>
             {items.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                No items added yet. Search and select products to add them.
+                <p className="mb-2">No items added yet.</p>
+                <p className="text-sm">
+                  {selectedInvoiceId && selectedInvoiceId !== 'none'
+                    ? 'Invoice items will appear here. Select an invoice above.'
+                    : 'Select an invoice above to auto-populate items, or search and add products manually.'}
+                </p>
               </div>
             ) : (
               <Table>
@@ -884,13 +943,20 @@ export function CreateCreditNoteModal({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {items.map((item) => (
-                    <TableRow key={item.id}>
+                  {items.map((item) => {
+                    const isFromInvoice = item.id.startsWith('invoice-item-');
+                    return (
+                    <TableRow key={item.id} className={isFromInvoice ? 'bg-blue-50' : ''}>
                       <TableCell>
                         <div>
                           {item.product_id ? (
                             <div>
-                              <div className="font-medium">{item.product_name}</div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium">{item.product_name}</span>
+                                {isFromInvoice && (
+                                  <Badge variant="secondary" className="text-xs">From Invoice</Badge>
+                                )}
+                              </div>
                               <div className="text-sm text-muted-foreground">{item.description}</div>
                             </div>
                           ) : (
@@ -966,7 +1032,8 @@ export function CreateCreditNoteModal({
                         </Button>
                       </TableCell>
                     </TableRow>
-                  ))}
+                    );
+                  })}
                 </TableBody>
               </Table>
             )}
@@ -1024,11 +1091,12 @@ export function CreateCreditNoteModal({
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-full p-0" side="bottom" align="start">
-                    <Command>
+                    <Command shouldFilter={false}>
                       <CommandInput
-                        placeholder="Search customers..."
+                        placeholder="Search customers by name or code..."
                         value={customerSearchValue}
                         onValueChange={setCustomerSearchValue}
+                        autoFocus
                       />
                       <CommandEmpty>No customers found.</CommandEmpty>
                       <CommandList>

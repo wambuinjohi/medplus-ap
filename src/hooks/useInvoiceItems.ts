@@ -18,44 +18,65 @@ export function useInvoiceItems(invoiceId?: string) {
   return useQuery({
     queryKey: ['invoice-items', invoiceId],
     queryFn: async () => {
-      if (!invoiceId) return [];
+      if (!invoiceId) {
+        console.log('No invoiceId provided to useInvoiceItems');
+        return [];
+      }
 
-      const { data, error } = await supabase
-        .from('invoice_items')
-        .select('id, product_id, description, quantity, unit_price, tax_percentage, tax_amount, tax_inclusive, line_total')
-        .eq('invoice_id', invoiceId)
-        .order('sort_order', { ascending: true });
+      console.log('Fetching invoice items for invoice:', invoiceId);
 
-      if (error) throw error;
+      try {
+        const { data, error } = await supabase
+          .from('invoice_items')
+          .select('id, product_id, description, quantity, unit_price, tax_percentage, tax_amount, tax_inclusive, line_total')
+          .eq('invoice_id', invoiceId)
+          .order('sort_order', { ascending: true });
 
-      // Fetch product names
-      if (!data || data.length === 0) return [];
+        if (error) {
+          console.error('Error fetching invoice items:', error);
+          throw error;
+        }
 
-      const productIds = data.map(item => item.product_id).filter(Boolean);
-      const productsData = productIds.length > 0
-        ? await supabase
-            .from('products')
-            .select('id, name')
-            .in('id', productIds)
-        : { data: [] };
+        console.log('Fetched invoice items:', data);
 
-      const productMap = (productsData.data || []).reduce((acc, p) => {
-        acc[p.id] = p.name;
-        return acc;
-      }, {} as Record<string, string>);
+        // Fetch product names
+        if (!data || data.length === 0) {
+          console.log('No items found for invoice:', invoiceId);
+          return [];
+        }
 
-      return data.map(item => ({
-        id: item.id,
-        product_id: item.product_id,
-        product_name: productMap[item.product_id] || 'Unknown Product',
-        description: item.description,
-        quantity: item.quantity,
-        unit_price: item.unit_price,
-        tax_percentage: item.tax_percentage,
-        tax_amount: item.tax_amount,
-        tax_inclusive: item.tax_inclusive,
-        line_total: item.line_total,
-      })) as InvoiceItem[];
+        const productIds = data.map(item => item.product_id).filter(Boolean);
+        const productsData = productIds.length > 0
+          ? await supabase
+              .from('products')
+              .select('id, name')
+              .in('id', productIds)
+          : { data: [] };
+
+        const productMap = (productsData.data || []).reduce((acc, p) => {
+          acc[p.id] = p.name;
+          return acc;
+        }, {} as Record<string, string>);
+
+        const result = data.map(item => ({
+          id: item.id,
+          product_id: item.product_id,
+          product_name: productMap[item.product_id] || 'Unknown Product',
+          description: item.description,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          tax_percentage: item.tax_percentage,
+          tax_amount: item.tax_amount,
+          tax_inclusive: item.tax_inclusive,
+          line_total: item.line_total,
+        })) as InvoiceItem[];
+
+        console.log('Returning invoice items:', result);
+        return result;
+      } catch (err) {
+        console.error('Exception in useInvoiceItems:', err);
+        throw err;
+      }
     },
     enabled: !!invoiceId,
   });

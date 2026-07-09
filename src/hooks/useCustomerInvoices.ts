@@ -5,7 +5,7 @@ interface Invoice {
   id: string;
   invoice_number: string;
   balance_due: number;
-  issued_date: string;
+  invoice_date: string;
   customer_id: string;
 }
 
@@ -15,17 +15,25 @@ export function useCustomerInvoices(customerId?: string, companyId?: string) {
     queryFn: async () => {
       if (!customerId || !companyId) return [];
 
-      const { data, error } = await supabase
-        .from('invoices')
-        .select('id, invoice_number, balance_due, issued_date, customer_id')
-        .eq('customer_id', customerId)
-        .eq('company_id', companyId)
-        .neq('status', 'cancelled')
-        .gt('balance_due', 0)
-        .order('issued_date', { ascending: false });
+      try {
+        const { data, error } = await supabase
+          .from('invoices')
+          .select('id, invoice_number, balance_due, invoice_date, customer_id')
+          .eq('customer_id', customerId)
+          .eq('company_id', companyId)
+          .neq('status', 'cancelled')
+          .gt('balance_due', 0)
+          .order('invoice_date', { ascending: false });
 
-      if (error) throw error;
-      return (data as Invoice[]) || [];
+        if (error) {
+          console.error('Error fetching customer invoices:', error);
+          throw error;
+        }
+        return (data as Invoice[]) || [];
+      } catch (err) {
+        console.error('Exception fetching customer invoices:', err);
+        throw err;
+      }
     },
     enabled: !!customerId && !!companyId,
   });
