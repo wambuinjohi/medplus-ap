@@ -19,35 +19,26 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { 
-  Plus, 
-  Trash2, 
+import {
+  Plus,
+  Trash2,
   Search,
   Calculator,
-  Receipt
+  Receipt,
+  Loader2,
+  AlertTriangle,
+  CheckCircle
 } from 'lucide-react';
-import { useCustomers, useProducts, useGenerateDocumentNumber, useTaxSettings } from '@/hooks/useDatabase';
-import { useCreateProformaWithItems } from '@/hooks/useQuotationItems';
+import { useCustomers, useProducts, useTaxSettings } from '@/hooks/useDatabase';
+import { useCreateProforma, type ProformaItem } from '@/hooks/useProforma';
+import { calculateItemTax, calculateDocumentTotals, formatCurrency, type TaxableItem } from '@/utils/taxCalculation';
+import { generateNextProformaNumber } from '@/utils/improvedProformaFix';
+import { setupProformaTables, checkProformaTables } from '@/utils/proformaDatabaseSetup';
+import { ProformaErrorSolution } from '@/components/fixes/ProformaErrorSolution';
 import { toast } from 'sonner';
 import { getTermsAndConditions } from '@/utils/termsManager';
-
-interface ProformaItem {
-  id: string;
-  product_id: string;
-  product_name: string;
-  description: string;
-  quantity: number;
-  unit_price: number;
-  tax_percentage: number;
-  tax_amount: number;
-  tax_inclusive: boolean;
-  line_total: number;
-  batch_no?: string;
-  expiry_date?: string | null;
-}
 
 interface CreateProformaModalProps {
   open: boolean;
@@ -74,40 +65,63 @@ export const CreateProformaModal = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [showProductSearch, setShowProductSearch] = useState(false);
   const [proformaNumber, setProformaNumber] = useState('');
+  const [isGeneratingNumber, setIsGeneratingNumber] = useState(false);
+  const [functionError, setFunctionError] = useState<string>('');
+  const [createError, setCreateError] = useState<string>('');
+  const [tablesStatus, setTablesStatus] = useState<'checking' | 'ready' | 'missing' | 'error'>('checking');
 
-  const { data: customers } = useCustomers(companyId);
-  const { data: products } = useProducts(companyId);
+  const { data: customers, isLoading: customersLoading } = useCustomers(companyId);
+  const { data: products, isLoading: productsLoading } = useProducts(companyId);
   const { data: taxSettings } = useTaxSettings(companyId);
-  const generateDocumentNumber = useGenerateDocumentNumber();
-  const createProformaWithItems = useCreateProformaWithItems();
+  const createProforma = useCreateProforma();
 
   const defaultTaxRate = taxSettings?.find(t => t.is_default)?.rate || 0;
 
+  const checkAndSetupTables = async () => {
+    try {
+      setTablesStatus('checking');
+      const status = await checkProformaTables();
+
+      if (status.ready) {
+        setTablesStatus('ready');
+      } else {
+        setTablesStatus('missing');
+      }
+    } catch (error) {
+      console.error('Error checking proforma tables:', error);
+      setTablesStatus('error');
+    }
+  };
+
+  const setupTables = async () => {
+    try {
+      toast.info('Setting up proforma tables...');
+      const result = await setupProformaTables();
+
+      if (result.success) {
+        toast.success('Proforma tables created successfully!');
+        setTablesStatus('ready');
+      } else {
+        toast.error(`Failed to create proforma tables: ${result.errors.join(', ')}`);
+        setTablesStatus('error');
+      }
+    } catch (error) {
+      console.error('Error setting up proforma tables:', error);
+      toast.error('Failed to setup proforma tables');
+      setTablesStatus('error');
+    }
+  };
+
   useEffect(() => {
     if (open) {
-      // Generate proforma number
-      generateDocumentNumber.mutate(
-        { companyId, type: 'proforma' },
-        {
-          onSuccess: (number) => {
-            setProformaNumber(`PF-${number}`);
-          },
-          onError: (error) => {
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            console.warn('Proforma number generation failed, using fallback:', errorMessage);
+      checkAndSetupTables();
+    }
+  }, [open]);
 
-            // Generate a fallback number using timestamp and random number
-            const timestamp = Date.now().toString().slice(-6);
-            const year = new Date().getFullYear();
-            const fallbackNumber = `PF-${year}-${timestamp}`;
-            setProformaNumber(fallbackNumber);
+  useEffect(() => {
+    if (open && tablesStatus === 'ready' && !proformaNumber && !isGeneratingNumber) {
+      generateProformaNumber();
 
-            console.info('Using fallback proforma number:', fallbackNumber);
-          }
-        }
-      );
-
-      // Set default valid until date (30 days from today)
       const validUntil = new Date();
       validUntil.setDate(validUntil.getDate() + 30);
       setFormData(prev => ({
@@ -115,7 +129,32 @@ export const CreateProformaModal = ({
         valid_until: validUntil.toISOString().split('T')[0]
       }));
     }
-  }, [open, generateDocumentNumber, companyId]);
+  }, [open, tablesStatus, proformaNumber, isGeneratingNumber]);
+
+  const generateProformaNumber = async () => {
+    setIsGeneratingNumber(true);
+    setFunctionError('');
+
+    try {
+      console.log('🔢 Generating proforma number...');
+      const proformaNumber = await generateNextProformaNumber();
+      setProformaNumber(proformaNumber);
+      console.log('✅ Proforma number generated:', proformaNumber);
+      toast.success(`Proforma number generated: ${proformaNumber}`);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error('❌ Proforma number generation failed:', error);
+      setFunctionError(errorMessage);
+
+      const timestamp = Date.now().toString().slice(-6);
+      const year = new Date().getFullYear();
+      const fallbackNumber = `PF-${year}-${timestamp}`;
+      setProformaNumber(fallbackNumber);
+      toast.warning(`Using fallback number: ${fallbackNumber}`);
+    } finally {
+      setIsGeneratingNumber(false);
+    }
+  };
 
   const filteredProducts = products?.filter(product =>
     product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -130,16 +169,23 @@ export const CreateProformaModal = ({
       description: product.description || '',
       quantity: 1,
       unit_price: product.selling_price,
+      discount_percentage: 0,
+      discount_amount: 0,
       tax_percentage: defaultTaxRate,
       tax_amount: 0,
       tax_inclusive: false,
       line_total: 0,
       batch_no: product.batch_no || '',
-      expiry_date: product.expiry_date || null
+      expiry_date: product.expiry_date || '',
     };
 
-    // Calculate tax and totals
-    const updatedItem = calculateItemTotals(newItem);
+    const calculatedItem = calculateItemTax(newItem);
+    const updatedItem: ProformaItem = {
+      ...newItem,
+      tax_amount: calculatedItem.tax_amount,
+      line_total: calculatedItem.line_total,
+    };
+
     setItems(prev => [...prev, updatedItem]);
     setShowProductSearch(false);
     setSearchTerm('');
@@ -150,53 +196,24 @@ export const CreateProformaModal = ({
       if (item.id === id) {
         let updatedItem = { ...item, [field]: value };
 
-        // Special handling for tax_inclusive checkbox
         if (field === 'tax_inclusive') {
-          // When checking VAT Inclusive, auto-apply default tax rate if no VAT is set
           if (value && item.tax_percentage === 0) {
             updatedItem.tax_percentage = defaultTaxRate;
           }
-          // When unchecking VAT Inclusive, reset VAT to 0
           if (!value) {
             updatedItem.tax_percentage = 0;
           }
         }
 
-        return calculateItemTotals(updatedItem);
+        const calculatedItem = calculateItemTax(updatedItem);
+        return {
+          ...updatedItem,
+          tax_amount: calculatedItem.tax_amount,
+          line_total: calculatedItem.line_total,
+        };
       }
       return item;
     }));
-  };
-
-  const calculateItemTotals = (item: ProformaItem): ProformaItem => {
-    const baseAmount = item.quantity * item.unit_price;
-
-    if (item.tax_percentage === 0 || !item.tax_inclusive) {
-      // No tax or tax checkbox unchecked
-      return {
-        ...item,
-        tax_amount: 0,
-        line_total: parseFloat(baseAmount.toFixed(2))
-      };
-    }
-
-    // Tax checkbox checked: add tax to the base amount
-    const taxAmount = baseAmount * (item.tax_percentage / 100);
-    const lineTotal = baseAmount + taxAmount;
-
-    return {
-      ...item,
-      tax_amount: parseFloat(taxAmount.toFixed(2)),
-      line_total: parseFloat(lineTotal.toFixed(2))
-    };
-  };
-
-  const updateItemBatchNo = (itemId: string, batchNo: string) => {
-    updateItem(itemId, 'batch_no', batchNo);
-  };
-
-  const updateItemExpiryDate = (itemId: string, expiryDate: string | null) => {
-    updateItem(itemId, 'expiry_date', expiryDate || null);
   };
 
   const removeItem = (id: string) => {
@@ -204,24 +221,21 @@ export const CreateProformaModal = ({
   };
 
   const calculateTotals = () => {
-    // Unit prices are always tax-exclusive, so subtotal is always the base amount
-    const subtotal = items.reduce((sum, item) => {
-      return sum + (item.quantity * item.unit_price);
-    }, 0);
+    const taxableItems: TaxableItem[] = items.map(item => ({
+      quantity: item.quantity,
+      unit_price: item.unit_price,
+      tax_percentage: item.tax_percentage,
+      tax_inclusive: item.tax_inclusive,
+      discount_percentage: item.discount_percentage,
+      discount_amount: item.discount_amount,
+    }));
 
-    const totalTax = items.reduce((sum, item) => sum + item.tax_amount, 0);
-    const total = items.reduce((sum, item) => sum + item.line_total, 0);
-
-    return {
-      subtotal: parseFloat(subtotal.toFixed(2)),
-      totalTax: parseFloat(totalTax.toFixed(2)),
-      total: parseFloat(total.toFixed(2)),
-    };
+    return calculateDocumentTotals(taxableItems);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.customer_id) {
       toast.error('Please select a customer');
       return;
@@ -232,82 +246,36 @@ export const CreateProformaModal = ({
       return;
     }
 
+    setCreateError('');
+
     try {
       const totals = calculateTotals();
 
-      // Create proforma invoice using the correct table
       const proformaData = {
         company_id: companyId,
         customer_id: formData.customer_id,
         proforma_number: proformaNumber,
         proforma_date: formData.proforma_date,
         valid_until: formData.valid_until,
-        status: 'draft',
+        status: 'draft' as const,
         subtotal: totals.subtotal,
-        tax_amount: totals.totalTax,
-        total_amount: totals.total,
+        tax_amount: totals.tax_total,
+        total_amount: totals.total_amount,
         notes: formData.notes,
         terms_and_conditions: formData.terms_and_conditions,
       };
 
-      // Convert items to proforma items format (simplified for current schema)
-      const proformaItems = items.map(item => ({
-        product_id: item.product_id,
-        description: item.description,
-        quantity: item.quantity,
-        unit_price: item.unit_price,
-        discount_percentage: 0,
-        discount_amount: 0,
-        tax_percentage: item.tax_percentage,
-        tax_amount: item.tax_amount,
-        tax_inclusive: item.tax_inclusive,
-        line_total: item.line_total,
-      }));
-
-      // Create proforma in database
-      await createProformaWithItems.mutateAsync({
+      await createProforma.mutateAsync({
         proforma: proformaData,
-        items: proformaItems
+        items: items
       });
 
-      toast.success('Proforma invoice created successfully!');
       onSuccess?.();
       handleClose();
     } catch (error) {
-      console.error('Error creating proforma:', error);
-
-      let errorMessage = 'Failed to create proforma invoice';
-
-      if (error instanceof Error) {
-        errorMessage = error.message;
-      } else if (error && typeof error === 'object') {
-        // Handle Supabase error objects
-        const supabaseError = error as any;
-
-        if (supabaseError.message) {
-          errorMessage = supabaseError.message;
-        } else if (supabaseError.details) {
-          errorMessage = supabaseError.details;
-        } else if (supabaseError.hint) {
-          errorMessage = supabaseError.hint;
-        } else if (supabaseError.error?.message) {
-          errorMessage = supabaseError.error.message;
-        } else if (supabaseError.statusText) {
-          errorMessage = supabaseError.statusText;
-        } else {
-          // Check for common database errors
-          const errorStr = JSON.stringify(error);
-          if (errorStr.includes('column') && errorStr.includes('does not exist')) {
-            errorMessage = 'Database schema issue: Missing required fields. Please contact support.';
-          } else if (errorStr.includes('violates')) {
-            errorMessage = 'Data validation error. Please check your input values.';
-          } else {
-            errorMessage = 'Database operation failed. Please try again.';
-          }
-        }
-      }
-
-      toast.error(`Error creating proforma: ${errorMessage}`);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error('Error creating proforma:', errorMessage);
+      setCreateError(errorMessage);
     }
   };
 
@@ -322,10 +290,67 @@ export const CreateProformaModal = ({
     setItems([]);
     setSearchTerm('');
     setShowProductSearch(false);
+    setProformaNumber('');
+    setFunctionError('');
+    setCreateError('');
     onOpenChange(false);
   };
 
-  const { subtotal, totalTax, total } = calculateTotals();
+  const totals = calculateTotals();
+  const isLoading = customersLoading || productsLoading || isGeneratingNumber;
+
+  if (tablesStatus === 'checking') {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Setting up Proforma Invoices</DialogTitle>
+            <DialogDescription>
+              Checking database configuration...
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin" />
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  if (tablesStatus === 'missing' || tablesStatus === 'error') {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-warning" />
+              Database Setup Required
+            </DialogTitle>
+            <DialogDescription>
+              Proforma invoice tables need to be created in the database.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="bg-warning-light border border-warning/20 rounded-lg p-4">
+              <p className="text-sm text-warning">
+                The proforma invoices feature requires additional database tables.
+                Click the button below to set them up automatically.
+              </p>
+            </div>
+            <div className="flex items-center justify-between">
+              <Button variant="outline" onClick={() => onOpenChange(false)}>
+                Cancel
+              </Button>
+              <Button onClick={setupTables}>
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Setup Tables
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -336,299 +361,320 @@ export const CreateProformaModal = ({
             Create Proforma Invoice
           </DialogTitle>
           <DialogDescription>
-            Create a new proforma invoice for advance payment scenarios
+            Create a new proforma invoice with automatic tax calculation
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Error Notification */}
-          {createError && (
-            <ProformaErrorSolution
-              error={createError}
-              onResolved={() => setCreateError('')}
-              compact={true}
-            />
-          )}
-
-          {/* Header Information */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="proforma_number">Proforma Number</Label>
-              <Input
-                id="proforma_number"
-                value={proformaNumber}
-                disabled
-                className="bg-muted"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="customer_id">Customer *</Label>
-              <Select value={formData.customer_id} onValueChange={(value) => 
-                setFormData(prev => ({ ...prev, customer_id: value }))
-              }>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select customer" />
-                </SelectTrigger>
-                <SelectContent>
-                  {customers?.map((customer) => (
-                    <SelectItem key={customer.id} value={customer.id}>
-                      {customer.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="proforma_date">Proforma Date</Label>
-              <Input
-                id="proforma_date"
-                type="date"
-                value={formData.proforma_date}
-                onChange={(e) => setFormData(prev => ({ ...prev, proforma_date: e.target.value }))}
-              />
-            </div>
+        {isLoading && (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin" />
+            <span className="ml-2">Loading...</span>
           </div>
+        )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="valid_until">Valid Until</Label>
-              <Input
-                id="valid_until"
-                type="date"
-                value={formData.valid_until}
-                onChange={(e) => setFormData(prev => ({ ...prev, valid_until: e.target.value }))}
+        {!isLoading && (
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {(functionError || createError) && (
+              <ProformaErrorSolution
+                error={functionError || createError}
+                onResolved={() => {
+                  setFunctionError('');
+                  setCreateError('');
+                  if (functionError && !createError) {
+                    generateProformaNumber();
+                  }
+                }}
+                compact={true}
               />
-            </div>
-          </div>
-
-          {/* Items Section */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
-                  <Calculator className="h-4 w-4" />
-                  Items
-                </CardTitle>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowProductSearch(true)}
-                >
-                  <Plus className="h-4 w-4" />
-                  Add Item
-                </Button>
+            )}
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="proforma_number">Proforma Number</Label>
+                <div className="relative">
+                  <Input
+                    id="proforma_number"
+                    value={proformaNumber}
+                    disabled
+                    className="bg-muted"
+                  />
+                  {isGeneratingNumber && (
+                    <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 animate-spin" />
+                  )}
+                </div>
               </div>
-            </CardHeader>
-            <CardContent>
-              {showProductSearch && (
-                <Card className="mb-4">
-                  <CardHeader>
-                    <CardTitle className="text-sm">Add Product</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="relative">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                        <Input
-                          placeholder="Search products..."
-                          value={searchTerm}
-                          onChange={(e) => setSearchTerm(e.target.value)}
-                          className="pl-10"
-                        />
-                      </div>
-                      <div className="max-h-40 overflow-y-auto space-y-2">
-                        {filteredProducts?.map((product) => (
-                          <div
-                            key={product.id}
-                            className="flex items-center justify-between p-2 border rounded cursor-pointer hover:bg-muted/50"
-                            onClick={() => addItem(product)}
-                          >
-                            <div>
-                              <p className="font-medium">{product.name}</p>
-                              <p className="text-sm text-muted-foreground">
-                                {product.product_code} • ${product.selling_price}
-                              </p>
-                            </div>
-                            <Button size="sm" variant="ghost">
-                              <Plus className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => setShowProductSearch(false)}
-                        className="w-full"
-                      >
-                        Cancel
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {items.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  No items added yet. Click "Add Item" to start.
-                </div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Product</TableHead>
-                      <TableHead>Description</TableHead>
-                      <TableHead>Qty</TableHead>
-                      <TableHead>Unit Price</TableHead>
-                      <TableHead>Tax %</TableHead>
-                      <TableHead>Tax Incl.</TableHead>
-                      <TableHead>Batch No</TableHead>
-                      <TableHead>Expiry Date</TableHead>
-                      <TableHead>Total</TableHead>
-                      <TableHead></TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {items.map((item) => (
-                      <TableRow key={item.id}>
-                        <TableCell className="font-medium">{item.product_name}</TableCell>
-                        <TableCell>
-                          <Input
-                            value={item.description}
-                            onChange={(e) => updateItem(item.id, 'description', e.target.value)}
-                            placeholder="Description"
-                            className="min-w-32"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Input
-                            type="number"
-                            value={item.quantity}
-                            onChange={(e) => updateItem(item.id, 'quantity', parseFloat(e.target.value) || 0)}
-                            min="0"
-                            step="0.01"
-                            className="w-20"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Input
-                            type="number"
-                            value={item.unit_price}
-                            onChange={(e) => updateItem(item.id, 'unit_price', parseFloat(e.target.value) || 0)}
-                            min="0"
-                            step="0.01"
-                            className="w-24"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Input
-                            type="number"
-                            value={item.tax_percentage}
-                            onChange={(e) => updateItem(item.id, 'tax_percentage', parseFloat(e.target.value) || 0)}
-                            min="0"
-                            max="100"
-                            step="0.01"
-                            className="w-20"
-                            disabled={item.tax_inclusive}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Checkbox
-                            checked={item.tax_inclusive}
-                            onCheckedChange={(checked) => updateItem(item.id, 'tax_inclusive', checked)}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Input
-                            type="text"
-                            value={item.batch_no || ''}
-                            onChange={(e) => updateItemBatchNo(item.id, e.target.value)}
-                            placeholder="Batch"
-                            className="w-24"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Input
-                            type="date"
-                            value={item.expiry_date || ''}
-                            onChange={(e) => updateItemExpiryDate(item.id, e.target.value || null)}
-                            className="w-28"
-                          />
-                        </TableCell>
-                        <TableCell>${item.line_total.toFixed(2)}</TableCell>
-                        <TableCell>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeItem(item.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
+              <div className="space-y-2">
+                <Label htmlFor="customer_id">Customer *</Label>
+                <Select value={formData.customer_id} onValueChange={(value) => 
+                  setFormData(prev => ({ ...prev, customer_id: value }))
+                }>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select customer" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {customers?.map((customer) => (
+                      <SelectItem key={customer.id} value={customer.id}>
+                        {customer.name}
+                      </SelectItem>
                     ))}
-                  </TableBody>
-                </Table>
-              )}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="proforma_date">Proforma Date</Label>
+                <Input
+                  id="proforma_date"
+                  type="date"
+                  value={formData.proforma_date}
+                  onChange={(e) => setFormData(prev => ({ ...prev, proforma_date: e.target.value }))}
+                />
+              </div>
+            </div>
 
-              {/* Totals */}
-              {items.length > 0 && (
-                <div className="mt-6 space-y-2 max-w-sm ml-auto">
-                  <div className="flex justify-between">
-                    <span>Subtotal:</span>
-                    <span>${subtotal.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Tax:</span>
-                    <span>${totalTax.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between font-semibold text-lg border-t pt-2">
-                    <span>Total:</span>
-                    <span>${total.toFixed(2)}</span>
-                  </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="valid_until">Valid Until</Label>
+                <Input
+                  id="valid_until"
+                  type="date"
+                  value={formData.valid_until}
+                  onChange={(e) => setFormData(prev => ({ ...prev, valid_until: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <Calculator className="h-4 w-4" />
+                    Items
+                  </CardTitle>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowProductSearch(true)}
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add Item
+                  </Button>
                 </div>
-              )}
-            </CardContent>
-          </Card>
+              </CardHeader>
+              <CardContent>
+                {showProductSearch && (
+                  <Card className="mb-4">
+                    <CardHeader>
+                      <CardTitle className="text-sm">Add Product</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div className="relative">
+                          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                          <Input
+                            placeholder="Search products..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="pl-10"
+                          />
+                        </div>
+                        <div className="max-h-40 overflow-y-auto space-y-2">
+                          {filteredProducts?.map((product) => (
+                            <div
+                              key={product.id}
+                              className="flex items-center justify-between p-2 border rounded cursor-pointer hover:bg-muted/50"
+                              onClick={() => addItem(product)}
+                            >
+                              <div>
+                                <p className="font-medium">{product.name}</p>
+                                <p className="text-sm text-muted-foreground">
+                                  {product.product_code} • {formatCurrency(product.selling_price)}
+                                </p>
+                              </div>
+                              <Button size="sm" variant="ghost">
+                                <Plus className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setShowProductSearch(false)}
+                          className="w-full"
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
 
-          {/* Additional Information */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="notes">Notes</Label>
-              <Textarea
-                id="notes"
-                value={formData.notes}
-                onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                placeholder="Internal notes..."
-                rows={3}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="terms_and_conditions">Terms & Conditions</Label>
-              <Textarea
-                id="terms_and_conditions"
-                value={formData.terms_and_conditions}
-                onChange={(e) => setFormData(prev => ({ ...prev, terms_and_conditions: e.target.value }))}
-                placeholder="Terms and conditions..."
-                rows={3}
-              />
-            </div>
-          </div>
+                {items.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    No items added yet. Click "Add Item" to start.
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Product</TableHead>
+                        <TableHead>Description</TableHead>
+                        <TableHead>Qty</TableHead>
+                        <TableHead>Unit Price</TableHead>
+                        <TableHead>Tax %</TableHead>
+                        <TableHead>Tax Incl.</TableHead>
+                        <TableHead>Batch No</TableHead>
+                        <TableHead>Expiry Date</TableHead>
+                        <TableHead>Total</TableHead>
+                        <TableHead></TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {items.map((item) => (
+                        <TableRow key={item.id}>
+                          <TableCell className="font-medium">{item.product_name}</TableCell>
+                          <TableCell>
+                            <Input
+                              value={item.description}
+                              onChange={(e) => updateItem(item.id!, 'description', e.target.value)}
+                              placeholder="Description"
+                              className="min-w-32"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              type="number"
+                              value={item.quantity}
+                              onChange={(e) => updateItem(item.id!, 'quantity', parseFloat(e.target.value) || 0)}
+                              min="0"
+                              step="0.01"
+                              className="w-20"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              type="number"
+                              value={item.unit_price}
+                              onChange={(e) => updateItem(item.id!, 'unit_price', parseFloat(e.target.value) || 0)}
+                              min="0"
+                              step="0.01"
+                              className="w-24"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              type="number"
+                              value={item.tax_percentage}
+                              onChange={(e) => updateItem(item.id!, 'tax_percentage', parseFloat(e.target.value) || 0)}
+                              min="0"
+                              max="100"
+                              step="0.01"
+                              className="w-20"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Checkbox
+                              checked={item.tax_inclusive}
+                              onCheckedChange={(checked) => updateItem(item.id!, 'tax_inclusive', checked)}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              type="text"
+                              value={item.batch_no || ''}
+                              onChange={(e) => updateItem(item.id!, 'batch_no', e.target.value)}
+                              placeholder="Batch"
+                              className="w-24"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              type="date"
+                              value={item.expiry_date || ''}
+                              onChange={(e) => updateItem(item.id!, 'expiry_date', e.target.value)}
+                              className="w-28"
+                            />
+                          </TableCell>
+                          <TableCell>{formatCurrency(item.line_total)}</TableCell>
+                          <TableCell>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeItem(item.id!)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
 
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={handleClose}>
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={!formData.customer_id || items.length === 0 || createProformaWithItems.isPending}
-            >
-              {createProformaWithItems.isPending ? 'Creating...' : 'Create Proforma'}
-            </Button>
-          </DialogFooter>
-        </form>
+                {items.length > 0 && (
+                  <div className="mt-6 space-y-2 max-w-sm ml-auto">
+                    <div className="flex justify-between">
+                      <span>Subtotal:</span>
+                      <span>{formatCurrency(totals.subtotal)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Tax:</span>
+                      <span>{formatCurrency(totals.tax_total)}</span>
+                    </div>
+                    <div className="flex justify-between font-semibold text-lg border-t pt-2">
+                      <span>Total:</span>
+                      <span>{formatCurrency(totals.total_amount)}</span>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="notes">Notes</Label>
+                <Textarea
+                  id="notes"
+                  value={formData.notes}
+                  onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                  placeholder="Internal notes..."
+                  rows={3}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="terms_and_conditions">Terms & Conditions</Label>
+                <Textarea
+                  id="terms_and_conditions"
+                  value={formData.terms_and_conditions}
+                  onChange={(e) => setFormData(prev => ({ ...prev, terms_and_conditions: e.target.value }))}
+                  placeholder="Terms and conditions..."
+                  rows={3}
+                />
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={handleClose}>
+                Cancel
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={!formData.customer_id || items.length === 0 || createProforma.isPending || isGeneratingNumber}
+              >
+                {createProforma.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    Creating...
+                  </>
+                ) : (
+                  'Create Proforma'
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        )}
       </DialogContent>
     </Dialog>
   );

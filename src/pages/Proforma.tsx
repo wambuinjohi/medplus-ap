@@ -32,7 +32,7 @@ import { useProformas, useDeleteProforma, type ProformaWithItems } from '@/hooks
 import { useCompanies } from '@/hooks/useDatabase';
 import { usePermissions } from '@/hooks/usePermissions';
 import { toast } from 'sonner';
-import { CreateProformaModalOptimized } from '@/components/proforma/CreateProformaModalOptimized';
+import { CreateProformaModal } from '@/components/proforma/CreateProformaModal';
 import { EditProformaModal } from '@/components/proforma/EditProformaModal';
 import { ViewProformaModal } from '@/components/proforma/ViewProformaModal';
 import { ProformaSetupBanner } from '@/components/proforma/ProformaSetupBanner';
@@ -540,7 +540,7 @@ export default function Proforma() {
       </Card>
 
       {/* Modals */}
-      <CreateProformaModalOptimized
+      <CreateProformaModal
         open={showCreateModal}
         onOpenChange={setShowCreateModal}
         onSuccess={handleCreateSuccess}
