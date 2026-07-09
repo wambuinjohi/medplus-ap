@@ -82,7 +82,7 @@ export const getWorkingProfileFields = async (userId: string) => {
     { key: 'position', value: 'System Administrator' }
   ];
 
-  let workingFields = { ...baseFields };
+  const workingFields = { ...baseFields };
   
   for (const field of optionalFields) {
     try {

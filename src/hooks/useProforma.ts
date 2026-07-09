@@ -198,7 +198,7 @@ export const useCreateProforma = () => {
       };
 
       // Ensure created_by defaults to authenticated user
-      let cleanProforma = { ...proformaWithTotals } as any;
+      const cleanProforma = { ...proformaWithTotals } as any;
       try {
         const { data: userData } = await supabase.auth.getUser();
         const authUserId = userData?.user?.id || null;
@@ -280,7 +280,7 @@ export const useCreateProforma = () => {
           expiry_date: item.expiry_date,
         }));
 
-        let { error: itemsError } = await supabase
+        const { error: itemsError } = await supabase
           .from('proforma_items')
           .insert(proformaItemsFull);
 

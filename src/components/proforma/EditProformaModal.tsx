@@ -156,7 +156,7 @@ export const EditProformaModal = ({
   const updateItem = (id: string, field: keyof ProformaItem, value: any) => {
     setItems(prev => prev.map(item => {
       if (item.id === id) {
-        let updatedItem = { ...item, [field]: value };
+        const updatedItem = { ...item, [field]: value };
 
         // Special handling for tax_inclusive checkbox
         if (field === 'tax_inclusive') {

@@ -25,7 +25,7 @@ export function useCreateCreditNoteWithItems() {
       // Start transaction-like operations
       try {
         // Ensure created_by defaults to the authenticated user
-        let cleanCreditNote = { ...creditNote } as any;
+        const cleanCreditNote = { ...creditNote } as any;
         try {
           const { data: userData } = await supabase.auth.getUser();
           const authUserId = userData?.user?.id || null;

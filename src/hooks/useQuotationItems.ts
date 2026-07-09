@@ -133,7 +133,7 @@ export const useCreateQuotationWithItems = () => {
   return useMutation({
     mutationFn: async ({ quotation, items }: { quotation: any; items: QuotationItem[] }) => {
       // Ensure created_by references the authenticated user to satisfy FK constraints
-      let cleanQuotation = { ...quotation } as any;
+      const cleanQuotation = { ...quotation } as any;
       try {
         const { data: userData } = await supabase.auth.getUser();
         const authUserId = userData?.user?.id || null;
@@ -445,7 +445,7 @@ export const useCreateInvoiceWithItems = () => {
   return useMutation({
     mutationFn: async ({ invoice, items }: { invoice: any; items: InvoiceItem[] }) => {
       // Ensure created_by references the authenticated user to satisfy FK constraints
-      let cleanInvoice = { ...invoice } as any;
+      const cleanInvoice = { ...invoice } as any;
       try {
         const { data: userData } = await supabase.auth.getUser();
         const authUserId = userData?.user?.id || null;
@@ -749,7 +749,7 @@ export const useCreateProformaWithItems = () => {
   return useMutation({
     mutationFn: async ({ proforma, items }: { proforma: any; items: any[] }) => {
       // Ensure created_by defaults to the authenticated user
-      let cleanProforma = { ...proforma } as any;
+      const cleanProforma = { ...proforma } as any;
       try {
         const { data: userData } = await supabase.auth.getUser();
         const authUserId = userData?.user?.id || null;
@@ -805,7 +805,7 @@ export const useCreateProformaWithItems = () => {
           sort_order: index + 1
         }));
 
-        let { error: itemsError } = await supabase
+        const { error: itemsError } = await supabase
           .from('proforma_items')
           .insert(proformaItems);
 
@@ -1045,7 +1045,7 @@ export const useConvertQuotationToProforma = () => {
           sort_order: item.sort_order
         }));
 
-        let { error: itemsError } = await supabase
+        const { error: itemsError } = await supabase
           .from('proforma_items')
           .insert(proformaItems);
 
