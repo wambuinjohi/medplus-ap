@@ -15,6 +15,8 @@ export interface QuotationItem {
   tax_inclusive?: boolean;
   line_total: number;
   sort_order?: number;
+  batch_no?: string;
+  expiry_date?: string;
 }
 
 export interface InvoiceItem {
@@ -31,6 +33,8 @@ export interface InvoiceItem {
   tax_inclusive?: boolean;
   line_total: number;
   sort_order?: number;
+  batch_no?: string;
+  expiry_date?: string;
 }
 
 // Calculate line item totals with tax
@@ -304,7 +308,9 @@ export const useConvertQuotationToInvoice = () => {
         notes: quotation.notes,
         terms_and_conditions: quotation.terms_and_conditions,
         affects_inventory: true,
-        created_by: createdBy
+        created_by: createdBy,
+        batch_no: quotation.batch_no,
+        expiry_date: quotation.expiry_date
       };
 
       let { data: invoice, error: invoiceError } = await supabase

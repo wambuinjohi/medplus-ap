@@ -62,6 +62,8 @@ interface Quotation {
   tax_amount?: number;
   notes?: string;
   terms_and_conditions?: string;
+  batch_no?: string;
+  expiry_date?: string;
 }
 
 function getStatusColor(status: string) {
