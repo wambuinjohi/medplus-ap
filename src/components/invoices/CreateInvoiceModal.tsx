@@ -49,6 +49,8 @@ interface InvoiceItem {
   tax_amount: number;
   tax_inclusive: boolean;
   line_total: number;
+  batch_no?: string;
+  expiry_date?: string | null;
 }
 
 interface CreateInvoiceModalProps {
@@ -65,9 +67,11 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
     new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
   );
   const [lpoNumber, setLpoNumber] = useState('');
+  const [batchNo, setBatchNo] = useState('');
+  const [expiryDate, setExpiryDate] = useState('');
   const [notes, setNotes] = useState('');
   const [termsAndConditions, setTermsAndConditions] = useState(getTermsAndConditions());
-  
+
   const [items, setItems] = useState<InvoiceItem[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitProgress, setSubmitProgress] = useState<{
@@ -126,15 +130,17 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
     const newItem: InvoiceItem = {
       id: `temp-${Date.now()}`,
       product_id: product.id,
-      product_name: product.name, // Store product name for historical record
+      product_name: product.name,
       description: product.description || product.name,
       quantity: 1,
       unit_price: price,
       discount_before_vat: 0,
-      tax_percentage: defaultTaxRate, // Auto-apply default tax rate
+      tax_percentage: defaultTaxRate,
       tax_amount: 0,
-      tax_inclusive: true, // Default to tax inclusive for easier pricing
-      line_total: price
+      tax_inclusive: true,
+      line_total: price,
+      batch_no: '',
+      expiry_date: null
     };
 
     // Calculate initial tax and line total with default tax
@@ -252,6 +258,14 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
     }));
   };
 
+  const updateItemBatchNo = (itemId: string, batchNo: string) => {
+    setItems(items.map(item => item.id === itemId ? { ...item, batch_no: batchNo } : item));
+  };
+
+  const updateItemExpiryDate = (itemId: string, expiryDate: string | null) => {
+    setItems(items.map(item => item.id === itemId ? { ...item, expiry_date: expiryDate } : item));
+  };
+
   const removeItem = (itemId: string) => {
     setItems(items.filter(item => item.id !== itemId));
   };
@@ -354,6 +368,8 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
         total_amount: totalAmount,
         paid_amount: 0,
         balance_due: balanceDue,
+        batch_no: batchNo || 'N/A',
+        expiry_date: expiryDate || null,
         terms_and_conditions: termsAndConditions,
         notes: notes,
         created_by: profile?.id
@@ -368,7 +384,9 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
         tax_percentage: item.tax_percentage,
         tax_amount: item.tax_amount,
         tax_inclusive: item.tax_inclusive,
-        line_total: item.line_total
+        line_total: item.line_total,
+        batch_no: item.batch_no || 'N/A',
+        expiry_date: item.expiry_date || null
       }));
 
       // Step 3: Create invoice and items
@@ -432,6 +450,8 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
     setInvoiceDate(new Date().toISOString().split('T')[0]);
     setDueDate(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
     setLpoNumber('');
+    setBatchNo('');
+    setExpiryDate('');
     setNotes('');
     setTermsAndConditions(getTermsAndConditions());
     setItems([]);
@@ -511,6 +531,29 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
                     value={lpoNumber}
                     onChange={(e) => setLpoNumber(e.target.value)}
                     placeholder="Enter LPO reference number"
+                  />
+                </div>
+
+                {/* Batch Number */}
+                <div className="space-y-2">
+                  <Label htmlFor="batch_no">Batch Number (Optional)</Label>
+                  <Input
+                    id="batch_no"
+                    type="text"
+                    value={batchNo}
+                    onChange={(e) => setBatchNo(e.target.value)}
+                    placeholder="Enter batch number"
+                  />
+                </div>
+
+                {/* Expiry Date */}
+                <div className="space-y-2">
+                  <Label htmlFor="expiry_date">Expiry Date (Optional)</Label>
+                  <Input
+                    id="expiry_date"
+                    type="date"
+                    value={expiryDate}
+                    onChange={(e) => setExpiryDate(e.target.value)}
                   />
                 </div>
 
@@ -629,6 +672,8 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
                     <TableHead>Disc. Before VAT (%)</TableHead>
                     <TableHead>VAT %</TableHead>
                     <TableHead>VAT Incl.</TableHead>
+                    <TableHead>Batch No</TableHead>
+                    <TableHead>Expiry Date</TableHead>
                     <TableHead>Line Total</TableHead>
                     <TableHead></TableHead>
                   </TableRow>
@@ -687,6 +732,23 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
                         <Checkbox
                           checked={item.tax_inclusive}
                           onCheckedChange={(checked) => updateItemTaxInclusive(item.id, !!checked)}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          type="text"
+                          value={item.batch_no || ''}
+                          onChange={(e) => updateItemBatchNo(item.id, e.target.value)}
+                          className="w-24"
+                          placeholder="Batch"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          type="date"
+                          value={item.expiry_date || ''}
+                          onChange={(e) => updateItemExpiryDate(item.id, e.target.value || null)}
+                          className="w-32"
                         />
                       </TableCell>
                       <TableCell className="font-semibold">
