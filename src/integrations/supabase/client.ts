@@ -24,12 +24,44 @@ if (!SUPABASE_PUBLISHABLE_KEY || SUPABASE_PUBLISHABLE_KEY === 'undefined') {
 
 console.log('✅ Supabase client initializing with URL:', SUPABASE_URL.substring(0, 30) + '...');
 
+// Custom storage that handles sandbox environments
+const createSafeStorage = () => {
+  const memoryStore: Record<string, string> = {};
+
+  return {
+    getItem: (key: string) => {
+      try {
+        return localStorage.getItem(key) || memoryStore[key] || null;
+      } catch (e) {
+        console.warn('localStorage unavailable, using memory storage:', e);
+        return memoryStore[key] || null;
+      }
+    },
+    setItem: (key: string, value: string) => {
+      try {
+        localStorage.setItem(key, value);
+      } catch (e) {
+        console.warn('localStorage unavailable, using memory storage:', e);
+      }
+      memoryStore[key] = value;
+    },
+    removeItem: (key: string) => {
+      try {
+        localStorage.removeItem(key);
+      } catch (e) {
+        console.warn('localStorage unavailable, using memory storage:', e);
+      }
+      delete memoryStore[key];
+    },
+  };
+};
+
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
-    storage: localStorage,
+    storage: createSafeStorage(),
     persistSession: true,
     autoRefreshToken: true,
   }
