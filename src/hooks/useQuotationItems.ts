@@ -216,6 +216,8 @@ export const useUpdateQuotationWithItems = () => {
           subtotal: quotation.subtotal,
           tax_amount: quotation.tax_amount,
           total_amount: quotation.total_amount,
+          batch_no: quotation.batch_no || 'N/A',
+          expiry_date: quotation.expiry_date,
         })
         .eq('id', quotationId)
         .select()
@@ -244,7 +246,9 @@ export const useUpdateQuotationWithItems = () => {
           tax_amount: item.tax_amount || 0,
           tax_inclusive: item.tax_inclusive || false,
           line_total: item.line_total,
-          sort_order: index + 1
+          sort_order: index + 1,
+          batch_no: item.batch_no || 'N/A',
+          expiry_date: item.expiry_date
         }));
 
         const { error: itemsError } = await supabase
@@ -347,7 +351,9 @@ export const useConvertQuotationToInvoice = () => {
           tax_amount: item.tax_amount,
           tax_inclusive: item.tax_inclusive,
           line_total: item.line_total,
-          sort_order: item.sort_order
+          sort_order: item.sort_order,
+          batch_no: item.batch_no || 'N/A',
+          expiry_date: item.expiry_date
         }));
         
         let itemsError: any = null;
@@ -485,7 +491,9 @@ export const useCreateInvoiceWithItems = () => {
         const invoiceItems = items.map((item, index) => ({
           ...item,
           invoice_id: invoiceData.id,
-          sort_order: index + 1
+          sort_order: index + 1,
+          batch_no: item.batch_no || 'N/A',
+          expiry_date: item.expiry_date
         }));
 
         let itemsError: any = null;
@@ -657,7 +665,9 @@ export const useUpdateInvoiceWithItems = () => {
         const invoiceItems = items.map((item, index) => ({
           ...item,
           invoice_id: invoiceId,
-          sort_order: index + 1
+          sort_order: index + 1,
+          batch_no: item.batch_no || 'N/A',
+          expiry_date: item.expiry_date
         }));
 
         let itemsError: any = null;

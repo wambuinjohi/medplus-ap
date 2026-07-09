@@ -44,6 +44,8 @@ interface QuotationItem {
   vat_percentage: number;
   vat_inclusive: boolean;
   line_total: number;
+  batch_no?: string;
+  expiry_date?: string | null;
 }
 
 interface CreateQuotationModalProps {
@@ -132,7 +134,9 @@ export function CreateQuotationModal({ open, onOpenChange, onSuccess }: CreateQu
       unit_price: product.selling_price,
       vat_percentage: 0,
       vat_inclusive: false,
-      line_total: calculateItemTotal(1, product.selling_price, 0, false)
+      line_total: calculateItemTotal(1, product.selling_price, 0, false),
+      batch_no: '',
+      expiry_date: null
     };
 
     setItems([...items, newItem]);
@@ -196,6 +200,24 @@ export function CreateQuotationModal({ open, onOpenChange, onSuccess }: CreateQu
 
   const removeItem = (itemId: string) => {
     setItems(items.filter(item => item.id !== itemId));
+  };
+
+  const updateItemBatchNo = (itemId: string, batchNo: string) => {
+    setItems(items.map(item => {
+      if (item.id === itemId) {
+        return { ...item, batch_no: batchNo };
+      }
+      return item;
+    }));
+  };
+
+  const updateItemExpiryDate = (itemId: string, expiryDate: string | null) => {
+    setItems(items.map(item => {
+      if (item.id === itemId) {
+        return { ...item, expiry_date: expiryDate };
+      }
+      return item;
+    }));
   };
 
   const formatCurrency = (amount: number) => {
@@ -309,7 +331,9 @@ export function CreateQuotationModal({ open, onOpenChange, onSuccess }: CreateQu
           tax_percentage: item.vat_percentage || 0,
           tax_amount: calculateTaxAmount(item),
           tax_inclusive: item.vat_inclusive || false,
-          line_total: item.line_total
+          line_total: item.line_total,
+          batch_no: item.batch_no || 'N/A',
+          expiry_date: item.expiry_date || null
         };
       });
       console.log('Quotation items prepared:', quotationItems);
@@ -565,6 +589,8 @@ export function CreateQuotationModal({ open, onOpenChange, onSuccess }: CreateQu
                     <TableHead>Unit Price</TableHead>
                     <TableHead>VAT %</TableHead>
                     <TableHead>VAT Incl.</TableHead>
+                    <TableHead>Batch No</TableHead>
+                    <TableHead>Expiry Date</TableHead>
                     <TableHead>Line Total</TableHead>
                     <TableHead></TableHead>
                   </TableRow>
@@ -613,6 +639,23 @@ export function CreateQuotationModal({ open, onOpenChange, onSuccess }: CreateQu
                         <Checkbox
                           checked={item.vat_inclusive}
                           onCheckedChange={(checked) => updateItemVATInclusive(item.id, !!checked)}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          type="text"
+                          value={item.batch_no || ''}
+                          onChange={(e) => updateItemBatchNo(item.id, e.target.value)}
+                          className="w-24"
+                          placeholder="Batch"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          type="date"
+                          value={item.expiry_date || ''}
+                          onChange={(e) => updateItemExpiryDate(item.id, e.target.value || null)}
+                          className="w-28"
                         />
                       </TableCell>
                       <TableCell className="font-semibold">

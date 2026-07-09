@@ -276,6 +276,8 @@ export const useCreateProforma = () => {
           tax_amount: item.tax_amount,
           tax_inclusive: item.tax_inclusive,
           line_total: item.line_total,
+          batch_no: item.batch_no || 'N/A',
+          expiry_date: item.expiry_date,
         }));
 
         let { error: itemsError } = await supabase
@@ -296,6 +298,8 @@ export const useCreateProforma = () => {
             discount_percentage: item.discount_percentage || 0,
             line_total: item.line_total,
             sort_order: index + 1,
+            batch_no: item.batch_no || 'N/A',
+            expiry_date: item.expiry_date,
           }));
 
           // If discount_percentage column is missing, remove it too
@@ -409,6 +413,8 @@ export const useUpdateProforma = () => {
             tax_amount: item.tax_amount,
             tax_inclusive: item.tax_inclusive,
             line_total: item.line_total,
+            batch_no: item.batch_no || 'N/A',
+            expiry_date: item.expiry_date,
           }));
 
           const { error: itemsError } = await supabase
@@ -649,7 +655,9 @@ export const useConvertProformaToInvoice = () => {
         notes: `Converted from proforma invoice ${proforma.proforma_number}`,
         terms_and_conditions: proforma.terms_and_conditions,
         affects_inventory: true,
-        created_by: createdBy
+        created_by: createdBy,
+        batch_no: proforma.batch_no,
+        expiry_date: proforma.expiry_date
       };
 
       let { data: invoice, error: invoiceError } = await supabase
@@ -684,6 +692,8 @@ export const useConvertProformaToInvoice = () => {
           tax_amount: item.tax_amount,
           tax_inclusive: item.tax_inclusive,
           line_total: item.line_total,
+          batch_no: item.batch_no || 'N/A',
+          expiry_date: item.expiry_date
         }));
 
         const { error: itemsError } = await supabase
