@@ -104,7 +104,7 @@ export function CreateCreditNoteModal({
 
   const { data: companies, isLoading: loadingCompanies, error: companiesError } = useCompanies();
   const companyId = companies?.[0]?.id;
-  
+
   const { data: customers, isLoading: loadingCustomers } = useCustomers(companyId);
   const { data: products, isLoading: loadingProducts } = useProducts(companyId);
   const { data: taxSettings } = useTaxSettings(companyId);
@@ -112,10 +112,23 @@ export function CreateCreditNoteModal({
   const createCreditNoteWithItems = useCreateCreditNoteWithItems();
   const generateCreditNoteNumber = useGenerateCreditNoteNumber();
   const applyCreditNoteToInvoice = useApplyCreditNoteToInvoice();
-  const { data: customerInvoices = [] } = useCustomerInvoices(selectedCustomerId || undefined, companyId);
+  const { data: customerInvoices = [], isLoading: loadingCustomerInvoices, error: customerInvoicesError } = useCustomerInvoices(selectedCustomerId || undefined, companyId);
   const { data: invoiceItems = [], isLoading: loadingInvoiceItems } = useInvoiceItems(
     selectedInvoiceId && selectedInvoiceId !== 'none' ? selectedInvoiceId : undefined
   );
+
+  // Debug logging
+  useEffect(() => {
+    if (selectedCustomerId && companyId) {
+      console.log('Fetching invoices for customer:', selectedCustomerId, 'company:', companyId);
+    }
+  }, [selectedCustomerId, companyId]);
+
+  useEffect(() => {
+    if (customerInvoicesError) {
+      console.error('Customer invoices error:', customerInvoicesError);
+    }
+  }, [customerInvoicesError]);
 
   // Get default tax rate
   const defaultTax = taxSettings?.find(tax => tax.is_default && tax.is_active);
@@ -643,12 +656,22 @@ export function CreateCreditNoteModal({
                   <div className="space-y-3">
                     <div className="space-y-2">
                       <Label htmlFor="invoice">Related Invoice (Optional)</Label>
-                      <Select value={selectedInvoiceId} onValueChange={setSelectedInvoiceId}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select an invoice (optional)" />
+                      <Select value={selectedInvoiceId} onValueChange={setSelectedInvoiceId} disabled={loadingCustomerInvoices}>
+                        <SelectTrigger className={loadingCustomerInvoices ? 'opacity-60' : ''}>
+                          <SelectValue placeholder={loadingCustomerInvoices ? "Loading invoices..." : "Select an invoice (optional)"} />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="none">No specific invoice</SelectItem>
+                          {customerInvoicesError && (
+                            <SelectItem value="error" disabled>
+                              Error loading invoices
+                            </SelectItem>
+                          )}
+                          {customerInvoices.length === 0 && !loadingCustomerInvoices && (
+                            <SelectItem value="no-invoices" disabled>
+                              No invoices with outstanding balance
+                            </SelectItem>
+                          )}
                           {customerInvoices.map((invoice) => (
                             <SelectItem key={invoice.id} value={invoice.id}>
                               {invoice.invoice_number} - {formatCurrency(invoice.balance_due || 0)} due
