@@ -238,6 +238,18 @@ export function ViewInvoiceModal({
                     {formatCurrency(invoice.balance_due || 0)}
                   </div>
                 </div>
+                {invoice.batch_no && (
+                  <div>
+                    <span className="text-muted-foreground">Batch No:</span>
+                    <div className="font-medium">{invoice.batch_no}</div>
+                  </div>
+                )}
+                {invoice.expiry_date && (
+                  <div>
+                    <span className="text-muted-foreground">Expiry Date:</span>
+                    <div className="font-medium">{formatDate(invoice.expiry_date)}</div>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -267,6 +279,8 @@ export function ViewInvoiceModal({
                     <TableHead>Unit Price</TableHead>
                     <TableHead>Discount %</TableHead>
                     <TableHead>Tax %</TableHead>
+                    <TableHead>Batch No</TableHead>
+                    <TableHead>Expiry Date</TableHead>
                     <TableHead className="text-right">Line Total</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -287,6 +301,8 @@ export function ViewInvoiceModal({
                       <TableCell>{formatCurrency(item.unit_price)}</TableCell>
                       <TableCell>{item.discount_percentage || 0}%</TableCell>
                       <TableCell>{item.tax_percentage || 0}%</TableCell>
+                      <TableCell>{item.batch_no || '-'}</TableCell>
+                      <TableCell>{item.expiry_date ? formatDate(item.expiry_date) : '-'}</TableCell>
                       <TableCell className="text-right font-semibold">
                         {formatCurrency(item.line_total)}
                       </TableCell>

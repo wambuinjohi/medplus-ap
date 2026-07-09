@@ -327,6 +327,18 @@ export function ViewQuotationModal({
                     <span>{formatDate(quotation.valid_until)}</span>
                   </div>
                 )}
+                {quotation.batch_no && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Batch No:</span>
+                    <span>{quotation.batch_no}</span>
+                  </div>
+                )}
+                {quotation.expiry_date && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Expiry Date:</span>
+                    <span>{formatDate(quotation.expiry_date)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Total Amount:</span>
                   <span className="font-semibold text-primary">{formatCurrency(quotation.total_amount || 0)}</span>
@@ -350,6 +362,8 @@ export function ViewQuotationModal({
                       <TableHead className="text-center">Unit Pack</TableHead>
                       <TableHead className="text-right">Unit Price</TableHead>
                       <TableHead className="text-center">Discount %</TableHead>
+                      <TableHead>Batch No</TableHead>
+                      <TableHead>Expiry Date</TableHead>
                       <TableHead className="text-right">Total Price</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -368,6 +382,8 @@ export function ViewQuotationModal({
                         <TableCell className="text-center">{item.products?.unit_of_measure || 'Each'}</TableCell>
                         <TableCell className="text-right">{formatCurrency(item.unit_price)}</TableCell>
                         <TableCell className="text-center">{item.discount_percentage || 0}%</TableCell>
+                        <TableCell>{item.batch_no || '-'}</TableCell>
+                        <TableCell>{item.expiry_date ? formatDate(item.expiry_date) : '-'}</TableCell>
                         <TableCell className="text-right font-semibold">{formatCurrency(item.line_total)}</TableCell>
                       </TableRow>
                     ))}
