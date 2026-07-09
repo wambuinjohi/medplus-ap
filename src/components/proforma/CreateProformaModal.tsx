@@ -45,6 +45,8 @@ interface ProformaItem {
   tax_amount: number;
   tax_inclusive: boolean;
   line_total: number;
+  batch_no?: string;
+  expiry_date?: string | null;
 }
 
 interface CreateProformaModalProps {
@@ -132,6 +134,8 @@ export const CreateProformaModal = ({
       tax_amount: 0,
       tax_inclusive: false,
       line_total: 0,
+      batch_no: product.batch_no || '',
+      expiry_date: product.expiry_date || null
     };
 
     // Calculate tax and totals
@@ -185,6 +189,14 @@ export const CreateProformaModal = ({
       tax_amount: parseFloat(taxAmount.toFixed(2)),
       line_total: parseFloat(lineTotal.toFixed(2))
     };
+  };
+
+  const updateItemBatchNo = (itemId: string, batchNo: string) => {
+    updateItem(itemId, 'batch_no', batchNo);
+  };
+
+  const updateItemExpiryDate = (itemId: string, expiryDate: string | null) => {
+    updateItem(itemId, 'expiry_date', expiryDate || null);
   };
 
   const removeItem = (id: string) => {
@@ -471,6 +483,8 @@ export const CreateProformaModal = ({
                       <TableHead>Unit Price</TableHead>
                       <TableHead>Tax %</TableHead>
                       <TableHead>Tax Incl.</TableHead>
+                      <TableHead>Batch No</TableHead>
+                      <TableHead>Expiry Date</TableHead>
                       <TableHead>Total</TableHead>
                       <TableHead></TableHead>
                     </TableRow>
@@ -523,6 +537,23 @@ export const CreateProformaModal = ({
                           <Checkbox
                             checked={item.tax_inclusive}
                             onCheckedChange={(checked) => updateItem(item.id, 'tax_inclusive', checked)}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            type="text"
+                            value={item.batch_no || ''}
+                            onChange={(e) => updateItemBatchNo(item.id, e.target.value)}
+                            placeholder="Batch"
+                            className="w-24"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            type="date"
+                            value={item.expiry_date || ''}
+                            onChange={(e) => updateItemExpiryDate(item.id, e.target.value || null)}
+                            className="w-28"
                           />
                         </TableCell>
                         <TableCell>${item.line_total.toFixed(2)}</TableCell>
