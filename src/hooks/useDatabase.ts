@@ -134,6 +134,8 @@ export interface Invoice {
   affects_inventory?: boolean;
   created_at?: string;
   updated_at?: string;
+  batch_no?: string;
+  expiry_date?: string;
 }
 
 export interface Payment {
@@ -161,6 +163,8 @@ export interface RemittanceAdvice {
   notes?: string;
   created_at?: string;
   updated_at?: string;
+  batch_no?: string;
+  expiry_date?: string;
 }
 
 export interface DeliveryNote {
@@ -182,6 +186,8 @@ export interface DeliveryNote {
   invoice_number?: string;
   created_at?: string;
   updated_at?: string;
+  batch_no?: string;
+  expiry_date?: string;
   // Related data
   customers?: {
     name: string;
@@ -209,6 +215,8 @@ export interface DeliveryNoteItem {
   sort_order?: number;
   created_at?: string;
   updated_at?: string;
+  batch_no?: string;
+  expiry_date?: string;
   // Related data
   products?: {
     name: string;
@@ -235,6 +243,8 @@ export interface LPO {
   created_by?: string;
   created_at?: string;
   updated_at?: string;
+  batch_no?: string;
+  expiry_date?: string;
   // Related data
   suppliers?: {
     name: string;
@@ -257,6 +267,8 @@ export interface LPOItem {
   line_total: number;
   notes?: string;
   sort_order: number;
+  batch_no?: string;
+  expiry_date?: string;
   // Related data
   products?: {
     name: string;
