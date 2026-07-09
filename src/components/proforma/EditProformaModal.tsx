@@ -46,6 +46,8 @@ interface ProformaItem {
   tax_amount: number;
   tax_inclusive: boolean;
   line_total: number;
+  batch_no?: string;
+  expiry_date?: string;
 }
 
 interface Proforma {
@@ -140,6 +142,8 @@ export const EditProformaModal = ({
       tax_amount: 0,
       tax_inclusive: false,
       line_total: 0,
+      batch_no: '',
+      expiry_date: '',
     };
 
     // Calculate tax and totals
@@ -434,6 +438,8 @@ export const EditProformaModal = ({
                       <TableHead>Unit Price</TableHead>
                       <TableHead>Tax %</TableHead>
                       <TableHead>Tax Incl.</TableHead>
+                      <TableHead>Batch No</TableHead>
+                      <TableHead>Expiry Date</TableHead>
                       <TableHead>Total</TableHead>
                       <TableHead></TableHead>
                     </TableRow>
@@ -486,6 +492,23 @@ export const EditProformaModal = ({
                           <Checkbox
                             checked={item.tax_inclusive}
                             onCheckedChange={(checked) => updateItem(item.id, 'tax_inclusive', checked)}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            type="text"
+                            value={item.batch_no || ''}
+                            onChange={(e) => updateItem(item.id, 'batch_no', e.target.value)}
+                            placeholder="Batch"
+                            className="w-24"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            type="date"
+                            value={item.expiry_date || ''}
+                            onChange={(e) => updateItem(item.id, 'expiry_date', e.target.value)}
+                            className="w-28"
                           />
                         </TableCell>
                         <TableCell>${item.line_total.toFixed(2)}</TableCell>

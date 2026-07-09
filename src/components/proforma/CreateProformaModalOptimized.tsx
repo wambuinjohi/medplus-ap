@@ -139,6 +139,8 @@ export const CreateProformaModalOptimized = ({
       tax_amount: 0,
       tax_inclusive: false,
       line_total: 0,
+      batch_no: '',
+      expiry_date: '',
     };
 
     const calculatedItem = calculateItemTax(newItem);
@@ -439,6 +441,8 @@ export const CreateProformaModalOptimized = ({
                         <TableHead>Unit Price</TableHead>
                         <TableHead>Tax %</TableHead>
                         <TableHead>Tax Incl.</TableHead>
+                        <TableHead>Batch No</TableHead>
+                        <TableHead>Expiry Date</TableHead>
                         <TableHead>Total</TableHead>
                         <TableHead></TableHead>
                       </TableRow>
@@ -490,6 +494,23 @@ export const CreateProformaModalOptimized = ({
                             <Checkbox
                               checked={item.tax_inclusive}
                               onCheckedChange={(checked) => updateItem(item.id!, 'tax_inclusive', checked)}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              type="text"
+                              value={item.batch_no || ''}
+                              onChange={(e) => updateItem(item.id!, 'batch_no', e.target.value)}
+                              placeholder="Batch"
+                              className="w-24"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              type="date"
+                              value={item.expiry_date || ''}
+                              onChange={(e) => updateItem(item.id!, 'expiry_date', e.target.value)}
+                              className="w-28"
                             />
                           </TableCell>
                           <TableCell>{formatCurrency(item.line_total)}</TableCell>
