@@ -11,7 +11,7 @@ export function useCreditNotePDFDownload() {
 
   return useMutation({
     mutationFn: async (creditNote: CreditNotePDFData) => {
-      // Fetch credit note allocations if not already included
+      // Fetch credit note allocations with full invoice details if not already included
       if (!creditNote.credit_note_allocations) {
         try {
           const { data: allocations, error } = await supabase
@@ -19,7 +19,22 @@ export function useCreditNotePDFDownload() {
             .select(`
               *,
               invoices!invoice_id (
-                invoice_number
+                id,
+                invoice_number,
+                invoice_date,
+                subtotal,
+                tax_amount,
+                total_amount,
+                balance_due,
+                invoice_items (
+                  id,
+                  description,
+                  quantity,
+                  unit_price,
+                  tax_percentage,
+                  tax_amount,
+                  line_total
+                )
               )
             `)
             .eq('credit_note_id', creditNote.id)
@@ -30,6 +45,40 @@ export function useCreditNotePDFDownload() {
           }
         } catch (err) {
           console.warn('Failed to fetch credit note allocations:', err);
+        }
+      }
+
+      // Fetch directly linked invoice details if not already included
+      if (creditNote.invoice_id && !creditNote.invoices) {
+        try {
+          const { data: invoice, error } = await supabase
+            .from('invoices')
+            .select(`
+              id,
+              invoice_number,
+              invoice_date,
+              subtotal,
+              tax_amount,
+              total_amount,
+              balance_due,
+              invoice_items (
+                id,
+                description,
+                quantity,
+                unit_price,
+                tax_percentage,
+                tax_amount,
+                line_total
+              )
+            `)
+            .eq('id', creditNote.invoice_id)
+            .single();
+
+          if (!error && invoice) {
+            creditNote.invoices = invoice as any;
+          }
+        } catch (err) {
+          console.warn('Failed to fetch related invoice details:', err);
         }
       }
 
