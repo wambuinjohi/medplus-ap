@@ -50,10 +50,10 @@ export function DeleteCreditNoteModal({
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2 text-destructive">
             <AlertTriangle className="h-5 w-5" />
-            <span>Delete Credit Note</span>
+            <span>Delete Credit Note Entirely</span>
           </DialogTitle>
           <DialogDescription>
-            This action cannot be undone. Please review the details before confirming.
+            This will permanently delete the credit note and reverse all allocations. This action cannot be undone.
           </DialogDescription>
         </DialogHeader>
 

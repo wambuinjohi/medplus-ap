@@ -19,12 +19,23 @@ import {
   Download,
   Printer,
   Send,
-  Link
+  Link,
+  Undo2
 } from 'lucide-react';
 import type { CreditNote } from '@/hooks/useCreditNotes';
-import { useCreditNotePDFDownload } from '@/hooks/useCreditNotePDF';
+import { useCreditNotePDFDownload, useUnapplyCreditNoteAllocation } from '@/hooks/useCreditNotes';
 import { useCreditNoteAllocations } from '@/hooks/useCreditNotes';
 import { TermsAndConditions } from '@/components/ui/TermsAndConditions';
+import { useState } from 'react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface ViewCreditNoteModalProps {
   open: boolean;
@@ -35,8 +46,13 @@ interface ViewCreditNoteModalProps {
 export function ViewCreditNoteModal({ open, onOpenChange, creditNote }: ViewCreditNoteModalProps) {
   const downloadPDF = useCreditNotePDFDownload();
   const { data: allocations } = useCreditNoteAllocations(creditNote?.id);
+  const unapplyCreditNote = useUnapplyCreditNoteAllocation();
+  const [selectedAllocationId, setSelectedAllocationId] = useState<string | null>(null);
+  const [showUnapplyConfirm, setShowUnapplyConfirm] = useState(false);
 
   if (!creditNote) return null;
+
+  const selectedAllocation = allocations?.find(a => a.id === selectedAllocationId);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-KE', {
@@ -59,6 +75,23 @@ export function ViewCreditNoteModal({ open, onOpenChange, creditNote }: ViewCred
         return 'bg-destructive-light text-destructive border-destructive/20';
       default:
         return 'bg-muted text-muted-foreground border-muted-foreground/20';
+    }
+  };
+
+  const handleUnapply = async () => {
+    if (!selectedAllocation) return;
+
+    try {
+      await unapplyCreditNote.mutateAsync({
+        allocationId: selectedAllocation.id,
+        creditNoteId: creditNote.id,
+        invoiceId: selectedAllocation.invoice_id,
+        allocatedAmount: selectedAllocation.allocated_amount
+      });
+      setShowUnapplyConfirm(false);
+      setSelectedAllocationId(null);
+    } catch (error) {
+      console.error('Error unapplying allocation:', error);
     }
   };
 
@@ -154,6 +187,7 @@ export function ViewCreditNoteModal({ open, onOpenChange, creditNote }: ViewCred
                       <TableHead>Invoice Number</TableHead>
                       <TableHead>Applied Date</TableHead>
                       <TableHead className="text-right">Allocated Amount</TableHead>
+                      <TableHead className="w-24">Action</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -167,6 +201,20 @@ export function ViewCreditNoteModal({ open, onOpenChange, creditNote }: ViewCred
                         </TableCell>
                         <TableCell className="text-right font-semibold text-success">
                           {formatCurrency(allocation.allocated_amount)}
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedAllocationId(allocation.id);
+                              setShowUnapplyConfirm(true);
+                            }}
+                            disabled={unapplyCreditNote.isPending}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <Undo2 className="h-4 w-4" />
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -299,6 +347,31 @@ export function ViewCreditNoteModal({ open, onOpenChange, creditNote }: ViewCred
           </div>
         </div>
       </DialogContent>
+
+      {/* Unapply Confirmation Dialog */}
+      <AlertDialog open={showUnapplyConfirm} onOpenChange={setShowUnapplyConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reverse Allocation?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will unapply {formatCurrency(selectedAllocation?.allocated_amount || 0)} from invoice {selectedAllocation?.invoices?.invoice_number}. The invoice balance will be restored and the credit note balance will be increased.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="bg-muted p-3 rounded-md text-sm space-y-1">
+            <p><strong>Invoice:</strong> {selectedAllocation?.invoices?.invoice_number}</p>
+            <p><strong>Allocated Amount:</strong> {formatCurrency(selectedAllocation?.allocated_amount || 0)}</p>
+            <p><strong>Applied Date:</strong> {selectedAllocation ? new Date(selectedAllocation.allocation_date).toLocaleDateString() : 'N/A'}</p>
+          </div>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={handleUnapply}
+            disabled={unapplyCreditNote.isPending}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            {unapplyCreditNote.isPending ? 'Reversing...' : 'Reverse Allocation'}
+          </AlertDialogAction>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }

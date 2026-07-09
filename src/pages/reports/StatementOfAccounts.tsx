@@ -175,11 +175,17 @@ const StatementOfAccounts = () => {
         paybill_number: currentCompany.paybill_number
       } : undefined;
 
-      // Generate PDF with real data (pass credit notes as part of options)
-      await generateCustomerStatementPDF(customer, customerInvoices, customerPayments, {
-        statement_date: new Date().toISOString().split('T')[0],
-        creditNotes: customerCreditNotes
-      }, companyDetails);
+      // Generate PDF with real data including credit notes
+      await generateCustomerStatementPDF(
+        customer,
+        customerInvoices,
+        customerPayments,
+        {
+          statement_date: new Date().toISOString().split('T')[0]
+        },
+        companyDetails,
+        customerCreditNotes
+      );
 
       toast.success(`Statement PDF generated for ${statement.customerName}`);
     } catch (error) {

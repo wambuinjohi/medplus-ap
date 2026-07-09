@@ -1187,14 +1187,17 @@ export const downloadQuotationPDF = async (quotation: any, company?: CompanyDeta
 };
 
 // Function for generating customer statement PDF
-export const generateCustomerStatementPDF = async (customer: any, invoices: any[], payments: any[], statementData?: any, company?: CompanyDetails) => {
+export const generateCustomerStatementPDF = async (customer: any, invoices: any[], payments: any[], statementData?: any, company?: CompanyDetails, creditNotes: any[] = []) => {
   const today = new Date();
   const statementDate = statementData?.statement_date || today.toISOString().split('T')[0];
 
-  // Calculate outstanding amounts
+  // Calculate outstanding amounts (adjusted for credit notes)
+  const totalCreditNotes = creditNotes.reduce((sum, cn) =>
+    sum + (Number(cn.total_amount) || 0), 0
+  );
   const totalOutstanding = invoices.reduce((sum, inv) =>
     sum + ((inv.total_amount || 0) - (inv.paid_amount || 0)), 0
-  );
+  ) - totalCreditNotes;
 
   // Calculate aging buckets
   const current = invoices.filter(inv => {
@@ -1227,7 +1230,7 @@ export const generateCustomerStatementPDF = async (customer: any, invoices: any[
     return daysOverdue > 90 && (inv.total_amount - (inv.paid_amount || 0)) > 0;
   }).reduce((sum, inv) => sum + (inv.total_amount - (inv.paid_amount || 0)), 0);
 
-  // Create all transactions (invoices and payments) with running balance
+  // Create all transactions (invoices, payments, and credit notes) with running balance
   const allTransactions = [
     // Add all invoices as debits
     ...invoices.map(inv => ({
@@ -1247,6 +1250,18 @@ export const generateCustomerStatementPDF = async (customer: any, invoices: any[
       description: `Payment - ${pay.method || 'Cash'}`,
       debit: 0,
       credit: pay.amount || 0,
+      due_date: null
+    })),
+    // Add all credit notes as credits (reducing balance)
+    ...creditNotes.map(cn => ({
+      date: cn.credit_note_date,
+      type: 'credit_note',
+      reference: cn.credit_note_number,
+      description: cn.invoices?.invoice_number
+        ? `Credit Note ${cn.credit_note_number} - Applied to Invoice ${cn.invoices.invoice_number}`
+        : `Credit Note ${cn.credit_note_number}${cn.reason ? ` - ${cn.reason}` : ''}`,
+      debit: 0,
+      credit: cn.total_amount || 0,
       due_date: null
     }))
   ];
@@ -1306,7 +1321,7 @@ export const generateCustomerStatementPDF = async (customer: any, invoices: any[
     subtotal: finalBalance,
     tax_amount: 0,
     total_amount: finalBalance,
-    notes: `Statement of Account as of ${new Date(statementDate).toLocaleDateString()}\n\nThis statement shows all transactions including invoices (debits) and payments (credits) with running balance.\n\nAging Summary for Outstanding Invoices:\nCurrent: ${formatCurrency(current)}\n1-30 Days: ${formatCurrency(days30)}\n31-60 Days: ${formatCurrency(days60)}\n61-90 Days: ${formatCurrency(days90)}\nOver 90 Days: ${formatCurrency(over90)}`,
+    notes: `Statement of Account as of ${new Date(statementDate).toLocaleDateString()}\n\nThis statement shows all transactions including invoices (debits), payments (credits), and credit notes (credits) with running balance.\n\nTotal Credit Notes: ${formatCurrency(totalCreditNotes)}\n\nAging Summary for Outstanding Invoices:\nCurrent: ${formatCurrency(current)}\n1-30 Days: ${formatCurrency(days30)}\n31-60 Days: ${formatCurrency(days60)}\n61-90 Days: ${formatCurrency(days90)}\nOver 90 Days: ${formatCurrency(over90)}`,
     terms_and_conditions: 'Please remit payment for any outstanding amounts. Contact us if you have any questions about this statement.',
   };
 
