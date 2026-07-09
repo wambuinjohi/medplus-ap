@@ -709,7 +709,7 @@ export const useInvoices = (companyId?: string) => {
 
       try {
         // Step 1: Get invoices without embedded relationships
-        let query = supabase
+        const query = supabase
           .from('invoices')
           .select(`
             id,
@@ -951,7 +951,7 @@ export const usePayments = (companyId?: string) => {
 
       try {
         // Step 1: Get payments without embedded relationships
-        let query = supabase
+        const query = supabase
           .from('payments')
           .select(`
             id,
@@ -1815,7 +1815,7 @@ export const useQuotations = (companyId?: string) => {
 
       try {
         // Step 1: Get quotations without embedded relationships
-        let query = supabase
+        const query = supabase
           .from('quotations')
           .select(`
             id,
@@ -2695,7 +2695,7 @@ export const useUnitsOfMeasure = (companyId?: string) => {
     queryFn: async () => {
       if (!companyId) return [];
 
-      let query = supabase
+      const query = supabase
         .from('units_of_measure')
         .select('*')
         .eq('company_id', companyId)

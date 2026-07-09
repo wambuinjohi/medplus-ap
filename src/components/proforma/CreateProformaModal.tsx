@@ -194,7 +194,7 @@ export const CreateProformaModal = ({
   const updateItem = (id: string, field: keyof ProformaItem, value: any) => {
     setItems(prev => prev.map(item => {
       if (item.id === id) {
-        let updatedItem = { ...item, [field]: value };
+        const updatedItem = { ...item, [field]: value };
 
         if (field === 'tax_inclusive') {
           if (value && item.tax_percentage === 0) {

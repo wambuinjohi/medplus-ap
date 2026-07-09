@@ -23,8 +23,8 @@ import {
   Undo2
 } from 'lucide-react';
 import type { CreditNote } from '@/hooks/useCreditNotes';
-import { useCreditNotePDFDownload, useUnapplyCreditNoteAllocation } from '@/hooks/useCreditNotes';
-import { useCreditNoteAllocations } from '@/hooks/useCreditNotes';
+import { useUnapplyCreditNoteAllocation, useCreditNoteAllocations } from '@/hooks/useCreditNotes';
+import { useCreditNotePDFDownload } from '@/hooks/useCreditNotePDF';
 import { TermsAndConditions } from '@/components/ui/TermsAndConditions';
 import { useState } from 'react';
 import {

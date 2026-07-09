@@ -127,9 +127,9 @@ export function EditInvoiceModal({ open, onOpenChange, onSuccess, invoice }: Edi
     const discount = discountPercentage ?? item.discount_percentage;
     const tax = taxPercentage ?? item.tax_percentage;
 
-    let subtotal = qty * price;
-    let discountAmount = subtotal * (discount / 100);
-    let afterDiscount = subtotal - discountAmount;
+    const subtotal = qty * price;
+    const discountAmount = subtotal * (discount / 100);
+    const afterDiscount = subtotal - discountAmount;
 
     let taxAmount = 0;
     let lineTotal = 0;

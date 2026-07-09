@@ -72,11 +72,11 @@ async function insertAuditLog(entry: AuditLogEntry): Promise<void> {
       const retry = await supabase.from('audit_logs' as any).insert([entry]);
       if (retry.error) {
         // Swallow to not block operations; surface in console for diagnostics
-        // eslint-disable-next-line no-console
+         
         console.warn('Audit log insert failed:', retry.error?.message || retry.error);
       }
     } catch (e: any) {
-      // eslint-disable-next-line no-console
+       
       console.warn('Audit log ensure+insert failed:', e?.message || e);
     }
   }

@@ -102,7 +102,7 @@ export const useInvoicesFixed = (companyId?: string) => {
         }
 
         // Step 5b: Get product details separately if items exist
-        let productsMap = new Map();
+        const productsMap = new Map();
         if (invoiceItems && invoiceItems.length > 0) {
           const productIds = [...new Set(invoiceItems.map(item => item.product_id).filter(id => id))];
           if (productIds.length > 0) {
@@ -260,7 +260,7 @@ export const useCustomerInvoicesFixed = (customerId?: string, companyId?: string
         }
 
         // Get product details separately if items exist
-        let productsMap = new Map();
+        const productsMap = new Map();
         if (invoiceItems && invoiceItems.length > 0) {
           const productIds = [...new Set(invoiceItems.map(item => item.product_id).filter(id => id))];
           if (productIds.length > 0) {

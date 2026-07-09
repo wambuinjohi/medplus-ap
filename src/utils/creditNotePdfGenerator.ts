@@ -42,6 +42,107 @@ const resolveUnitOfMeasure = async (value: string | undefined): Promise<string> 
   return 'pcs';
 };
 
+// Helper to render invoice summary card
+const renderInvoiceSummaryCard = (invoice: InvoiceDetail, formatCurrency: (amount: number) => string, formatDate: (dateString: string) => string): string => {
+  return `
+    <div style="background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 6px; padding: 12px; margin-bottom: 15px;">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; font-size: 10px;">
+        <div>
+          <div style="color: #666; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Invoice #</div>
+          <div style="color: #212529; font-size: 12px; font-weight: bold;">${invoice.invoice_number}</div>
+        </div>
+        <div>
+          <div style="color: #666; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Date</div>
+          <div style="color: #212529;">${formatDate(invoice.invoice_date)}</div>
+        </div>
+        <div>
+          <div style="color: #666; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Original Total</div>
+          <div style="color: #212529; font-weight: 600;">${formatCurrency(invoice.total_amount)}</div>
+        </div>
+        <div>
+          <div style="color: #666; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Balance Due</div>
+          <div style="color: #2BB673; font-weight: 600;">${formatCurrency(invoice.balance_due)}</div>
+        </div>
+      </div>
+    </div>
+  `;
+};
+
+// Helper to render invoice items table
+const renderInvoiceItemsTable = (invoice: InvoiceDetail, formatCurrency: (amount: number) => string): string => {
+  if (!invoice.invoice_items || invoice.invoice_items.length === 0) {
+    return '';
+  }
+
+  return `
+    <div style="margin: 20px 0; page-break-inside: avoid;">
+      <table class="items-table" style="margin: 15px 0;">
+        <thead>
+          <tr>
+            <th style="width: 5%;">#</th>
+            <th style="width: 35%;">Description</th>
+            <th style="width: 8%;">Qty</th>
+            <th style="width: 12%;">Unit Price</th>
+            <th style="width: 8%;">Tax %</th>
+            <th style="width: 12%;">Tax Amount</th>
+            <th style="width: 12%;">Line Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${invoice.invoice_items.map((item, index) => `
+            <tr>
+              <td class="center">${index + 1}</td>
+              <td class="description-cell">${item.description}</td>
+              <td class="center">${item.quantity}</td>
+              <td class="amount-cell">${formatCurrency(item.unit_price)}</td>
+              <td class="center">${item.tax_percentage}%</td>
+              <td class="amount-cell">${formatCurrency(item.tax_amount)}</td>
+              <td class="amount-cell">${formatCurrency(item.line_total)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+      <div style="text-align: right; margin-top: 10px;">
+        <table style="width: 300px; margin-left: auto; border-collapse: collapse; font-size: 11px;">
+          <tr>
+            <td style="padding: 4px 10px; text-align: left; color: #495057;">Subtotal:</td>
+            <td style="padding: 4px 10px; text-align: right; color: #212529; font-weight: 500;">${formatCurrency(invoice.subtotal)}</td>
+          </tr>
+          <tr>
+            <td style="padding: 4px 10px; text-align: left; color: #495057; border-top: 1px solid #dee2e6;">Tax Amount:</td>
+            <td style="padding: 4px 10px; text-align: right; color: #212529; font-weight: 500; border-top: 1px solid #dee2e6;">${formatCurrency(invoice.tax_amount)}</td>
+          </tr>
+          <tr style="background: #f0f0f0;">
+            <td style="padding: 6px 10px; text-align: left; color: #212529; font-weight: bold; border-top: 2px solid #2BB673;">Invoice Total:</td>
+            <td style="padding: 6px 10px; text-align: right; color: #2BB673; font-weight: bold; border-top: 2px solid #2BB673;">${formatCurrency(invoice.total_amount)}</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  `;
+};
+
+export interface InvoiceItem {
+  id: string;
+  description: string;
+  quantity: number;
+  unit_price: number;
+  tax_percentage: number;
+  tax_amount: number;
+  line_total: number;
+}
+
+export interface InvoiceDetail {
+  id: string;
+  invoice_number: string;
+  invoice_date: string;
+  subtotal: number;
+  tax_amount: number;
+  total_amount: number;
+  balance_due: number;
+  invoice_items?: InvoiceItem[];
+}
+
 export interface CreditNotePDFData extends CreditNote {
   customers: {
     name: string;
@@ -65,9 +166,7 @@ export interface CreditNotePDFData extends CreditNote {
       product_code: string;
     };
   }>;
-  invoices?: {
-    invoice_number: string;
-  };
+  invoices?: InvoiceDetail;
   terms_and_conditions?: string;
   notes?: string;
   credit_note_allocations?: Array<{
@@ -75,9 +174,7 @@ export interface CreditNotePDFData extends CreditNote {
     invoice_id: string;
     allocated_amount: number;
     allocation_date: string;
-    invoices?: {
-      invoice_number: string;
-    };
+    invoices?: InvoiceDetail;
   }>;
 }
 
@@ -573,9 +670,54 @@ export const generateCreditNotePDF = async (creditNote: CreditNotePDFData, compa
           </div>
         </div>
 
-        <!-- Items Section -->
+        <!-- Related Invoice Details Section -->
+        ${creditNote.invoices ? `
+        <div style="margin: 30px 0; page-break-inside: avoid;">
+          <div class="section-title" style="margin-bottom: 15px;">Related Invoice Summary</div>
+          ${renderInvoiceSummaryCard(creditNote.invoices, formatCurrency, formatDate)}
+          ${renderInvoiceItemsTable(creditNote.invoices, formatCurrency)}
+        </div>
+        ` : ''}
+
+        <!-- Allocated Invoices Details Section -->
+        ${creditNote.credit_note_allocations && creditNote.credit_note_allocations.length > 0 && creditNote.credit_note_allocations.some(a => a.invoices) ? `
+        <div style="margin: 30px 0;">
+          <div class="section-title" style="margin-bottom: 15px;">Invoice Allocations Detail</div>
+          ${creditNote.credit_note_allocations.map((allocation, index) => {
+            if (!allocation.invoices) return '';
+            const newBalance = allocation.invoices.balance_due - allocation.allocated_amount;
+            return `
+            <div style="margin-bottom: 25px; page-break-inside: avoid;">
+              <div style="background: #e8f5e9; border-left: 4px solid #2BB673; padding: 10px; margin-bottom: 10px;">
+                <div style="font-weight: bold; color: #1b5e20; font-size: 11px;">Allocation ${index + 1}</div>
+                <div style="font-size: 10px; color: #2d4a2b; margin-top: 2px;">Applied: ${formatCurrency(allocation.allocated_amount)} on ${formatDate(allocation.allocation_date)}</div>
+              </div>
+              <div style="margin-left: 10px;">
+                ${renderInvoiceSummaryCard(allocation.invoices, formatCurrency, formatDate)}
+                ${renderInvoiceItemsTable(allocation.invoices, formatCurrency)}
+                <div style="text-align: right; margin-top: 12px; padding: 12px; background: #f5f5f5; border-radius: 4px;">
+                  <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                    <tr>
+                      <td style="padding: 4px 10px; text-align: left; width: 50%;">Applied via Credit Note:</td>
+                      <td style="padding: 4px 10px; text-align: right; font-weight: 600; color: #d32f2f;">${formatCurrency(allocation.allocated_amount)}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 6px 10px; text-align: left; border-top: 2px solid #2BB673; font-weight: bold;">New Balance:</td>
+                      <td style="padding: 6px 10px; text-align: right; border-top: 2px solid #2BB673; font-weight: bold; color: #2BB673;">${formatCurrency(newBalance)}</td>
+                    </tr>
+                  </table>
+                </div>
+              </div>
+            </div>
+            `;
+          }).join('')}
+        </div>
+        ` : ''}
+
+        <!-- Credit Note Items Section -->
         ${resolvedItems && resolvedItems.length > 0 ? `
         <div class="items-section">
+          <div class="section-title" style="margin-bottom: 15px;">Credit Note Items</div>
           <table class="items-table">
             <thead>
               <tr>
