@@ -572,11 +572,12 @@ export function CreateCreditNoteModal({
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-full p-0" side="bottom" align="start">
-                      <Command>
+                      <Command shouldFilter={false}>
                         <CommandInput
-                          placeholder="Search customers..."
+                          placeholder="Search customers by name or code..."
                           value={customerSearchValue}
                           onValueChange={setCustomerSearchValue}
+                          autoFocus
                         />
                         <CommandEmpty>No customers found.</CommandEmpty>
                         <CommandList>
@@ -1024,11 +1025,12 @@ export function CreateCreditNoteModal({
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-full p-0" side="bottom" align="start">
-                    <Command>
+                    <Command shouldFilter={false}>
                       <CommandInput
-                        placeholder="Search customers..."
+                        placeholder="Search customers by name or code..."
                         value={customerSearchValue}
                         onValueChange={setCustomerSearchValue}
+                        autoFocus
                       />
                       <CommandEmpty>No customers found.</CommandEmpty>
                       <CommandList>
