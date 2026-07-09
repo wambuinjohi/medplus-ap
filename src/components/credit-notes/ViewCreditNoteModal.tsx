@@ -18,10 +18,12 @@ import {
   Package,
   Download,
   Printer,
-  Send
+  Send,
+  Link
 } from 'lucide-react';
 import type { CreditNote } from '@/hooks/useCreditNotes';
 import { useCreditNotePDFDownload } from '@/hooks/useCreditNotePDF';
+import { useCreditNoteAllocations } from '@/hooks/useCreditNotes';
 import { TermsAndConditions } from '@/components/ui/TermsAndConditions';
 
 interface ViewCreditNoteModalProps {
@@ -32,6 +34,7 @@ interface ViewCreditNoteModalProps {
 
 export function ViewCreditNoteModal({ open, onOpenChange, creditNote }: ViewCreditNoteModalProps) {
   const downloadPDF = useCreditNotePDFDownload();
+  const { data: allocations } = useCreditNoteAllocations(creditNote?.id);
 
   if (!creditNote) return null;
 
@@ -134,6 +137,44 @@ export function ViewCreditNoteModal({ open, onOpenChange, creditNote }: ViewCred
               </CardContent>
             </Card>
           </div>
+
+          {/* Applied Invoices Section */}
+          {allocations && allocations.length > 0 && (
+            <Card className="border-success/20 bg-success/5">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Link className="h-4 w-4 mr-2 text-success" />
+                  Applied to Invoices
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Invoice Number</TableHead>
+                      <TableHead>Applied Date</TableHead>
+                      <TableHead className="text-right">Allocated Amount</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {allocations.map((allocation) => (
+                      <TableRow key={allocation.id}>
+                        <TableCell className="font-medium">
+                          {allocation.invoices?.invoice_number || 'N/A'}
+                        </TableCell>
+                        <TableCell>
+                          {new Date(allocation.allocation_date).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell className="text-right font-semibold text-success">
+                          {formatCurrency(allocation.allocated_amount)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Credit Note Items */}
           <Card>

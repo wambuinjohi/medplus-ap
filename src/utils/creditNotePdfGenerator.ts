@@ -70,6 +70,15 @@ export interface CreditNotePDFData extends CreditNote {
   };
   terms_and_conditions?: string;
   notes?: string;
+  credit_note_allocations?: Array<{
+    id: string;
+    invoice_id: string;
+    allocated_amount: number;
+    allocation_date: string;
+    invoices?: {
+      invoice_number: string;
+    };
+  }>;
 }
 
 export interface CompanyData {
@@ -519,6 +528,23 @@ export const generateCreditNotePDF = async (creditNote: CreditNotePDFData, compa
                 ${creditNote.customers.country ? `, ${creditNote.customers.country}` : ''}<br>
                 ${creditNote.customers.customer_code ? `Customer Code: ${creditNote.customers.customer_code}` : ''}
               </div>
+              ${(creditNote.credit_note_allocations && creditNote.credit_note_allocations.length > 0) ? `
+              <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e9ecef;">
+                <div class="section-title">Applied To Invoice(s)</div>
+                <div class="related-details">
+                  ${creditNote.credit_note_allocations.map(alloc => `
+                    Invoice #${alloc.invoices?.invoice_number || 'N/A'}: ${formatCurrency(alloc.allocated_amount)}<br>
+                  `).join('')}
+                </div>
+              </div>
+              ` : creditNote.invoice_id && creditNote.invoices ? `
+              <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e9ecef;">
+                <div class="section-title">Related Invoice</div>
+                <div class="related-details">
+                  Invoice #${creditNote.invoices.invoice_number}
+                </div>
+              </div>
+              ` : ''}
             </div>
 
             <div class="document-info">
