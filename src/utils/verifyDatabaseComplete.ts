@@ -24,7 +24,7 @@ const EXPECTED_STRUCTURE = {
     'id', 'company_id', 'category_id', 'product_code', 'name', 'description',
     'unit_of_measure', 'cost_price', 'selling_price', 'stock_quantity',
     'minimum_stock_level', 'maximum_stock_level', 'min_stock_level', 'max_stock_level',
-    'reorder_point', 'is_active', 'track_inventory', 'created_at', 'updated_at'
+    'reorder_point', 'is_active', 'track_inventory', 'batch_no', 'expiry_date', 'created_at', 'updated_at'
   ],
   invoices: [
     'id', 'company_id', 'customer_id', 'invoice_number', 'invoice_date',

@@ -139,8 +139,8 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
       tax_amount: 0,
       tax_inclusive: true,
       line_total: price,
-      batch_no: '',
-      expiry_date: null
+      batch_no: product.batch_no || '',
+      expiry_date: product.expiry_date || null
     };
 
     // Calculate initial tax and line total with default tax

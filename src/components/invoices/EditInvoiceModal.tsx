@@ -167,7 +167,9 @@ export function EditInvoiceModal({ open, onOpenChange, onSuccess, invoice }: Edi
       tax_percentage: 0,
       tax_amount: 0,
       tax_inclusive: false,
-      line_total: product.selling_price
+      line_total: product.selling_price,
+      batch_no: product.batch_no || '',
+      expiry_date: product.expiry_date || null
     };
 
     const { lineTotal, taxAmount } = calculateLineTotal(newItem);

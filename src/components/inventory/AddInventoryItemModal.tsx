@@ -57,7 +57,9 @@ export function AddInventoryItemModal({ open, onOpenChange, onSuccess }: AddInve
     selling_price: 0,
     stock_quantity: 0,
     min_stock_level: 10,
-    max_stock_level: 100
+    max_stock_level: 100,
+    batch_no: 'N/A',
+    expiry_date: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCreateCategory, setShowCreateCategory] = useState(false);
@@ -144,6 +146,8 @@ export function AddInventoryItemModal({ open, onOpenChange, onSuccess }: AddInve
         stock_quantity: formData.stock_quantity,
         minimum_stock_level: formData.min_stock_level,
         maximum_stock_level: formData.max_stock_level,
+        batch_no: formData.batch_no || 'N/A',
+        expiry_date: formData.expiry_date || null,
         is_active: true,
         track_inventory: true
       };
@@ -276,7 +280,9 @@ export function AddInventoryItemModal({ open, onOpenChange, onSuccess }: AddInve
       selling_price: 0,
       stock_quantity: 0,
       min_stock_level: 10,
-      max_stock_level: 100
+      max_stock_level: 100,
+      batch_no: 'N/A',
+      expiry_date: ''
     });
   };
 
@@ -417,6 +423,28 @@ export function AddInventoryItemModal({ open, onOpenChange, onSuccess }: AddInve
                   </Select>
                 </div>
 
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="batch_no">Batch No</Label>
+                  <Input
+                    id="batch_no"
+                    value={formData.batch_no}
+                    onChange={(e) => handleInputChange('batch_no', e.target.value)}
+                    placeholder="e.g., BATCH-2025-001"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="expiry_date">Expiry Date</Label>
+                  <Input
+                    id="expiry_date"
+                    type="date"
+                    value={formData.expiry_date}
+                    onChange={(e) => handleInputChange('expiry_date', e.target.value)}
+                  />
+                </div>
               </div>
             </CardContent>
           </Card>

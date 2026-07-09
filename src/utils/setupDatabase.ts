@@ -145,6 +145,8 @@ CREATE TABLE IF NOT EXISTS products (
     maximum_stock INTEGER,
     reorder_level INTEGER DEFAULT 0,
     is_active BOOLEAN DEFAULT TRUE,
+    batch_no TEXT DEFAULT 'N/A',
+    expiry_date DATE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
