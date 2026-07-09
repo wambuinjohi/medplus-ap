@@ -459,7 +459,7 @@ export default function CreditNotes() {
                 <TableRow>
                   <TableHead>Credit Note Number</TableHead>
                   <TableHead>Customer</TableHead>
-                  <TableHead>Date</TableHead>
+                  <TableHead>Issued Date</TableHead>
                   <TableHead>Reason</TableHead>
                   <TableHead>Total Amount</TableHead>
                   <TableHead>Applied</TableHead>
