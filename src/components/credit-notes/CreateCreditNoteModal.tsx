@@ -135,7 +135,28 @@ export function CreateCreditNoteModal({
   // Clear invoice selection when customer changes
   useEffect(() => {
     setSelectedInvoiceId('none');
+    setItems([]);
   }, [selectedCustomerId]);
+
+  // Auto-populate invoice items when invoice is selected
+  useEffect(() => {
+    if (selectedInvoiceId && selectedInvoiceId !== 'none' && invoiceItems.length > 0) {
+      // Clear existing items and add all invoice items
+      const newItems = invoiceItems.map((item) => ({
+        id: `invoice-item-${item.id}`,
+        product_id: item.product_id,
+        product_name: item.product_name,
+        description: item.description,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        tax_percentage: item.tax_percentage,
+        tax_amount: item.tax_amount,
+        tax_inclusive: item.tax_inclusive,
+        line_total: item.line_total
+      }));
+      setItems(newItems);
+    }
+  }, [selectedInvoiceId, invoiceItems]);
 
   const filteredProducts = products?.filter(product =>
     product.name.toLowerCase().includes(searchProduct.toLowerCase()) ||
@@ -618,7 +639,7 @@ export function CreateCreditNoteModal({
                 </div>
 
                 {/* Invoice Selection (Optional) */}
-                {selectedCustomerId && customerInvoices.length > 0 && (
+                {selectedCustomerId && (
                   <div className="space-y-3">
                     <div className="space-y-2">
                       <Label htmlFor="invoice">Related Invoice (Optional)</Label>
@@ -640,27 +661,24 @@ export function CreateCreditNoteModal({
                       <>
                         {/* Invoice Products */}
                         {loadingInvoiceItems ? (
-                          <div className="text-sm text-muted-foreground p-3 bg-slate-50 rounded-md">
+                          <div className="text-sm text-muted-foreground p-3 bg-blue-50 rounded-md">
                             Loading invoice items...
                           </div>
                         ) : invoiceItems.length > 0 ? (
-                          <div className="space-y-2 bg-slate-50 p-3 rounded-md">
-                            <Label className="text-sm font-medium">Products from Invoice</Label>
+                          <div className="space-y-2 bg-blue-50 p-3 rounded-md border border-blue-200">
+                            <Label className="text-sm font-medium">
+                              Invoice Items (Auto-populated)
+                            </Label>
                             <div className="space-y-2 max-h-64 overflow-y-auto">
                               {invoiceItems.map((item) => {
                                 const isAdded = items.some(i => i.product_id === item.product_id);
                                 return (
                                   <div
                                     key={item.id}
-                                    className={`p-2 rounded-md border cursor-pointer transition-colors ${
-                                      isAdded
-                                        ? 'bg-green-50 border-green-300'
-                                        : 'bg-white border-slate-200 hover:border-slate-300'
-                                    }`}
-                                    onClick={() => !isAdded && addInvoiceItem(item)}
+                                    className="p-2 rounded-md border bg-white border-slate-200"
                                   >
                                     <div className="flex justify-between items-start">
-                                      <div>
+                                      <div className="flex-1">
                                         <div className="font-medium text-sm">{item.product_name}</div>
                                         <div className="text-xs text-muted-foreground">{item.description}</div>
                                         <div className="text-xs text-muted-foreground mt-1">
@@ -671,8 +689,8 @@ export function CreateCreditNoteModal({
                                       <div className="text-right">
                                         <div className="font-semibold text-sm">{formatCurrency(item.line_total)}</div>
                                         {isAdded && (
-                                          <Badge variant="outline" className="text-xs bg-green-100 text-green-800 border-green-300 mt-1">
-                                            Added
+                                          <Badge className="text-xs bg-green-600 text-white mt-1">
+                                            Included
                                           </Badge>
                                         )}
                                       </div>
@@ -681,6 +699,9 @@ export function CreateCreditNoteModal({
                                 );
                               })}
                             </div>
+                            <p className="text-xs text-muted-foreground italic mt-2">
+                              All invoice items have been automatically added to the credit note. You can edit quantities and prices in the items table below.
+                            </p>
                           </div>
                         ) : null}
 
