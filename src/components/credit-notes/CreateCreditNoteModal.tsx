@@ -151,9 +151,10 @@ export function CreateCreditNoteModal({
     setItems([]);
   }, [selectedCustomerId]);
 
-  // Auto-populate invoice items when invoice is selected
+  // Auto-populate invoice items when invoice is selected (only in fromInvoice mode)
   useEffect(() => {
-    if (selectedInvoiceId && selectedInvoiceId !== 'none' && invoiceItems.length > 0) {
+    if (creditNoteMode === 'fromInvoice' && selectedInvoiceId && selectedInvoiceId !== 'none' && invoiceItems.length > 0) {
+      console.log('Auto-populating invoice items:', invoiceItems.length);
       // Clear existing items and add all invoice items
       const newItems = invoiceItems.map((item) => ({
         id: `invoice-item-${item.id}`,
@@ -169,7 +170,7 @@ export function CreateCreditNoteModal({
       }));
       setItems(newItems);
     }
-  }, [selectedInvoiceId, invoiceItems]);
+  }, [creditNoteMode, selectedInvoiceId, invoiceItems]);
 
   const filteredProducts = products?.filter(product =>
     product.name.toLowerCase().includes(searchProduct.toLowerCase()) ||
@@ -913,7 +914,12 @@ export function CreateCreditNoteModal({
           <CardContent>
             {items.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                No items added yet. Search and select products to add them.
+                <p className="mb-2">No items added yet.</p>
+                <p className="text-sm">
+                  {selectedInvoiceId && selectedInvoiceId !== 'none'
+                    ? 'Invoice items will appear here. Select an invoice above.'
+                    : 'Select an invoice above to auto-populate items, or search and add products manually.'}
+                </p>
               </div>
             ) : (
               <Table>
@@ -929,13 +935,20 @@ export function CreateCreditNoteModal({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {items.map((item) => (
-                    <TableRow key={item.id}>
+                  {items.map((item) => {
+                    const isFromInvoice = item.id.startsWith('invoice-item-');
+                    return (
+                    <TableRow key={item.id} className={isFromInvoice ? 'bg-blue-50' : ''}>
                       <TableCell>
                         <div>
                           {item.product_id ? (
                             <div>
-                              <div className="font-medium">{item.product_name}</div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium">{item.product_name}</span>
+                                {isFromInvoice && (
+                                  <Badge variant="secondary" className="text-xs">From Invoice</Badge>
+                                )}
+                              </div>
                               <div className="text-sm text-muted-foreground">{item.description}</div>
                             </div>
                           ) : (
@@ -1011,7 +1024,8 @@ export function CreateCreditNoteModal({
                         </Button>
                       </TableCell>
                     </TableRow>
-                  ))}
+                    );
+                  })}
                 </TableBody>
               </Table>
             )}
