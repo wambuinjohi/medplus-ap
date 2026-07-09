@@ -48,6 +48,8 @@ interface InvoiceItem {
   tax_amount: number;
   tax_inclusive: boolean;
   line_total: number;
+  batch_no?: string;
+  expiry_date?: string | null;
 }
 
 interface EditInvoiceModalProps {
@@ -62,9 +64,11 @@ export function EditInvoiceModal({ open, onOpenChange, onSuccess, invoice }: Edi
   const [invoiceDate, setInvoiceDate] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [lpoNumber, setLpoNumber] = useState('');
+  const [batchNo, setBatchNo] = useState('');
+  const [expiryDate, setExpiryDate] = useState('');
   const [notes, setNotes] = useState('');
   const [termsAndConditions, setTermsAndConditions] = useState(getTermsAndConditions());
-  
+
   const [items, setItems] = useState<InvoiceItem[]>([]);
   const [searchProduct, setSearchProduct] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -86,10 +90,11 @@ export function EditInvoiceModal({ open, onOpenChange, onSuccess, invoice }: Edi
       setInvoiceDate(invoice.invoice_date || '');
       setDueDate(invoice.due_date || '');
       setLpoNumber(invoice.lpo_number || '');
+      setBatchNo(invoice.batch_no || '');
+      setExpiryDate(invoice.expiry_date || '');
       setNotes(invoice.notes || '');
       setTermsAndConditions(invoice.terms_and_conditions || getTermsAndConditions());
 
-      // Convert invoice items to local format
       const invoiceItems = (invoice.invoice_items || []).map((item: any, index: number) => ({
         id: item.id || `existing-${index}`,
         product_id: item.product_id || '',
@@ -103,8 +108,10 @@ export function EditInvoiceModal({ open, onOpenChange, onSuccess, invoice }: Edi
         tax_amount: item.tax_amount || 0,
         tax_inclusive: item.tax_inclusive || false,
         line_total: item.line_total || 0,
+        batch_no: item.batch_no || '',
+        expiry_date: item.expiry_date || null,
       }));
-      
+
       setItems(invoiceItems);
     }
   }, [invoice, open]);
@@ -254,6 +261,14 @@ export function EditInvoiceModal({ open, onOpenChange, onSuccess, invoice }: Edi
     }));
   };
 
+  const updateItemBatchNo = (itemId: string, batchNo: string) => {
+    setItems(items.map(item => item.id === itemId ? { ...item, batch_no: batchNo } : item));
+  };
+
+  const updateItemExpiryDate = (itemId: string, expiryDate: string | null) => {
+    setItems(items.map(item => item.id === itemId ? { ...item, expiry_date: expiryDate } : item));
+  };
+
   const removeItem = (itemId: string) => {
     setItems(items.filter(item => item.id !== itemId));
   };
@@ -295,6 +310,8 @@ export function EditInvoiceModal({ open, onOpenChange, onSuccess, invoice }: Edi
         invoice_date: invoiceDate,
         due_date: dueDate,
         lpo_number: lpoNumber || null,
+        batch_no: batchNo || 'N/A',
+        expiry_date: expiryDate || null,
         subtotal: subtotal,
         tax_amount: taxAmount,
         total_amount: totalAmount,
@@ -313,7 +330,9 @@ export function EditInvoiceModal({ open, onOpenChange, onSuccess, invoice }: Edi
         tax_percentage: item.tax_percentage,
         tax_amount: item.tax_amount,
         tax_inclusive: item.tax_inclusive,
-        line_total: item.line_total
+        line_total: item.line_total,
+        batch_no: item.batch_no || 'N/A',
+        expiry_date: item.expiry_date || null
       }));
 
       await updateInvoiceWithItems.mutateAsync({
@@ -406,6 +425,29 @@ export function EditInvoiceModal({ open, onOpenChange, onSuccess, invoice }: Edi
                     value={lpoNumber}
                     onChange={(e) => setLpoNumber(e.target.value)}
                     placeholder="Enter LPO reference number"
+                  />
+                </div>
+
+                {/* Batch Number */}
+                <div className="space-y-2">
+                  <Label htmlFor="batch_no">Batch Number (Optional)</Label>
+                  <Input
+                    id="batch_no"
+                    type="text"
+                    value={batchNo}
+                    onChange={(e) => setBatchNo(e.target.value)}
+                    placeholder="Enter batch number"
+                  />
+                </div>
+
+                {/* Expiry Date */}
+                <div className="space-y-2">
+                  <Label htmlFor="expiry_date">Expiry Date (Optional)</Label>
+                  <Input
+                    id="expiry_date"
+                    type="date"
+                    value={expiryDate}
+                    onChange={(e) => setExpiryDate(e.target.value)}
                   />
                 </div>
 
@@ -516,6 +558,8 @@ export function EditInvoiceModal({ open, onOpenChange, onSuccess, invoice }: Edi
                     <TableHead>Disc. Before VAT</TableHead>
                     <TableHead>Tax %</TableHead>
                     <TableHead>Tax Incl.</TableHead>
+                    <TableHead>Batch No</TableHead>
+                    <TableHead>Expiry Date</TableHead>
                     <TableHead>Line Total</TableHead>
                     <TableHead></TableHead>
                   </TableRow>
@@ -584,6 +628,23 @@ export function EditInvoiceModal({ open, onOpenChange, onSuccess, invoice }: Edi
                         <Checkbox
                           checked={item.tax_inclusive}
                           onCheckedChange={(checked) => updateItemTaxInclusive(item.id, !!checked)}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          type="text"
+                          value={item.batch_no || ''}
+                          onChange={(e) => updateItemBatchNo(item.id, e.target.value)}
+                          className="w-24"
+                          placeholder="Batch"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          type="date"
+                          value={item.expiry_date || ''}
+                          onChange={(e) => updateItemExpiryDate(item.id, e.target.value || null)}
+                          className="w-32"
                         />
                       </TableCell>
                       <TableCell className="font-semibold">
