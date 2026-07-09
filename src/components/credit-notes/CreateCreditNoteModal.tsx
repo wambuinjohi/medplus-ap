@@ -153,24 +153,32 @@ export function CreateCreditNoteModal({
 
   // Auto-populate invoice items when invoice is selected (only in fromInvoice mode)
   useEffect(() => {
-    if (creditNoteMode === 'fromInvoice' && selectedInvoiceId && selectedInvoiceId !== 'none' && invoiceItems.length > 0) {
-      console.log('Auto-populating invoice items:', invoiceItems.length);
-      // Clear existing items and add all invoice items
-      const newItems = invoiceItems.map((item) => ({
-        id: `invoice-item-${item.id}`,
-        product_id: item.product_id,
-        product_name: item.product_name,
-        description: item.description,
-        quantity: item.quantity,
-        unit_price: item.unit_price,
-        tax_percentage: item.tax_percentage,
-        tax_amount: item.tax_amount,
-        tax_inclusive: item.tax_inclusive,
-        line_total: item.line_total
-      }));
-      setItems(newItems);
+    console.log('Auto-populate effect - mode:', creditNoteMode, 'invoiceId:', selectedInvoiceId, 'items:', invoiceItems.length, 'loading:', loadingInvoiceItems);
+
+    if (creditNoteMode === 'fromInvoice') {
+      if (selectedInvoiceId && selectedInvoiceId !== 'none') {
+        if (!loadingInvoiceItems && invoiceItems.length > 0) {
+          console.log('Auto-populating invoice items:', invoiceItems.length);
+          // Clear existing items and add all invoice items
+          const newItems = invoiceItems.map((item) => ({
+            id: `invoice-item-${item.id}`,
+            product_id: item.product_id,
+            product_name: item.product_name,
+            description: item.description,
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+            tax_percentage: item.tax_percentage,
+            tax_amount: item.tax_amount,
+            tax_inclusive: item.tax_inclusive,
+            line_total: item.line_total
+          }));
+          setItems(newItems);
+        } else if (!loadingInvoiceItems && invoiceItems.length === 0) {
+          console.log('No invoice items found for invoice:', selectedInvoiceId);
+        }
+      }
     }
-  }, [creditNoteMode, selectedInvoiceId, invoiceItems]);
+  }, [creditNoteMode, selectedInvoiceId, invoiceItems, loadingInvoiceItems]);
 
   const filteredProducts = products?.filter(product =>
     product.name.toLowerCase().includes(searchProduct.toLowerCase()) ||
