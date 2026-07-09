@@ -157,28 +157,40 @@ export function CreateCreditNoteModal({
 
     if (creditNoteMode === 'fromInvoice') {
       if (selectedInvoiceId && selectedInvoiceId !== 'none') {
-        if (!loadingInvoiceItems && invoiceItems.length > 0) {
-          console.log('Auto-populating invoice items:', invoiceItems.length);
-          // Clear existing items and add all invoice items
-          const newItems = invoiceItems.map((item) => ({
-            id: `invoice-item-${item.id}`,
-            product_id: item.product_id,
-            product_name: item.product_name,
-            description: item.description,
-            quantity: item.quantity,
-            unit_price: item.unit_price,
-            tax_percentage: item.tax_percentage,
-            tax_amount: item.tax_amount,
-            tax_inclusive: item.tax_inclusive,
-            line_total: item.line_total
-          }));
-          setItems(newItems);
-        } else if (!loadingInvoiceItems && invoiceItems.length === 0) {
-          console.log('No invoice items found for invoice:', selectedInvoiceId);
+        if (!loadingInvoiceItems) {
+          if (invoiceItems.length > 0) {
+            console.log('Auto-populating invoice items:', invoiceItems.length);
+            // Only update if items actually changed to prevent duplicate re-renders
+            const newItems = invoiceItems.map((item) => ({
+              id: `invoice-item-${item.id}`,
+              product_id: item.product_id,
+              product_name: item.product_name,
+              description: item.description,
+              quantity: item.quantity,
+              unit_price: item.unit_price,
+              tax_percentage: item.tax_percentage,
+              tax_amount: item.tax_amount,
+              tax_inclusive: item.tax_inclusive,
+              line_total: item.line_total
+            }));
+
+            // Only set items if they're different from current items
+            const hasInvoiceItems = items.some(i => i.id.startsWith('invoice-item-'));
+            if (!hasInvoiceItems) {
+              setItems(newItems);
+            }
+          } else {
+            console.log('No invoice items found for invoice:', selectedInvoiceId);
+            // Clear items if invoice has no items
+            const nonInvoiceItems = items.filter(i => !i.id.startsWith('invoice-item-'));
+            if (nonInvoiceItems.length !== items.length) {
+              setItems(nonInvoiceItems);
+            }
+          }
         }
       }
     }
-  }, [creditNoteMode, selectedInvoiceId, invoiceItems, loadingInvoiceItems]);
+  }, [creditNoteMode, selectedInvoiceId, invoiceItems, loadingInvoiceItems, items]);
 
   const filteredProducts = products?.filter(product =>
     product.name.toLowerCase().includes(searchProduct.toLowerCase()) ||
@@ -920,12 +932,20 @@ export function CreateCreditNoteModal({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {items.length === 0 ? (
+            {loadingInvoiceItems && selectedInvoiceId && selectedInvoiceId !== 'none' ? (
+              <div className="text-center py-8">
+                <div className="flex justify-center mb-4">
+                  <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full"></div>
+                </div>
+                <p className="text-muted-foreground">Loading invoice items...</p>
+              </div>
+            ) : items.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                <p className="mb-2">No items added yet.</p>
+                <AlertCircle className="mx-auto h-8 w-8 mb-3 text-muted-foreground/60" />
+                <p className="mb-2 font-medium">No items added yet.</p>
                 <p className="text-sm">
                   {selectedInvoiceId && selectedInvoiceId !== 'none'
-                    ? 'Invoice items will appear here. Select an invoice above.'
+                    ? 'This invoice has no items. You can manually add items or select a different invoice.'
                     : 'Select an invoice above to auto-populate items, or search and add products manually.'}
                 </p>
               </div>
