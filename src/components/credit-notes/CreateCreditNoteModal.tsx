@@ -18,6 +18,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { Check, ChevronsUpDown } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -34,6 +48,8 @@ import { useCustomers, useProducts, useTaxSettings, useCompanies } from '@/hooks
 import { useInvoicesFixed as useInvoices } from '@/hooks/useInvoicesFixed';
 import { useGenerateCreditNoteNumber, useApplyCreditNoteToInvoice } from '@/hooks/useCreditNotes';
 import { useCreateCreditNoteWithItems } from '@/hooks/useCreditNoteItems';
+import { useCustomerInvoices } from '@/hooks/useCustomerInvoices';
+import { useInvoiceItems } from '@/hooks/useInvoiceItems';
 import { toast } from 'sonner';
 import { getTermsAndConditions } from '@/utils/termsManager';
 import { supabase } from '@/integrations/supabase/client';
@@ -73,12 +89,18 @@ export function CreateCreditNoteModal({
   const [notes, setNotes] = useState('');
   const [termsAndConditions, setTermsAndConditions] = useState(getTermsAndConditions());
   const [affectsInventory, setAffectsInventory] = useState(false);
-  
+
   const [items, setItems] = useState<CreditNoteItem[]>([]);
   const [searchProduct, setSearchProduct] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [autoApply, setAutoApply] = useState(false);
   const [autoApplyAmount, setAutoApplyAmount] = useState<number | null>(null);
+
+  const [customerSearchOpen, setCustomerSearchOpen] = useState(false);
+  const [customerSearchValue, setCustomerSearchValue] = useState('');
+
+  const [creditNoteMode, setCreditNoteMode] = useState<'fromInvoice' | 'nominal'>('fromInvoice');
+  const [nominalAmount, setNominalAmount] = useState<number | null>(null);
 
   const { data: companies, isLoading: loadingCompanies, error: companiesError } = useCompanies();
   const companyId = companies?.[0]?.id;
@@ -90,19 +112,16 @@ export function CreateCreditNoteModal({
   const createCreditNoteWithItems = useCreateCreditNoteWithItems();
   const generateCreditNoteNumber = useGenerateCreditNoteNumber();
   const applyCreditNoteToInvoice = useApplyCreditNoteToInvoice();
+  const { data: customerInvoices = [] } = useCustomerInvoices(selectedCustomerId || undefined, companyId);
+  const { data: invoiceItems = [], isLoading: loadingInvoiceItems } = useInvoiceItems(
+    selectedInvoiceId && selectedInvoiceId !== 'none' ? selectedInvoiceId : undefined
+  );
 
   // Get default tax rate
   const defaultTax = taxSettings?.find(tax => tax.is_default && tax.is_active);
   const defaultTaxRate = defaultTax?.rate || 16;
 
-  // Filter invoices for selected customer
-  const customerInvoices = invoices?.filter(inv => 
-    inv.customer_id === selectedCustomerId && 
-    inv.status !== 'cancelled' &&
-    (inv.balance_due || 0) > 0
-  ) || [];
-
-  // Handle pre-selected data
+  // Handle pre-selected data and clear invoice when customer changes
   useEffect(() => {
     if (preSelectedCustomer && open) {
       setSelectedCustomerId(preSelectedCustomer.id);
@@ -112,6 +131,11 @@ export function CreateCreditNoteModal({
       setSelectedCustomerId(preSelectedInvoice.customer_id);
     }
   }, [preSelectedCustomer, preSelectedInvoice, open]);
+
+  // Clear invoice selection when customer changes
+  useEffect(() => {
+    setSelectedInvoiceId('none');
+  }, [selectedCustomerId]);
 
   const filteredProducts = products?.filter(product =>
     product.name.toLowerCase().includes(searchProduct.toLowerCase()) ||
@@ -145,6 +169,30 @@ export function CreateCreditNoteModal({
 
     setItems([...items, newItem]);
     setSearchProduct('');
+  };
+
+  const addInvoiceItem = (invoiceItem: any) => {
+    const existingItem = items.find(item => item.product_id === invoiceItem.product_id);
+
+    if (existingItem) {
+      updateItemQuantity(existingItem.id, existingItem.quantity + invoiceItem.quantity);
+      return;
+    }
+
+    const newItem: CreditNoteItem = {
+      id: `temp-${Date.now()}`,
+      product_id: invoiceItem.product_id,
+      product_name: invoiceItem.product_name,
+      description: invoiceItem.description,
+      quantity: invoiceItem.quantity,
+      unit_price: invoiceItem.unit_price,
+      tax_percentage: invoiceItem.tax_percentage,
+      tax_amount: invoiceItem.tax_amount,
+      tax_inclusive: invoiceItem.tax_inclusive,
+      line_total: invoiceItem.line_total
+    };
+
+    setItems([...items, newItem]);
   };
 
   const addCustomItem = () => {
@@ -429,22 +477,65 @@ export function CreateCreditNoteModal({
                 {/* Customer Selection */}
                 <div className="space-y-2">
                   <Label htmlFor="customer">Customer *</Label>
-                  <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a customer" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {loadingCustomers ? (
-                        <SelectItem value="loading" disabled>Loading customers...</SelectItem>
-                      ) : (
-                        customers?.map((customer) => (
-                          <SelectItem key={customer.id} value={customer.id}>
-                            {customer.name} ({customer.customer_code})
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
+                  <Popover open={customerSearchOpen} onOpenChange={setCustomerSearchOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={customerSearchOpen}
+                        className="w-full justify-between"
+                        disabled={loadingCustomers}
+                      >
+                        {selectedCustomerId && customers
+                          ? customers.find(c => c.id === selectedCustomerId)?.name +
+                            ' (' + customers.find(c => c.id === selectedCustomerId)?.customer_code + ')'
+                          : "Select a customer..."}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-full p-0" side="bottom" align="start">
+                      <Command>
+                        <CommandInput
+                          placeholder="Search customers..."
+                          value={customerSearchValue}
+                          onValueChange={setCustomerSearchValue}
+                        />
+                        <CommandEmpty>No customers found.</CommandEmpty>
+                        <CommandList>
+                          <CommandGroup>
+                            {customers
+                              ?.filter((customer) =>
+                                customer.name.toLowerCase().includes(customerSearchValue.toLowerCase()) ||
+                                customer.customer_code.toLowerCase().includes(customerSearchValue.toLowerCase())
+                              )
+                              .map((customer) => (
+                                <CommandItem
+                                  key={customer.id}
+                                  value={customer.id}
+                                  onSelect={(currentValue) => {
+                                    setSelectedCustomerId(currentValue === selectedCustomerId ? "" : currentValue);
+                                    setSelectedInvoiceId('none');
+                                    setCustomerSearchOpen(false);
+                                    setCustomerSearchValue('');
+                                  }}
+                                >
+                                  <Check
+                                    className="mr-2 h-4 w-4"
+                                    style={{
+                                      opacity: selectedCustomerId === customer.id ? 1 : 0,
+                                    }}
+                                  />
+                                  <div className="flex flex-col">
+                                    <span className="font-medium">{customer.name}</span>
+                                    <span className="text-xs text-muted-foreground">{customer.customer_code}</span>
+                                  </div>
+                                </CommandItem>
+                              ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                 </div>
 
                 {/* Invoice Selection (Optional) */}
@@ -467,38 +558,86 @@ export function CreateCreditNoteModal({
                       </Select>
                     </div>
                     {selectedInvoiceId && selectedInvoiceId !== 'none' && (
-                      <div className="space-y-2 bg-blue-50 p-3 rounded-md">
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id="auto_apply"
-                            checked={autoApply}
-                            onCheckedChange={(checked) => {
-                              setAutoApply(!!checked);
-                              if (!checked) setAutoApplyAmount(null);
-                            }}
-                          />
-                          <Label htmlFor="auto_apply" className="text-sm cursor-pointer">
-                            Apply to selected invoice immediately upon creation
-                          </Label>
-                        </div>
-                        {autoApply && (
-                          <div className="ml-6 space-y-2">
-                            <Label htmlFor="auto_apply_amount" className="text-sm">
-                              Amount to apply (leave blank to apply full credit note)
-                            </Label>
-                            <Input
-                              id="auto_apply_amount"
-                              type="number"
-                              value={autoApplyAmount ?? ''}
-                              onChange={(e) => setAutoApplyAmount(e.target.value ? parseFloat(e.target.value) : null)}
-                              placeholder={`Full amount: ${formatCurrency(totalAmount)}`}
-                              step="0.01"
-                              min="0"
-                              className="h-8"
-                            />
+                      <>
+                        {/* Invoice Products */}
+                        {loadingInvoiceItems ? (
+                          <div className="text-sm text-muted-foreground p-3 bg-slate-50 rounded-md">
+                            Loading invoice items...
                           </div>
-                        )}
-                      </div>
+                        ) : invoiceItems.length > 0 ? (
+                          <div className="space-y-2 bg-slate-50 p-3 rounded-md">
+                            <Label className="text-sm font-medium">Products from Invoice</Label>
+                            <div className="space-y-2 max-h-64 overflow-y-auto">
+                              {invoiceItems.map((item) => {
+                                const isAdded = items.some(i => i.product_id === item.product_id);
+                                return (
+                                  <div
+                                    key={item.id}
+                                    className={`p-2 rounded-md border cursor-pointer transition-colors ${
+                                      isAdded
+                                        ? 'bg-green-50 border-green-300'
+                                        : 'bg-white border-slate-200 hover:border-slate-300'
+                                    }`}
+                                    onClick={() => !isAdded && addInvoiceItem(item)}
+                                  >
+                                    <div className="flex justify-between items-start">
+                                      <div>
+                                        <div className="font-medium text-sm">{item.product_name}</div>
+                                        <div className="text-xs text-muted-foreground">{item.description}</div>
+                                        <div className="text-xs text-muted-foreground mt-1">
+                                          Qty: {item.quantity} × {formatCurrency(item.unit_price)}
+                                          {item.tax_percentage > 0 && ` (+ ${item.tax_percentage}% tax)`}
+                                        </div>
+                                      </div>
+                                      <div className="text-right">
+                                        <div className="font-semibold text-sm">{formatCurrency(item.line_total)}</div>
+                                        {isAdded && (
+                                          <Badge variant="outline" className="text-xs bg-green-100 text-green-800 border-green-300 mt-1">
+                                            Added
+                                          </Badge>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ) : null}
+
+                        <div className="space-y-2 bg-blue-50 p-3 rounded-md">
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id="auto_apply"
+                              checked={autoApply}
+                              onCheckedChange={(checked) => {
+                                setAutoApply(!!checked);
+                                if (!checked) setAutoApplyAmount(null);
+                              }}
+                            />
+                            <Label htmlFor="auto_apply" className="text-sm cursor-pointer">
+                              Apply to selected invoice immediately upon creation
+                            </Label>
+                          </div>
+                          {autoApply && (
+                            <div className="ml-6 space-y-2">
+                              <Label htmlFor="auto_apply_amount" className="text-sm">
+                                Amount to apply (leave blank to apply full credit note)
+                              </Label>
+                              <Input
+                                id="auto_apply_amount"
+                                type="number"
+                                value={autoApplyAmount ?? ''}
+                                onChange={(e) => setAutoApplyAmount(e.target.value ? parseFloat(e.target.value) : null)}
+                                placeholder={`Full amount: ${formatCurrency(totalAmount)}`}
+                                step="0.01"
+                                min="0"
+                                className="h-8"
+                              />
+                            </div>
+                          )}
+                        </div>
+                      </>
                     )}
                   </div>
                 )}
