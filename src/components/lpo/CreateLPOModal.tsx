@@ -228,8 +228,8 @@ export const CreateLPOModal = ({
       tax_amount: 0,
       line_total: 0,
       unit_of_measure: product.unit_of_measure || 'pcs',
-      batch_no: '',
-      expiry_date: '',
+      batch_no: product.batch_no || '',
+      expiry_date: product.expiry_date || '',
     };
 
     setItems(prev => [...prev, newItem]);

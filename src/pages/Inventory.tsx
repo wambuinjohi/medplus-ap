@@ -48,6 +48,8 @@ interface InventoryItem {
   minimum_stock_level: number;
   selling_price: number;
   cost_price?: number;
+  batch_no?: string;
+  expiry_date?: string | null;
   status?: 'in_stock' | 'low_stock' | 'out_of_stock';
   description?: string;
   unit_of_measure?: string;
@@ -429,6 +431,8 @@ export default function Inventory() {
                 <TableHead>Product Code</TableHead>
                 <TableHead>Product Name</TableHead>
                 <TableHead>Category</TableHead>
+                <TableHead>Batch No</TableHead>
+                <TableHead>Expiry Date</TableHead>
                 <TableHead>Current Stock</TableHead>
                 <TableHead>Min Stock</TableHead>
                 <TableHead>Unit Price</TableHead>
@@ -440,7 +444,7 @@ export default function Inventory() {
             <TableBody>
               {filteredInventory.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-8">
+                  <TableCell colSpan={11} className="text-center py-8">
                     <div className="flex flex-col items-center space-y-2">
                       <Package className="h-12 w-12 text-muted-foreground" />
                       <p className="text-muted-foreground">
@@ -461,6 +465,10 @@ export default function Inventory() {
                     <TableCell className="font-medium">{item.product_code}</TableCell>
                     <TableCell className="font-medium">{item.name}</TableCell>
                     <TableCell>{item.product_categories?.name || '-'}</TableCell>
+                    <TableCell className="text-sm">{item.batch_no || 'N/A'}</TableCell>
+                    <TableCell className="text-sm">
+                      {item.expiry_date ? new Date(item.expiry_date).toLocaleDateString() : '-'}
+                    </TableCell>
                     <TableCell className={`font-semibold ${(item.stock_quantity || 0) <= (item.minimum_stock_level || 0) ? 'text-warning' : 'text-foreground'}`}>
                       {item.stock_quantity || 0}
                     </TableCell>

@@ -38,6 +38,8 @@ interface InventoryItem {
   description?: string;
   unitOfMeasure?: string;
   lastRestocked?: string;
+  batch_no?: string;
+  expiry_date?: string | null;
   status: 'in_stock' | 'low_stock' | 'out_of_stock';
 }
 
@@ -149,6 +151,23 @@ export function ViewInventoryItemModal({ open, onOpenChange, item, onEdit, onRes
                   <div className="text-sm mt-1 p-2 bg-muted/50 rounded">
                     {item.description}
                   </div>
+                </div>
+              )}
+
+              {(item.batch_no || item.expiry_date) && (
+                <div className="grid grid-cols-2 gap-4 text-sm border-t pt-4">
+                  {item.batch_no && (
+                    <div>
+                      <span className="text-muted-foreground">Batch No:</span>
+                      <div className="font-medium">{item.batch_no}</div>
+                    </div>
+                  )}
+                  {item.expiry_date && (
+                    <div>
+                      <span className="text-muted-foreground">Expiry Date:</span>
+                      <div className="font-medium">{new Date(item.expiry_date).toLocaleDateString()}</div>
+                    </div>
+                  )}
                 </div>
               )}
 

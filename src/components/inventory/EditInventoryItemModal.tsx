@@ -38,6 +38,8 @@ interface InventoryItem {
   stock_quantity: number;
   min_stock_level: number;
   max_stock_level?: number;
+  batch_no?: string;
+  expiry_date?: string | null;
 }
 
 interface ProductCategory {
@@ -64,7 +66,9 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
     selling_price: 0,
     stock_quantity: 0,
     min_stock_level: 10,
-    max_stock_level: 100
+    max_stock_level: 100,
+    batch_no: 'N/A',
+    expiry_date: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCreateCategory, setShowCreateCategory] = useState(false);
@@ -108,7 +112,9 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
         selling_price: Number(item.selling_price) || 0,
         stock_quantity: Number(item.stock_quantity) || 0,
         min_stock_level: Number(item.min_stock_level) || 10,
-        max_stock_level: Number(item.max_stock_level) || 100
+        max_stock_level: Number(item.max_stock_level) || 100,
+        batch_no: item.batch_no || 'N/A',
+        expiry_date: item.expiry_date || ''
       });
     }
   }, [item, open]);
@@ -159,7 +165,9 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
         selling_price: Number(formData.selling_price),
         stock_quantity: Number(formData.stock_quantity),
         minimum_stock_level: Number(formData.min_stock_level),
-        maximum_stock_level: Number(formData.max_stock_level)
+        maximum_stock_level: Number(formData.max_stock_level),
+        batch_no: formData.batch_no || 'N/A',
+        expiry_date: formData.expiry_date || null
       };
 
       console.log('Updating product with data:', updatedData);
@@ -287,7 +295,9 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
       selling_price: 0,
       stock_quantity: 0,
       min_stock_level: 10,
-      max_stock_level: 100
+      max_stock_level: 100,
+      batch_no: 'N/A',
+      expiry_date: ''
     });
   };
 
@@ -411,6 +421,28 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
                   )}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="batch_no">Batch No</Label>
+                <Input
+                  id="batch_no"
+                  value={formData.batch_no}
+                  onChange={(e) => handleInputChange('batch_no', e.target.value)}
+                  placeholder="e.g., BATCH-2025-001"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="expiry_date">Expiry Date</Label>
+                <Input
+                  id="expiry_date"
+                  type="date"
+                  value={formData.expiry_date}
+                  onChange={(e) => handleInputChange('expiry_date', e.target.value)}
+                />
+              </div>
             </div>
           </div>
 

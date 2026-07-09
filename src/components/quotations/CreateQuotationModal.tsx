@@ -118,7 +118,7 @@ export function CreateQuotationModal({ open, onOpenChange, onSuccess }: CreateQu
 
   const addItem = (product: any) => {
     const existingItem = items.find(item => item.product_id === product.id);
-    
+
     if (existingItem) {
       // Increase quantity if item already exists
       updateItemQuantity(existingItem.id, existingItem.quantity + 1);
@@ -135,8 +135,8 @@ export function CreateQuotationModal({ open, onOpenChange, onSuccess }: CreateQu
       vat_percentage: 0,
       vat_inclusive: false,
       line_total: calculateItemTotal(1, product.selling_price, 0, false),
-      batch_no: '',
-      expiry_date: null
+      batch_no: product.batch_no || '',
+      expiry_date: product.expiry_date || null
     };
 
     setItems([...items, newItem]);

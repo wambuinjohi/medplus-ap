@@ -216,8 +216,8 @@ export function EditQuotationModal({ open, onOpenChange, onSuccess, quotation }:
       tax_amount: 0,
       tax_inclusive: false,
       line_total: product.selling_price,
-      batch_no: '',
-      expiry_date: null
+      batch_no: product.batch_no || '',
+      expiry_date: product.expiry_date || null
     };
 
     setItems([...items, newItem]);
