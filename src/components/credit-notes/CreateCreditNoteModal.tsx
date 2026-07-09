@@ -32,10 +32,11 @@ import {
 } from 'lucide-react';
 import { useCustomers, useProducts, useTaxSettings, useCompanies } from '@/hooks/useDatabase';
 import { useInvoicesFixed as useInvoices } from '@/hooks/useInvoicesFixed';
-import { useGenerateCreditNoteNumber } from '@/hooks/useCreditNotes';
+import { useGenerateCreditNoteNumber, useApplyCreditNoteToInvoice } from '@/hooks/useCreditNotes';
 import { useCreateCreditNoteWithItems } from '@/hooks/useCreditNoteItems';
 import { toast } from 'sonner';
 import { getTermsAndConditions } from '@/utils/termsManager';
+import { supabase } from '@/integrations/supabase/client';
 
 interface CreditNoteItem {
   id: string;
@@ -76,6 +77,7 @@ export function CreateCreditNoteModal({
   const [items, setItems] = useState<CreditNoteItem[]>([]);
   const [searchProduct, setSearchProduct] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [autoApply, setAutoApply] = useState(false);
 
   const { data: companies, isLoading: loadingCompanies, error: companiesError } = useCompanies();
   const companyId = companies?.[0]?.id;
@@ -86,6 +88,7 @@ export function CreateCreditNoteModal({
   const { data: invoices } = useInvoices(companyId);
   const createCreditNoteWithItems = useCreateCreditNoteWithItems();
   const generateCreditNoteNumber = useGenerateCreditNoteNumber();
+  const applyCreditNoteToInvoice = useApplyCreditNoteToInvoice();
 
   // Get default tax rate
   const defaultTax = taxSettings?.find(tax => tax.is_default && tax.is_active);
@@ -335,12 +338,33 @@ export function CreateCreditNoteModal({
         sort_order: index
       }));
 
-      await createCreditNoteWithItems.mutateAsync({
+      const createdCreditNote = await createCreditNoteWithItems.mutateAsync({
         creditNote: creditNoteData,
         items: creditNoteItems
       });
 
-      toast.success(`Credit note ${creditNoteNumber} created successfully!`);
+      // Auto-apply if checkbox is selected
+      if (autoApply && selectedInvoiceId && selectedInvoiceId !== 'none') {
+        try {
+          const authUser = await supabase.auth.getUser();
+          const userId = authUser?.data?.user?.id || 'system';
+
+          await applyCreditNoteToInvoice.mutateAsync({
+            creditNoteId: createdCreditNote.id,
+            invoiceId: selectedInvoiceId,
+            amount: totalAmount,
+            appliedBy: userId
+          });
+
+          toast.success(`Credit note ${creditNoteNumber} created and applied successfully!`);
+        } catch (applyError) {
+          console.error('Error auto-applying credit note:', applyError);
+          toast.error('Credit note created but auto-apply failed. You can apply it manually.');
+        }
+      } else {
+        toast.success(`Credit note ${creditNoteNumber} created successfully!`);
+      }
+
       onSuccess();
       onOpenChange(false);
       resetForm();
@@ -360,6 +384,7 @@ export function CreateCreditNoteModal({
     setNotes('');
     setTermsAndConditions('All credits must be used within 90 days.');
     setAffectsInventory(false);
+    setAutoApply(false);
     setItems([]);
     setSearchProduct('');
   };
@@ -408,21 +433,35 @@ export function CreateCreditNoteModal({
 
                 {/* Invoice Selection (Optional) */}
                 {selectedCustomerId && customerInvoices.length > 0 && (
-                  <div className="space-y-2">
-                    <Label htmlFor="invoice">Related Invoice (Optional)</Label>
-                    <Select value={selectedInvoiceId} onValueChange={setSelectedInvoiceId}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select an invoice (optional)" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">No specific invoice</SelectItem>
-                        {customerInvoices.map((invoice) => (
-                          <SelectItem key={invoice.id} value={invoice.id}>
-                            {invoice.invoice_number} - {formatCurrency(invoice.balance_due || 0)} due
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                  <div className="space-y-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="invoice">Related Invoice (Optional)</Label>
+                      <Select value={selectedInvoiceId} onValueChange={setSelectedInvoiceId}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select an invoice (optional)" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">No specific invoice</SelectItem>
+                          {customerInvoices.map((invoice) => (
+                            <SelectItem key={invoice.id} value={invoice.id}>
+                              {invoice.invoice_number} - {formatCurrency(invoice.balance_due || 0)} due
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {selectedInvoiceId && selectedInvoiceId !== 'none' && (
+                      <div className="flex items-center space-x-2 bg-blue-50 p-3 rounded-md">
+                        <Checkbox
+                          id="auto_apply"
+                          checked={autoApply}
+                          onCheckedChange={(checked) => setAutoApply(!!checked)}
+                        />
+                        <Label htmlFor="auto_apply" className="text-sm cursor-pointer">
+                          Apply to selected invoice immediately upon creation
+                        </Label>
+                      </div>
+                    )}
                   </div>
                 )}
 

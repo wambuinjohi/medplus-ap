@@ -28,21 +28,25 @@ import { generateCustomerStatementPDF } from '@/utils/pdfGenerator';
 import { toast } from 'sonner';
 import { useCustomers, usePayments, useCompanies } from '@/hooks/useDatabase';
 import { useInvoicesFixed as useInvoices } from '@/hooks/useInvoicesFixed';
+import { useCreditNotes } from '@/hooks/useCreditNotes';
+import { supabase } from '@/integrations/supabase/client';
 import { exportDataToExcel } from '@/utils/csvExporter';
 
 // Helper function to compute customer statements from real data
-const computeCustomerStatements = (customers: any[], invoices: any[], payments: any[]) => {
+const computeCustomerStatements = (customers: any[], invoices: any[], payments: any[], creditNotes: any[] = []) => {
   if (!customers || !invoices || !payments) return [];
 
   return customers.map(customer => {
-    // Get customer invoices
+    // Get customer invoices, payments, and credit notes
     const customerInvoices = invoices.filter(inv => inv.customer_id === customer.id);
     const customerPayments = payments.filter(pay => pay.customer_id === customer.id);
+    const customerCreditNotes = creditNotes.filter(cn => cn.customer_id === customer.id);
 
-    // Calculate totals
+    // Calculate totals including credit notes
     const totalInvoiced = customerInvoices.reduce((sum, inv) => sum + (Number(inv.total_amount) || 0), 0);
     const totalPaid = customerPayments.reduce((sum, pay) => sum + (Number(pay.amount) || 0), 0);
-    const currentBalance = totalInvoiced - totalPaid;
+    const totalCreditNotes = customerCreditNotes.reduce((sum, cn) => sum + (Number(cn.total_amount) || 0), 0);
+    const currentBalance = totalInvoiced - totalPaid - totalCreditNotes;
 
     // Calculate aging analysis
     const today = new Date();
@@ -79,6 +83,15 @@ const computeCustomerStatements = (customers: any[], invoices: any[], payments: 
         description: `Payment - ${pay.payment_method || 'Cash'}`,
         debit: 0,
         credit: Number(pay.amount) || 0,
+        balance: 0 // Will be calculated
+      })),
+      ...customerCreditNotes.map(cn => ({
+        date: cn.credit_note_date,
+        type: 'Credit Note',
+        reference: cn.credit_note_number,
+        description: `Credit Note - ${cn.reason || cn.credit_note_number}`,
+        debit: 0,
+        credit: Number(cn.total_amount) || 0,
         balance: 0 // Will be calculated
       }))
     ];
@@ -125,9 +138,10 @@ const StatementOfAccounts = () => {
   const { data: customers } = useCustomers(currentCompany?.id);
   const { data: invoices } = useInvoices(currentCompany?.id);
   const { data: payments } = usePayments(currentCompany?.id);
+  const { data: creditNotes } = useCreditNotes(currentCompany?.id);
 
   // Compute statements from real data
-  const computedStatements = computeCustomerStatements(customers || [], invoices || [], payments || []);
+  const computedStatements = computeCustomerStatements(customers || [], invoices || [], payments || [], creditNotes || []);
 
   const handleDownloadStatement = async (statement: any) => {
     try {
@@ -138,9 +152,10 @@ const StatementOfAccounts = () => {
         return;
       }
 
-      // Get real invoices and payments for this customer
+      // Get real invoices, payments, and credit notes for this customer
       const customerInvoices = invoices?.filter(inv => inv.customer_id === customer.id) || [];
       const customerPayments = payments?.filter(pay => pay.customer_id === customer.id) || [];
+      const customerCreditNotes = creditNotes?.filter(cn => cn.customer_id === customer.id) || [];
 
       // Prepare company details for PDF
       const companyDetails = currentCompany ? {
@@ -160,9 +175,10 @@ const StatementOfAccounts = () => {
         paybill_number: currentCompany.paybill_number
       } : undefined;
 
-      // Generate PDF with real data
+      // Generate PDF with real data (pass credit notes as part of options)
       await generateCustomerStatementPDF(customer, customerInvoices, customerPayments, {
-        statement_date: new Date().toISOString().split('T')[0]
+        statement_date: new Date().toISOString().split('T')[0],
+        creditNotes: customerCreditNotes
       }, companyDetails);
 
       toast.success(`Statement PDF generated for ${statement.customerName}`);
