@@ -546,3 +546,97 @@ export function useApplyCreditNoteToInvoice() {
     },
   });
 }
+
+// Unapply credit note allocation from invoice
+export function useUnapplyCreditNoteAllocation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      allocationId,
+      creditNoteId,
+      invoiceId,
+      allocatedAmount
+    }: {
+      allocationId: string;
+      creditNoteId: string;
+      invoiceId: string;
+      allocatedAmount: number;
+    }) => {
+      // Step 1: Delete the allocation record
+      const { error: deleteError } = await supabase
+        .from('credit_note_allocations')
+        .delete()
+        .eq('id', allocationId);
+
+      if (deleteError) throw deleteError;
+
+      // Step 2: Restore invoice balance_due
+      const { data: invoice, error: fetchError } = await supabase
+        .from('invoices')
+        .select('balance_due, total_amount, paid_amount')
+        .eq('id', invoiceId)
+        .single();
+
+      if (!fetchError && invoice) {
+        const newBalanceDue = Math.min(
+          invoice.total_amount,
+          (invoice.balance_due || 0) + allocatedAmount
+        );
+
+        const { error: updateError } = await supabase
+          .from('invoices')
+          .update({ balance_due: newBalanceDue })
+          .eq('id', invoiceId);
+
+        if (updateError) {
+          console.warn('Failed to restore invoice balance_due:', updateError);
+        }
+      }
+
+      // Step 3: Update credit note balance and applied_amount
+      const { data: creditNote, error: cnFetchError } = await supabase
+        .from('credit_notes')
+        .select('applied_amount, balance, total_amount, status')
+        .eq('id', creditNoteId)
+        .single();
+
+      if (!cnFetchError && creditNote) {
+        const newAppliedAmount = Math.max(0, (creditNote.applied_amount || 0) - allocatedAmount);
+        const newBalance = creditNote.total_amount - newAppliedAmount;
+
+        // Determine status: if balance > 0, it's no longer fully applied
+        let newStatus = creditNote.status;
+        if (creditNote.status === 'applied' && newBalance > 0.01) {
+          newStatus = creditNote.status === 'sent' ? 'sent' : 'draft';
+        }
+
+        const { error: cnUpdateError } = await supabase
+          .from('credit_notes')
+          .update({
+            applied_amount: newAppliedAmount,
+            balance: newBalance,
+            status: newStatus
+          })
+          .eq('id', creditNoteId);
+
+        if (cnUpdateError) {
+          console.warn('Failed to update credit note:', cnUpdateError);
+        }
+      }
+
+      return { allocationId, creditNoteId, invoiceId };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['creditNotes'] });
+      queryClient.invalidateQueries({ queryKey: ['creditNoteAllocations'] });
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      toast.success('Allocation reversed successfully!');
+    },
+    onError: (error: any) => {
+      console.error('Error unapplying credit note:', error);
+      const errorMessage = error.message || 'Failed to reverse allocation';
+      toast.error(errorMessage);
+    },
+  });
+}

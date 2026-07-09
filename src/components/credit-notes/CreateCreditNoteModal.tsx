@@ -78,6 +78,7 @@ export function CreateCreditNoteModal({
   const [searchProduct, setSearchProduct] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [autoApply, setAutoApply] = useState(false);
+  const [autoApplyAmount, setAutoApplyAmount] = useState<number | null>(null);
 
   const { data: companies, isLoading: loadingCompanies, error: companiesError } = useCompanies();
   const companyId = companies?.[0]?.id;
@@ -348,11 +349,25 @@ export function CreateCreditNoteModal({
         try {
           const authUser = await supabase.auth.getUser();
           const userId = authUser?.data?.user?.id || 'system';
+          const applyAmount = autoApplyAmount ?? totalAmount;
+
+          // Validate amount
+          if (applyAmount <= 0) {
+            toast.error('Apply amount must be greater than zero');
+            setIsSubmitting(false);
+            return;
+          }
+
+          if (applyAmount > totalAmount) {
+            toast.error(`Apply amount cannot exceed credit note total (${formatCurrency(totalAmount)})`);
+            setIsSubmitting(false);
+            return;
+          }
 
           await applyCreditNoteToInvoice.mutateAsync({
             creditNoteId: createdCreditNote.id,
             invoiceId: selectedInvoiceId,
-            amount: totalAmount,
+            amount: applyAmount,
             appliedBy: userId
           });
 
@@ -385,6 +400,7 @@ export function CreateCreditNoteModal({
     setTermsAndConditions('All credits must be used within 90 days.');
     setAffectsInventory(false);
     setAutoApply(false);
+    setAutoApplyAmount(null);
     setItems([]);
     setSearchProduct('');
   };
@@ -451,15 +467,37 @@ export function CreateCreditNoteModal({
                       </Select>
                     </div>
                     {selectedInvoiceId && selectedInvoiceId !== 'none' && (
-                      <div className="flex items-center space-x-2 bg-blue-50 p-3 rounded-md">
-                        <Checkbox
-                          id="auto_apply"
-                          checked={autoApply}
-                          onCheckedChange={(checked) => setAutoApply(!!checked)}
-                        />
-                        <Label htmlFor="auto_apply" className="text-sm cursor-pointer">
-                          Apply to selected invoice immediately upon creation
-                        </Label>
+                      <div className="space-y-2 bg-blue-50 p-3 rounded-md">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="auto_apply"
+                            checked={autoApply}
+                            onCheckedChange={(checked) => {
+                              setAutoApply(!!checked);
+                              if (!checked) setAutoApplyAmount(null);
+                            }}
+                          />
+                          <Label htmlFor="auto_apply" className="text-sm cursor-pointer">
+                            Apply to selected invoice immediately upon creation
+                          </Label>
+                        </div>
+                        {autoApply && (
+                          <div className="ml-6 space-y-2">
+                            <Label htmlFor="auto_apply_amount" className="text-sm">
+                              Amount to apply (leave blank to apply full credit note)
+                            </Label>
+                            <Input
+                              id="auto_apply_amount"
+                              type="number"
+                              value={autoApplyAmount ?? ''}
+                              onChange={(e) => setAutoApplyAmount(e.target.value ? parseFloat(e.target.value) : null)}
+                              placeholder={`Full amount: ${formatCurrency(totalAmount)}`}
+                              step="0.01"
+                              min="0"
+                              className="h-8"
+                            />
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
