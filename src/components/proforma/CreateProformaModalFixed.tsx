@@ -196,6 +196,8 @@ export const CreateProformaModalFixed = ({
       tax_amount: 0,
       tax_inclusive: false,
       line_total: 0,
+      batch_no: product.batch_no || '',
+      expiry_date: product.expiry_date || undefined
     };
 
     // Calculate tax and totals using the proper utility

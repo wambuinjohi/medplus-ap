@@ -56,12 +56,12 @@ function getStatusColor(status: string) {
 }
 
 // Memoized product row component for better performance
-const ProductRow = React.memo(({ 
-  product, 
-  formatter, 
-  onView, 
-  onEdit, 
-  onRestock 
+const ProductRow = React.memo(({
+  product,
+  formatter,
+  onView,
+  onEdit,
+  onRestock
 }: {
   product: OptimizedProduct;
   formatter: Intl.NumberFormat;
@@ -73,9 +73,9 @@ const ProductRow = React.memo(({
   const minimumStock = product.minimum_stock_level || 0;
   const sellingPrice = product.selling_price || 0;
   const status = useStockStatus(stockQuantity, minimumStock);
-  
-  const totalValue = useMemo(() => 
-    stockQuantity * sellingPrice, 
+
+  const totalValue = useMemo(() =>
+    stockQuantity * sellingPrice,
     [stockQuantity, sellingPrice]
   );
 
@@ -90,6 +90,8 @@ const ProductRow = React.memo(({
       <TableCell className="text-muted-foreground">{minimumStock}</TableCell>
       <TableCell>{formatter.format(sellingPrice)}</TableCell>
       <TableCell className="font-semibold text-success">{formatter.format(totalValue)}</TableCell>
+      <TableCell className="text-sm">{product.batch_no || 'N/A'}</TableCell>
+      <TableCell>{product.expiry_date ? new Date(product.expiry_date).toLocaleDateString() : '-'}</TableCell>
       <TableCell>
         <Badge variant="outline" className={getStatusColor(status)}>
           {status.replace('_', ' ')}
@@ -428,6 +430,8 @@ export default function OptimizedInventory() {
                 <TableHead>Min Stock</TableHead>
                 <TableHead>Unit Price</TableHead>
                 <TableHead>Total Value</TableHead>
+                <TableHead>Batch No</TableHead>
+                <TableHead>Expiry Date</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -435,7 +439,7 @@ export default function OptimizedInventory() {
             <TableBody>
               {products.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-8">
+                  <TableCell colSpan={11} className="text-center py-8">
                     <div className="flex flex-col items-center space-y-2">
                       <Package className="h-12 w-12 text-muted-foreground" />
                       <p className="text-muted-foreground">

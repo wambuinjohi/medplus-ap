@@ -33,6 +33,9 @@ interface DeliveryItem {
   quantity_ordered: number;
   quantity_delivered: number;
   unit_of_measure: string;
+  batch_no?: string;
+  expiry_date?: string;
+  products?: any;
 }
 
 interface DeliveryNote {
@@ -263,6 +266,8 @@ export const ViewDeliveryNoteModal = ({
                       <TableHead>Ordered</TableHead>
                       <TableHead>Delivered</TableHead>
                       <TableHead>Unit</TableHead>
+                      <TableHead>Batch No</TableHead>
+                      <TableHead>Expiry Date</TableHead>
                       <TableHead>Status</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -283,6 +288,8 @@ export const ViewDeliveryNoteModal = ({
                             {item.quantity_delivered}
                           </TableCell>
                           <TableCell>{(item.products as any)?.unit_of_measure || item.unit_of_measure || 'pcs'}</TableCell>
+                          <TableCell className="text-sm">{item.batch_no || 'N/A'}</TableCell>
+                          <TableCell>{item.expiry_date ? new Date(item.expiry_date).toLocaleDateString() : '-'}</TableCell>
                           <TableCell>
                             {isFullyDelivered ? (
                               <Badge className="text-xs bg-success text-success-foreground">

@@ -40,6 +40,8 @@ interface RemittanceItem {
   invoiceAmount: number;
   creditAmount: number;
   payment: number;
+  batch_no?: string;
+  expiry_date?: string | null;
 }
 
 export function CreateRemittanceModal({ open, onOpenChange, onSuccess }: CreateRemittanceModalProps) {
@@ -67,6 +69,8 @@ export function CreateRemittanceModal({ open, onOpenChange, onSuccess }: CreateR
     invoiceAmount: 0,
     creditAmount: 0,
     payment: 0,
+    batch_no: '',
+    expiry_date: null,
   }]);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -122,6 +126,8 @@ export function CreateRemittanceModal({ open, onOpenChange, onSuccess }: CreateR
       invoiceAmount: 0,
       creditAmount: 0,
       payment: 0,
+      batch_no: '',
+      expiry_date: null,
     };
     setItems([...items, newItem]);
   };
@@ -228,6 +234,8 @@ export function CreateRemittanceModal({ open, onOpenChange, onSuccess }: CreateR
         invoiceAmount: 0,
         creditAmount: 0,
         payment: 0,
+        batch_no: '',
+        expiry_date: null,
       }]);
 
     } catch (error: any) {

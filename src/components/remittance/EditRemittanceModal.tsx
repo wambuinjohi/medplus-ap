@@ -42,6 +42,8 @@ interface RemittanceItem {
   invoiceAmount: number;
   creditAmount: number;
   payment: number;
+  batch_no?: string;
+  expiry_date?: string | null;
 }
 
 export function EditRemittanceModal({ open, onOpenChange, remittance, onSuccess }: EditRemittanceModalProps) {

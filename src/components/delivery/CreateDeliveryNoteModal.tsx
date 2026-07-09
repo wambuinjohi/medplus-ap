@@ -42,6 +42,8 @@ interface DeliveryItem {
   quantity_ordered: number;
   quantity_delivered: number;
   unit_of_measure: string;
+  batch_no?: string;
+  expiry_date?: string | null;
 }
 
 interface CreateDeliveryNoteModalProps {
@@ -117,6 +119,8 @@ export const CreateDeliveryNoteModal = ({
             quantity_ordered: Math.max(Number(item.quantity) || 1, 1),
             quantity_delivered: Math.max(Number(item.quantity) || 1, 1),
             unit_of_measure: item.products?.unit_of_measure || 'pcs',
+            batch_no: item.batch_no || '',
+            expiry_date: item.expiry_date || null
           }));
 
           setItems(deliveryItems);
@@ -150,6 +154,8 @@ export const CreateDeliveryNoteModal = ({
       quantity_ordered: 1, // Default to 1 unit
       quantity_delivered: 1, // Default to 1 unit for delivery
       unit_of_measure: product.unit_of_measure || 'pcs',
+      batch_no: product.batch_no || '',
+      expiry_date: product.expiry_date || null
     };
 
     setItems(prev => [...prev, newItem]);
@@ -159,9 +165,17 @@ export const CreateDeliveryNoteModal = ({
   };
 
   const updateItem = (id: string, field: keyof DeliveryItem, value: any) => {
-    setItems(prev => prev.map(item => 
+    setItems(prev => prev.map(item =>
       item.id === id ? { ...item, [field]: value } : item
     ));
+  };
+
+  const updateItemBatchNo = (itemId: string, batchNo: string) => {
+    updateItem(itemId, 'batch_no', batchNo);
+  };
+
+  const updateItemExpiryDate = (itemId: string, expiryDate: string | null) => {
+    updateItem(itemId, 'expiry_date', expiryDate || null);
   };
 
   const removeItem = (id: string) => {
@@ -240,7 +254,9 @@ export const CreateDeliveryNoteModal = ({
           quantity_delivered: Math.max(item.quantity_delivered, 0.01),
           quantity: Math.max(item.quantity_delivered, 0.01), // For compatibility
           unit_of_measure: item.unit_of_measure || 'pcs',
-          unit_price: 0 // Delivery notes don't include pricing
+          unit_price: 0, // Delivery notes don't include pricing
+          batch_no: item.batch_no || '',
+          expiry_date: item.expiry_date || null
         }))
       });
 
@@ -505,6 +521,8 @@ export const CreateDeliveryNoteModal = ({
                       <TableHead>Ordered</TableHead>
                       <TableHead>Delivered</TableHead>
                       <TableHead>Unit</TableHead>
+                      <TableHead>Batch No</TableHead>
+                      <TableHead>Expiry Date</TableHead>
                       <TableHead></TableHead>
                     </TableRow>
                   </TableHeader>
@@ -549,6 +567,23 @@ export const CreateDeliveryNoteModal = ({
                           />
                         </TableCell>
                         <TableCell>{item.unit_of_measure}</TableCell>
+                        <TableCell>
+                          <Input
+                            type="text"
+                            value={item.batch_no || ''}
+                            onChange={(e) => updateItemBatchNo(item.id, e.target.value)}
+                            placeholder="Batch no"
+                            className="w-28"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            type="date"
+                            value={item.expiry_date || ''}
+                            onChange={(e) => updateItemExpiryDate(item.id, e.target.value || null)}
+                            className="w-32"
+                          />
+                        </TableCell>
                         <TableCell>
                           {!formData.invoice_id && (
                             <Button
