@@ -238,18 +238,6 @@ export function ViewInvoiceModal({
                     {formatCurrency(invoice.balance_due || 0)}
                   </div>
                 </div>
-                {invoice.batch_no && (
-                  <div>
-                    <span className="text-muted-foreground">Batch No:</span>
-                    <div className="font-medium">{invoice.batch_no}</div>
-                  </div>
-                )}
-                {invoice.expiry_date && (
-                  <div>
-                    <span className="text-muted-foreground">Expiry Date:</span>
-                    <div className="font-medium">{formatDate(invoice.expiry_date)}</div>
-                  </div>
-                )}
               </div>
             </CardContent>
           </Card>

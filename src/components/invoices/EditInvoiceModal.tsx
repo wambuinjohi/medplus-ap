@@ -64,8 +64,6 @@ export function EditInvoiceModal({ open, onOpenChange, onSuccess, invoice }: Edi
   const [invoiceDate, setInvoiceDate] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [lpoNumber, setLpoNumber] = useState('');
-  const [batchNo, setBatchNo] = useState('');
-  const [expiryDate, setExpiryDate] = useState('');
   const [notes, setNotes] = useState('');
   const [termsAndConditions, setTermsAndConditions] = useState(getTermsAndConditions());
 
@@ -90,8 +88,6 @@ export function EditInvoiceModal({ open, onOpenChange, onSuccess, invoice }: Edi
       setInvoiceDate(invoice.invoice_date || '');
       setDueDate(invoice.due_date || '');
       setLpoNumber(invoice.lpo_number || '');
-      setBatchNo(invoice.batch_no || '');
-      setExpiryDate(invoice.expiry_date || '');
       setNotes(invoice.notes || '');
       setTermsAndConditions(invoice.terms_and_conditions || getTermsAndConditions());
 
@@ -312,8 +308,6 @@ export function EditInvoiceModal({ open, onOpenChange, onSuccess, invoice }: Edi
         invoice_date: invoiceDate,
         due_date: dueDate,
         lpo_number: lpoNumber || null,
-        batch_no: batchNo || 'N/A',
-        expiry_date: expiryDate || null,
         subtotal: subtotal,
         tax_amount: taxAmount,
         total_amount: totalAmount,
@@ -427,29 +421,6 @@ export function EditInvoiceModal({ open, onOpenChange, onSuccess, invoice }: Edi
                     value={lpoNumber}
                     onChange={(e) => setLpoNumber(e.target.value)}
                     placeholder="Enter LPO reference number"
-                  />
-                </div>
-
-                {/* Batch Number */}
-                <div className="space-y-2">
-                  <Label htmlFor="batch_no">Batch Number (Optional)</Label>
-                  <Input
-                    id="batch_no"
-                    type="text"
-                    value={batchNo}
-                    onChange={(e) => setBatchNo(e.target.value)}
-                    placeholder="Enter batch number"
-                  />
-                </div>
-
-                {/* Expiry Date */}
-                <div className="space-y-2">
-                  <Label htmlFor="expiry_date">Expiry Date (Optional)</Label>
-                  <Input
-                    id="expiry_date"
-                    type="date"
-                    value={expiryDate}
-                    onChange={(e) => setExpiryDate(e.target.value)}
                   />
                 </div>
 
