@@ -61,7 +61,21 @@ export function useCreateCreditNoteWithItems() {
         }
 
         if (creditNoteError) {
-          console.error('Error creating credit note:', creditNoteError);
+          console.error('Error creating credit note:', {
+            message: creditNoteError.message,
+            code: creditNoteError.code,
+            details: creditNoteError.details,
+            hint: creditNoteError.hint
+          });
+
+          // Check for RLS/permission errors
+          if (creditNoteError.code === '42501' || creditNoteError.code === 'PGRST301' ||
+              creditNoteError.message?.includes('permission') ||
+              creditNoteError.message?.includes('policy')) {
+            console.error('RLS Policy Error - User may lack required permissions');
+            throw new Error(`Permission denied: You don't have permission to create credit notes. Please contact your administrator.`);
+          }
+
           throw creditNoteError;
         }
 
@@ -80,7 +94,27 @@ export function useCreateCreditNoteWithItems() {
             .insert(itemsToInsert);
 
           if (itemsError) {
-            console.error('Error creating credit note items:', itemsError);
+            console.error('Error creating credit note items:', {
+              message: itemsError.message,
+              code: itemsError.code,
+              details: itemsError.details,
+              hint: itemsError.hint
+            });
+
+            // Check for RLS/permission errors
+            if (itemsError.code === '42501' || itemsError.code === 'PGRST301' ||
+                itemsError.message?.includes('permission') ||
+                itemsError.message?.includes('policy')) {
+              console.error('RLS Policy Error on items - User may lack required permissions');
+              // Still try to cleanup the credit note
+              await supabase
+                .from('credit_notes')
+                .delete()
+                .eq('id', createdCreditNote.id)
+                .catch(err => console.error('Cleanup error:', err));
+              throw new Error(`Permission denied: You don't have permission to add credit note items. Please contact your administrator.`);
+            }
+
             // Cleanup: delete the credit note if items failed
             await supabase
               .from('credit_notes')
