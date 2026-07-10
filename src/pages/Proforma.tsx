@@ -44,6 +44,7 @@ import { exportDataToExcel } from '@/utils/csvExporter';
 import { formatCurrency } from '@/utils/taxCalculation';
 import { ensureProformaSchema } from '@/utils/proformaDatabaseSetup';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function Proforma() {
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -107,6 +108,30 @@ export default function Proforma() {
         currentCompany?.id
       );
 
+      // Fetch applied credit notes for this proforma
+      let appliedCreditNotes = [];
+      try {
+        const { data: allocations } = await supabase
+          .from('credit_note_allocations')
+          .select(`
+            *,
+            credit_notes!credit_note_id (
+              credit_note_number,
+              total_amount,
+              balance
+            )
+          `)
+          .eq('proforma_id', proformaWithTerms.id);
+
+        appliedCreditNotes = (allocations || []).map(a => ({
+          id: a.id,
+          credit_note_number: a.credit_notes?.credit_note_number || '',
+          allocated_amount: a.allocated_amount
+        }));
+      } catch (error) {
+        console.warn('Failed to fetch credit notes for proforma PDF:', error);
+      }
+
       // Convert proforma to invoice format for PDF generation
       const invoiceData = {
         id: proformaWithTerms.id,
@@ -122,6 +147,9 @@ export default function Proforma() {
         notes: proformaWithTerms.notes || 'This is a proforma invoice for advance payment.',
         // Use proforma terms (which now includes dynamic terms if not already set)
         terms_and_conditions: proformaWithTerms.terms_and_conditions || undefined,
+        paid_amount: 0,
+        balance_due: proformaWithTerms.total_amount,
+        appliedCreditNotes: appliedCreditNotes.length > 0 ? appliedCreditNotes : undefined,
       };
 
       // Get current company details for PDF
