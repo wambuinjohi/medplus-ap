@@ -468,7 +468,51 @@ export function useApplyCreditNoteToInvoice() {
       amount: number;
       appliedBy: string;
     }) => {
-      // Step 1: Call the RPC function to create the allocation
+      // Client-side validation
+      if (!creditNoteId || !invoiceId || !appliedBy) {
+        throw new Error('Missing required fields: creditNoteId, invoiceId, appliedBy');
+      }
+
+      if (amount <= 0) {
+        throw new Error('Amount to apply must be greater than zero');
+      }
+
+      // Step 1: Fetch credit note to validate available balance
+      const { data: creditNote, error: cnFetchError } = await supabase
+        .from('credit_notes')
+        .select('balance, total_amount, applied_amount')
+        .eq('id', creditNoteId)
+        .single();
+
+      if (cnFetchError || !creditNote) {
+        throw new Error('Credit note not found');
+      }
+
+      if (amount > creditNote.balance) {
+        throw new Error(
+          `Amount to apply (${amount}) exceeds available balance (${creditNote.balance}). ` +
+          `Total amount: ${creditNote.total_amount}, Already applied: ${creditNote.applied_amount}`
+        );
+      }
+
+      // Step 2: Fetch invoice to validate it exists and check balance
+      const { data: invoice, error: invFetchError } = await supabase
+        .from('invoices')
+        .select('balance_due, total_amount')
+        .eq('id', invoiceId)
+        .single();
+
+      if (invFetchError || !invoice) {
+        throw new Error('Invoice not found');
+      }
+
+      if (amount > invoice.balance_due) {
+        throw new Error(
+          `Amount to apply (${amount}) exceeds invoice balance due (${invoice.balance_due})`
+        );
+      }
+
+      // Step 3: Call the RPC function to create the allocation
       const { data: rpcResult, error: rpcError } = await supabase
         .rpc('apply_credit_note_to_invoice', {
           credit_note_uuid: creditNoteId,
@@ -477,65 +521,24 @@ export function useApplyCreditNoteToInvoice() {
           applied_by_uuid: appliedBy
         });
 
-      if (rpcError) throw rpcError;
-
-      // Step 2: Verify and ensure invoice balance_due is updated
-      const { data: invoice, error: fetchError } = await supabase
-        .from('invoices')
-        .select('balance_due, total_amount, paid_amount')
-        .eq('id', invoiceId)
-        .single();
-
-      if (fetchError) {
-        console.warn('Could not verify invoice after allocation:', fetchError);
-        return rpcResult;
+      if (rpcError) {
+        console.error('RPC error:', rpcError);
+        throw new Error(rpcError.message || 'Failed to apply credit note');
       }
 
-      // Step 3: If balance_due wasn't updated by RPC, update it manually
-      if (invoice && (invoice.balance_due || 0) > 0) {
-        const newBalanceDue = Math.max(0, (invoice.balance_due || 0) - amount);
-
-        // Only update if the difference is significant (more than 0.01)
-        if (Math.abs((invoice.balance_due || 0) - newBalanceDue - amount) > 0.01) {
-          const { error: updateError } = await supabase
-            .from('invoices')
-            .update({ balance_due: newBalanceDue })
-            .eq('id', invoiceId);
-
-          if (updateError) {
-            console.warn('Manual balance_due update failed:', updateError);
-          }
+      // Step 4: Validate RPC response
+      if (!rpcResult || typeof rpcResult === 'string') {
+        // rpcResult might be a string in case of error
+        const resultObj = typeof rpcResult === 'string' ? JSON.parse(rpcResult) : rpcResult;
+        if (!resultObj.success) {
+          throw new Error(resultObj.error || 'RPC function returned failure');
         }
-      }
-
-      // Step 4: Update credit note balance and applied_amount
-      const { data: creditNote, error: cnFetchError } = await supabase
-        .from('credit_notes')
-        .select('applied_amount, balance, total_amount')
-        .eq('id', creditNoteId)
-        .single();
-
-      if (!cnFetchError && creditNote) {
-        const newAppliedAmount = (creditNote.applied_amount || 0) + amount;
-        const newBalance = Math.max(0, creditNote.total_amount - newAppliedAmount);
-
-        const { error: cnUpdateError } = await supabase
-          .from('credit_notes')
-          .update({
-            applied_amount: newAppliedAmount,
-            balance: newBalance,
-            status: newBalance <= 0.01 ? 'applied' : creditNote.status || 'applied'
-          })
-          .eq('id', creditNoteId);
-
-        if (cnUpdateError) {
-          console.warn('Credit note update failed:', cnUpdateError);
-        }
+        return resultObj;
       }
 
       return rpcResult;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['creditNotes'] });
       queryClient.invalidateQueries({ queryKey: ['creditNoteAllocations'] });
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
