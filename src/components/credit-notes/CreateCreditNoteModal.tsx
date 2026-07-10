@@ -528,9 +528,23 @@ export function CreateCreditNoteModal({
       onSuccess();
       onOpenChange(false);
       resetForm();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating credit note:', error);
-      toast.error('Failed to create credit note. Please try again.');
+
+      let errorMessage = 'Failed to create credit note. Please try again.';
+
+      // Check for permission/RLS errors
+      if (error?.message?.includes('Permission denied') ||
+          error?.message?.includes('permission') ||
+          error?.message?.includes('policy')) {
+        errorMessage = error.message;
+      } else if (error?.message?.includes('Unauthorized')) {
+        errorMessage = 'You do not have permission to create credit notes. Please contact your administrator.';
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+
+      toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
