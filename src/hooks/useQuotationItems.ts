@@ -304,6 +304,7 @@ export const useConvertQuotationToInvoice = () => {
       const invoiceData = {
         company_id: quotation.company_id,
         customer_id: quotation.customer_id,
+        quotation_id: quotationId,
         invoice_number: invoiceNumber,
         invoice_date: new Date().toISOString().split('T')[0],
         due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
