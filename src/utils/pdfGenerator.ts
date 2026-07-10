@@ -974,6 +974,12 @@ export const generatePDF = (data: DocumentData) => {
               <td class="label">Paid Amount:</td>
               <td class="amount" style="color: #2BB673;">${formatCurrency(data.paid_amount || 0)}</td>
             </tr>
+            ${data.appliedCreditNotes && data.appliedCreditNotes.length > 0 ? `
+            <tr class="credit-notes-info">
+              <td class="label">Applied Credit Notes:</td>
+              <td class="amount" style="color: #2BB673;">${formatCurrency(data.appliedCreditNotes.reduce((sum, cn) => sum + (cn.allocated_amount || 0), 0))}</td>
+            </tr>
+            ` : ''}
             <tr class="balance-info">
               <td class="label" style="font-weight: bold;">Balance Due:</td>
               <td class="amount" style="font-weight: bold; color: ${(data.balance_due || 0) > 0 ? '#DC2626' : '#2BB673'};">${formatCurrency(data.balance_due || 0)}</td>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -29,10 +29,12 @@ import {
   User,
   Receipt,
   DollarSign,
-  Trash2
+  Trash2,
+  CreditCard
 } from 'lucide-react';
 import { useDeleteProforma } from '@/hooks/useProforma';
 import { TermsAndConditions } from '@/components/ui/TermsAndConditions';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ProformaItem {
   id: string;
@@ -87,7 +89,36 @@ export const ViewProformaModal = ({
   onDelete
 }: ViewProformaModalProps) => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [allocations, setAllocations] = useState<any[]>([]);
+  const [allocationsLoading, setAllocationsLoading] = useState(false);
   const deleteProforma = useDeleteProforma();
+
+  // Fetch credit note allocations for this proforma
+  useEffect(() => {
+    if (open && proforma?.id) {
+      setAllocationsLoading(true);
+      supabase
+        .from('credit_note_allocations')
+        .select(`
+          *,
+          credit_notes!credit_note_id (
+            credit_note_number,
+            total_amount,
+            balance
+          )
+        `)
+        .eq('proforma_id', proforma.id)
+        .order('allocation_date', { ascending: false })
+        .then(({ data, error }) => {
+          if (error) {
+            console.error('Error fetching allocations:', error);
+          } else {
+            setAllocations(data || []);
+          }
+          setAllocationsLoading(false);
+        });
+    }
+  }, [open, proforma?.id]);
 
   if (!proforma) return null;
 
@@ -120,7 +151,20 @@ export const ViewProformaModal = ({
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString();
+    return new Date(dateString).toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    });
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-KE', {
+      style: 'currency',
+      currency: 'KES',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(amount);
   };
 
   const handleDownload = () => {
@@ -272,6 +316,75 @@ export const ViewProformaModal = ({
                   <div className="flex justify-between font-semibold">
                     <span>Total:</span>
                     <span>${proforma.total_amount?.toFixed(2)}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Applied Credit Notes */}
+          {allocations.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <CreditCard className="h-4 w-4" />
+                    <span>Applied Credit Notes</span>
+                  </div>
+                  <Badge variant="outline">
+                    {allocations.length} credit note(s)
+                  </Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Credit Note #</TableHead>
+                      <TableHead>Applied Amount</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Notes</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {allocations.map((allocation: any) => (
+                      <TableRow key={allocation.id}>
+                        <TableCell>
+                          <Button
+                            variant="link"
+                            className="p-0 h-auto font-semibold text-primary"
+                            onClick={() => {
+                              console.log('View credit note:', allocation.credit_note_id);
+                            }}
+                          >
+                            {allocation.credit_notes?.credit_note_number || 'N/A'}
+                          </Button>
+                        </TableCell>
+                        <TableCell className="font-semibold">
+                          {formatCurrency(allocation.allocated_amount || 0)}
+                        </TableCell>
+                        <TableCell>
+                          {allocation.allocation_date ? formatDate(allocation.allocation_date) : '-'}
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {allocation.notes || '-'}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+
+                {/* Total Applied Credit */}
+                <div className="mt-6 border-t pt-4 flex justify-end">
+                  <div className="w-80">
+                    <div className="flex justify-between text-lg border-b pb-2">
+                      <span className="font-semibold">Total Credit Applied:</span>
+                      <span className="font-bold text-success">
+                        {formatCurrency(
+                          allocations.reduce((sum: number, a: any) => sum + (a.allocated_amount || 0), 0)
+                        )}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </CardContent>
