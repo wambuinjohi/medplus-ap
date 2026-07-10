@@ -431,7 +431,7 @@ Website: www.biolegendscientific.co.ke`;
       new Date(invoice.due_date).toLocaleDateString(),
       invoice.total_amount || 0,
       invoice.paid_amount || 0,
-      invoice.balance_due || 0,
+      calculateActualBalance(invoice),
       calculateActualStatus(invoice).toUpperCase()
     ]);
 
