@@ -207,7 +207,7 @@ export function DeleteCreditNoteModal({
                             {new Intl.NumberFormat('en-KE', {
                               style: 'currency',
                               currency: 'KES',
-                            }).format(inv.allocated_amount)}
+                            }).format(inv.allocated_amount || 0)}
                           </span>
                         </li>
                       ))}

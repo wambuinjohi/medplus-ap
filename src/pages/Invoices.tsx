@@ -93,10 +93,16 @@ interface Invoice {
   }>;
 }
 
+function calculateActualBalance(invoice: Invoice): number {
+  const balanceDue = invoice.balance_due || 0;
+  const appliedCreditNotes = invoice.appliedCreditNotes?.reduce((sum, a) => sum + (a.allocated_amount || 0), 0) || 0;
+  return Math.max(0, balanceDue - appliedCreditNotes);
+}
+
 function calculateActualStatus(invoice: Invoice): 'draft' | 'sent' | 'paid' | 'partial' | 'overdue' {
   // Use tolerance of 0.01 to handle floating-point precision issues
   const tolerance = 0.01;
-  const balanceDue = Math.abs(invoice.balance_due || 0) < tolerance ? 0 : (invoice.balance_due || 0);
+  const balanceDue = calculateActualBalance(invoice);
   const paidAmount = invoice.paid_amount || 0;
 
   // If balance is fully paid (0 or less) and there was some payment, mark as paid
@@ -733,9 +739,9 @@ Website: www.biolegendscientific.co.ke`;
                     <TableCell className="text-success">
                       {formatCurrency(invoice.paid_amount || 0)}
                     </TableCell>
-                    <TableCell className={`font-medium ${(invoice.balance_due || 0) > 0 ? 'text-destructive' : 'text-success'}`}>
+                    <TableCell className={`font-medium ${calculateActualBalance(invoice) > 0 ? 'text-destructive' : 'text-success'}`}>
                       <div className="flex items-center gap-2">
-                        <span>{formatCurrency(invoice.balance_due || 0)}</span>
+                        <span>{formatCurrency(calculateActualBalance(invoice))}</span>
                         {invoice.appliedCreditNotes && invoice.appliedCreditNotes.length > 0 && (
                           <TooltipProvider>
                             <Tooltip>
@@ -752,12 +758,12 @@ Website: www.biolegendscientific.co.ke`;
                                       {allocation.credit_notes?.credit_note_number && (
                                         <span>{allocation.credit_notes.credit_note_number}: </span>
                                       )}
-                                      <span className="font-medium">{formatCurrency(allocation.allocated_amount)}</span>
+                                      <span className="font-medium">{formatCurrency(allocation.allocated_amount || 0)}</span>
                                     </div>
                                   ))}
                                   <div className="border-t border-gray-600 pt-1 mt-1 font-semibold text-white">
                                     Total Applied: {formatCurrency(
-                                      invoice.appliedCreditNotes.reduce((sum, a) => sum + a.allocated_amount, 0)
+                                      invoice.appliedCreditNotes.reduce((sum, a) => sum + (a.allocated_amount || 0), 0)
                                     )}
                                   </div>
                                 </div>

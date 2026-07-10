@@ -200,7 +200,7 @@ export function ViewCreditNoteModal({ open, onOpenChange, creditNote }: ViewCred
                           {new Date(allocation.allocation_date).toLocaleDateString()}
                         </TableCell>
                         <TableCell className="text-right font-semibold text-success">
-                          {formatCurrency(allocation.allocated_amount)}
+                          {formatCurrency(allocation.allocated_amount || 0)}
                         </TableCell>
                         <TableCell>
                           <Button
@@ -258,10 +258,10 @@ export function ViewCreditNoteModal({ open, onOpenChange, creditNote }: ViewCred
                           </div>
                         </TableCell>
                         <TableCell className="text-right">{item.quantity}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(item.unit_price)}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(item.unit_price || 0)}</TableCell>
                         <TableCell className="text-right">{item.tax_percentage}%</TableCell>
                         <TableCell className="text-right font-semibold">
-                          {formatCurrency(item.line_total)}
+                          {formatCurrency(item.line_total || 0)}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -287,24 +287,24 @@ export function ViewCreditNoteModal({ open, onOpenChange, creditNote }: ViewCred
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span>Subtotal:</span>
-                  <span className="font-semibold">{formatCurrency(creditNote.subtotal)}</span>
+                  <span className="font-semibold">{formatCurrency(creditNote.subtotal || 0)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Tax Amount:</span>
-                  <span className="font-semibold">{formatCurrency(creditNote.tax_amount)}</span>
+                  <span className="font-semibold">{formatCurrency(creditNote.tax_amount || 0)}</span>
                 </div>
                 <Separator />
                 <div className="flex justify-between text-lg">
                   <span className="font-bold">Total Credit:</span>
-                  <span className="font-bold text-success">{formatCurrency(creditNote.total_amount)}</span>
+                  <span className="font-bold text-success">{formatCurrency(creditNote.total_amount || 0)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-warning">Applied Amount:</span>
-                  <span className="font-semibold text-warning">{formatCurrency(creditNote.applied_amount)}</span>
+                  <span className="font-semibold text-warning">{formatCurrency(creditNote.applied_amount || 0)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-primary">Remaining Balance:</span>
-                  <span className="font-semibold text-primary">{formatCurrency(creditNote.balance)}</span>
+                  <span className="font-semibold text-primary">{formatCurrency(creditNote.balance || 0)}</span>
                 </div>
               </div>
             </CardContent>
