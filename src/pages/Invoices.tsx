@@ -16,6 +16,12 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { Label } from '@/components/ui/label';
 import {
   Table,
@@ -39,7 +45,8 @@ import {
   Truck,
   Trash2,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  CreditCard
 } from 'lucide-react';
 import { useCompanies } from '@/hooks/useDatabase';
 import { useInvoicesFixed as useInvoices, useDeleteInvoice } from '@/hooks/useInvoicesFixed';
@@ -73,6 +80,17 @@ interface Invoice {
   invoice_items?: any[];
   created_by?: string;
   created_by_profile?: { full_name?: string } | null;
+  appliedCreditNotes?: Array<{
+    id: string;
+    invoice_id: string;
+    credit_note_id: string;
+    allocated_amount: number;
+    credit_notes?: {
+      id: string;
+      credit_note_number: string;
+      total_amount: number;
+    };
+  }>;
 }
 
 function calculateActualStatus(invoice: Invoice): 'draft' | 'sent' | 'paid' | 'partial' | 'overdue' {
@@ -716,7 +734,38 @@ Website: www.biolegendscientific.co.ke`;
                       {formatCurrency(invoice.paid_amount || 0)}
                     </TableCell>
                     <TableCell className={`font-medium ${(invoice.balance_due || 0) > 0 ? 'text-destructive' : 'text-success'}`}>
-                      {formatCurrency(invoice.balance_due || 0)}
+                      <div className="flex items-center gap-2">
+                        <span>{formatCurrency(invoice.balance_due || 0)}</span>
+                        {invoice.appliedCreditNotes && invoice.appliedCreditNotes.length > 0 && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Badge variant="secondary" className="h-5 w-5 p-0 flex items-center justify-center cursor-help">
+                                  <CreditCard className="h-3 w-3" />
+                                </Badge>
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-xs">
+                                <div className="space-y-1 text-sm">
+                                  <p className="font-semibold text-white">Applied Credit Notes:</p>
+                                  {invoice.appliedCreditNotes.map((allocation) => (
+                                    <div key={allocation.id} className="text-gray-200">
+                                      {allocation.credit_notes?.credit_note_number && (
+                                        <span>{allocation.credit_notes.credit_note_number}: </span>
+                                      )}
+                                      <span className="font-medium">{formatCurrency(allocation.allocated_amount)}</span>
+                                    </div>
+                                  ))}
+                                  <div className="border-t border-gray-600 pt-1 mt-1 font-semibold text-white">
+                                    Total Applied: {formatCurrency(
+                                      invoice.appliedCreditNotes.reduce((sum, a) => sum + a.allocated_amount, 0)
+                                    )}
+                                  </div>
+                                </div>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <div className="text-sm">

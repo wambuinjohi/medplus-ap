@@ -146,6 +146,31 @@ export const useInvoicesFixed = (companyId?: string) => {
         const creatorMap = new Map();
         (creators || []).forEach(c => creatorMap.set(c.id, c));
 
+        // Step 7b: Fetch credit note allocations for each invoice
+        const { data: allocations, error: allocationsError } = invoiceIds.length > 0 ? await supabase
+          .from('credit_note_allocations')
+          .select(`
+            id,
+            invoice_id,
+            credit_note_id,
+            allocated_amount,
+            credit_notes(id, credit_note_number, total_amount)
+          `)
+          .in('invoice_id', invoiceIds) : { data: [], error: null };
+
+        if (allocationsError) {
+          console.warn('Error fetching credit note allocations (non-fatal):', allocationsError);
+        }
+
+        // Group allocations by invoice_id
+        const allocationsMap = new Map();
+        (allocations || []).forEach(allocation => {
+          if (!allocationsMap.has(allocation.invoice_id)) {
+            allocationsMap.set(allocation.invoice_id, []);
+          }
+          allocationsMap.get(allocation.invoice_id).push(allocation);
+        });
+
         // Step 8: Combine data
         const enrichedInvoices = invoices.map(invoice => ({
           ...invoice,
@@ -155,7 +180,8 @@ export const useInvoicesFixed = (companyId?: string) => {
             phone: null
           },
           invoice_items: itemsMap.get(invoice.id) || [],
-          created_by_profile: creatorMap.get(invoice.created_by) || null
+          created_by_profile: creatorMap.get(invoice.created_by) || null,
+          appliedCreditNotes: allocationsMap.get(invoice.id) || []
         }));
 
         console.log('Invoices enriched successfully:', enrichedInvoices.length);
@@ -296,6 +322,31 @@ export const useCustomerInvoicesFixed = (customerId?: string, companyId?: string
           itemsMap.get(item.invoice_id).push(itemWithProduct);
         });
 
+        // Fetch credit note allocations for each invoice
+        const { data: allocations, error: allocationsError } = invoiceIds.length > 0 ? await supabase
+          .from('credit_note_allocations')
+          .select(`
+            id,
+            invoice_id,
+            credit_note_id,
+            allocated_amount,
+            credit_notes(id, credit_note_number, total_amount)
+          `)
+          .in('invoice_id', invoiceIds) : { data: [], error: null };
+
+        if (allocationsError) {
+          console.warn('Error fetching credit note allocations (non-fatal):', allocationsError);
+        }
+
+        // Group allocations by invoice_id
+        const allocationsMap = new Map();
+        (allocations || []).forEach(allocation => {
+          if (!allocationsMap.has(allocation.invoice_id)) {
+            allocationsMap.set(allocation.invoice_id, []);
+          }
+          allocationsMap.get(allocation.invoice_id).push(allocation);
+        });
+
         // Combine data
         const enrichedInvoices = invoices.map(invoice => ({
           ...invoice,
@@ -304,7 +355,8 @@ export const useCustomerInvoicesFixed = (customerId?: string, companyId?: string
             email: null,
             phone: null
           },
-          invoice_items: itemsMap.get(invoice.id) || []
+          invoice_items: itemsMap.get(invoice.id) || [],
+          appliedCreditNotes: allocationsMap.get(invoice.id) || []
         }));
 
         return enrichedInvoices;

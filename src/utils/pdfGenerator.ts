@@ -93,6 +93,11 @@ export interface DocumentData {
   terms_and_conditions?: string;
   valid_until?: string; // For proforma invoices
   due_date?: string; // For invoices
+  appliedCreditNotes?: Array<{
+    id: string;
+    credit_note_number: string;
+    allocated_amount: number;
+  }>;
   // Delivery note specific fields
   delivery_date?: string;
   delivery_address?: string;
@@ -533,6 +538,15 @@ export const generatePDF = (data: DocumentData) => {
           display: block;
         }
 
+        .applied-credit-notes-section {
+          margin-top: 25px;
+          margin-bottom: 30px;
+          padding: 0;
+          background: transparent;
+          border-radius: 0;
+          border: none;
+        }
+
         .notes, .terms {
           margin-bottom: 20px;
           padding: 0;
@@ -969,6 +983,33 @@ export const generatePDF = (data: DocumentData) => {
         </div>
         ` : ''}
 
+        <!-- Applied Credit Notes Section -->
+        ${(data.type === 'invoice' || data.type === 'proforma') && data.appliedCreditNotes && data.appliedCreditNotes.length > 0 ? `
+        <div class="applied-credit-notes-section">
+          <div class="section-subtitle">Applied Credit Notes</div>
+          <table class="details-table" style="margin-top: 10px;">
+            <thead>
+              <tr>
+                <th style="text-align: left; padding: 8px; border-bottom: 2px solid #e5e7eb; font-weight: bold;">Credit Note Number</th>
+                <th style="text-align: right; padding: 8px; border-bottom: 2px solid #e5e7eb; font-weight: bold;">Applied Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${data.appliedCreditNotes.map(cn => `
+              <tr>
+                <td style="padding: 6px 8px; border-bottom: 1px solid #e5e7eb;">${cn.credit_note_number}</td>
+                <td style="padding: 6px 8px; text-align: right; border-bottom: 1px solid #e5e7eb;">${formatCurrency(cn.allocated_amount)}</td>
+              </tr>
+              `).join('')}
+              <tr style="background-color: #f3f4f6;">
+                <td style="padding: 8px; font-weight: bold; border-top: 2px solid #e5e7eb;">Total Applied</td>
+                <td style="padding: 8px; text-align: right; font-weight: bold; border-top: 2px solid #e5e7eb;">${formatCurrency(data.appliedCreditNotes.reduce((sum, cn) => sum + cn.allocated_amount, 0))}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        ` : ''}
+
         <!-- Signature Section (for delivery notes) -->
         ${data.type === 'delivery' ? `
         <div class="signature-section">
@@ -1106,6 +1147,38 @@ export const downloadInvoicePDF = async (invoice: any, documentType: 'INVOICE' |
     })
   );
 
+  // Fetch applied credit notes if not already in invoice object
+  let appliedCreditNotes = invoice.appliedCreditNotes || [];
+  if (!appliedCreditNotes || appliedCreditNotes.length === 0) {
+    try {
+      const { data: allocations } = await supabase
+        .from('credit_note_allocations')
+        .select(`
+          id,
+          credit_note_id,
+          allocated_amount,
+          credit_notes(id, credit_note_number, total_amount)
+        `)
+        .eq('invoice_id', invoice.id);
+
+      appliedCreditNotes = (allocations || []).map(a => ({
+        id: a.id,
+        credit_note_number: a.credit_notes?.credit_note_number || '',
+        allocated_amount: a.allocated_amount
+      }));
+    } catch (error) {
+      console.warn('Failed to fetch credit notes for PDF:', error);
+      appliedCreditNotes = [];
+    }
+  } else {
+    // Transform existing format
+    appliedCreditNotes = (appliedCreditNotes || []).map(a => ({
+      id: a.id,
+      credit_note_number: a.credit_notes?.credit_note_number || '',
+      allocated_amount: a.allocated_amount
+    }));
+  }
+
   const documentData: DocumentData = {
     type: documentType === 'PROFORMA' ? 'proforma' : 'invoice',
     number: invoice.invoice_number,
@@ -1129,6 +1202,7 @@ export const downloadInvoicePDF = async (invoice: any, documentType: 'INVOICE' |
     balance_due: invoice.balance_due || (invoice.total_amount - (invoice.paid_amount || 0)),
     notes: invoice.notes,
     terms_and_conditions: invoice.terms_and_conditions,
+    appliedCreditNotes: appliedCreditNotes.length > 0 ? appliedCreditNotes : undefined,
   };
 
   return generatePDF(documentData);
