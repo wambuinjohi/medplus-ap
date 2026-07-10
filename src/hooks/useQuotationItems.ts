@@ -277,13 +277,15 @@ export const useConvertQuotationToInvoice = () => {
         .from('quotations')
         .select(`
           *,
+          batch_no,
+          expiry_date,
           quotation_items(*)
         `)
         .eq('id', quotationId)
         .single();
-      
+
       if (quotationError) throw quotationError;
-      
+
       // Generate invoice number
       const { data: invoiceNumber } = await supabase.rpc('generate_invoice_number', {
         company_uuid: quotation.company_id
@@ -969,6 +971,8 @@ export const useConvertQuotationToProforma = () => {
         .from('quotations')
         .select(`
           *,
+          batch_no,
+          expiry_date,
           quotation_items(*)
         `)
         .eq('id', quotationId)
