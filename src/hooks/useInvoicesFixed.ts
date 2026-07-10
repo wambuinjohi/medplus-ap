@@ -92,7 +92,9 @@ export const useInvoicesFixed = (companyId?: string) => {
             tax_amount,
             tax_inclusive,
             line_total,
-            sort_order
+            sort_order,
+            batch_no,
+            expiry_date
           `)
           .in('invoice_id', invoiceIds) : { data: [], error: null };
 
@@ -251,7 +253,9 @@ export const useCustomerInvoicesFixed = (customerId?: string, companyId?: string
             tax_amount,
             tax_inclusive,
             line_total,
-            sort_order
+            sort_order,
+            batch_no,
+            expiry_date
           `)
           .in('invoice_id', invoiceIds) : { data: [], error: null };
 

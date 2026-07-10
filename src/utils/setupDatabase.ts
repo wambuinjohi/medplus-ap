@@ -182,6 +182,8 @@ CREATE TABLE IF NOT EXISTS quotation_items (
     tax_percentage DECIMAL(5,2) DEFAULT 0,
     tax_amount DECIMAL(15,2) DEFAULT 0,
     line_total DECIMAL(15,2) NOT NULL DEFAULT 0,
+    batch_no TEXT DEFAULT 'N/A',
+    expiry_date DATE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -219,6 +221,8 @@ CREATE TABLE IF NOT EXISTS invoice_items (
     tax_percentage DECIMAL(5,2) DEFAULT 0,
     tax_amount DECIMAL(15,2) DEFAULT 0,
     line_total DECIMAL(15,2) NOT NULL DEFAULT 0,
+    batch_no TEXT DEFAULT 'N/A',
+    expiry_date DATE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
