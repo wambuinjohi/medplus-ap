@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -10,8 +10,9 @@ import {
 } from '@/components/ui/dialog';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { AlertTriangle, Trash2 } from 'lucide-react';
-import type { CreditNote } from '@/hooks/useCreditNotes';
+import { AlertTriangle, Trash2, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import type { CreditNote, CreditNoteAllocation } from '@/hooks/useCreditNotes';
 
 interface DeleteCreditNoteModalProps {
   open: boolean;
@@ -19,6 +20,12 @@ interface DeleteCreditNoteModalProps {
   creditNote: CreditNote | null;
   isDeleting?: boolean;
   onConfirm: (creditNoteId: string) => Promise<void>;
+}
+
+interface AllocatedInvoice {
+  invoice_id: string;
+  invoice_number: string;
+  allocated_amount: number;
 }
 
 export function DeleteCreditNoteModal({
@@ -29,6 +36,51 @@ export function DeleteCreditNoteModal({
   onConfirm,
 }: DeleteCreditNoteModalProps) {
   const [confirmed, setConfirmed] = useState(false);
+  const [allocatedInvoices, setAllocatedInvoices] = useState<AllocatedInvoice[]>([]);
+  const [isLoadingAllocations, setIsLoadingAllocations] = useState(false);
+
+  useEffect(() => {
+    if (open && creditNote) {
+      loadAllocatedInvoices();
+    }
+  }, [open, creditNote]);
+
+  const loadAllocatedInvoices = async () => {
+    if (!creditNote) return;
+
+    setIsLoadingAllocations(true);
+    try {
+      const { data, error } = await supabase
+        .from('credit_note_allocations')
+        .select(`
+          id,
+          credit_note_id,
+          invoice_id,
+          allocated_amount,
+          invoices!invoice_id (
+            invoice_number
+          )
+        `)
+        .eq('credit_note_id', creditNote.id);
+
+      if (error) {
+        console.warn('Failed to load allocations:', error);
+        setAllocatedInvoices([]);
+      } else if (data) {
+        const invoices: AllocatedInvoice[] = (data as any[]).map((alloc: any) => ({
+          invoice_id: alloc.invoice_id,
+          invoice_number: alloc.invoices?.invoice_number || 'Unknown',
+          allocated_amount: alloc.allocated_amount,
+        }));
+        setAllocatedInvoices(invoices);
+      }
+    } catch (err) {
+      console.warn('Error loading allocations:', err);
+      setAllocatedInvoices([]);
+    } finally {
+      setIsLoadingAllocations(false);
+    }
+  };
 
   if (!creditNote) return null;
 
@@ -114,28 +166,55 @@ export function DeleteCreditNoteModal({
 
           {/* Related Records Info */}
           {(hasAllocations || itemsCount > 0 || affectsInventory) && (
-            <div className="space-y-2 text-sm">
+            <div className="space-y-3 text-sm">
               <p className="font-medium">Related Records:</p>
               <ul className="space-y-1 text-muted-foreground">
                 {itemsCount > 0 && (
                   <li className="flex items-center space-x-2">
                     <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground" />
-                    <span>{itemsCount} line item(s)</span>
+                    <span>{itemsCount} line item(s) will be deleted</span>
                   </li>
                 )}
                 {hasAllocations && (
                   <li className="flex items-center space-x-2">
                     <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground" />
-                    <span>Allocations to invoice(s)</span>
+                    <span>{allocatedInvoices.length} invoice(s) will be affected</span>
                   </li>
                 )}
                 {affectsInventory && (
                   <li className="flex items-center space-x-2">
                     <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground" />
-                    <span>Stock movement records</span>
+                    <span>Stock movement records will be reversed</span>
                   </li>
                 )}
               </ul>
+
+              {/* Detailed Allocations List */}
+              {allocatedInvoices.length > 0 && (
+                <div className="mt-3 space-y-2 rounded-lg bg-muted/50 p-3">
+                  <p className="text-xs font-semibold text-foreground">Invoices with Allocations:</p>
+                  {isLoadingAllocations ? (
+                    <div className="flex items-center space-x-2 text-xs text-muted-foreground">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      <span>Loading allocations...</span>
+                    </div>
+                  ) : (
+                    <ul className="space-y-1">
+                      {allocatedInvoices.map((inv) => (
+                        <li key={inv.invoice_id} className="flex items-center justify-between text-xs text-muted-foreground">
+                          <span>{inv.invoice_number}</span>
+                          <span className="font-medium">
+                            {new Intl.NumberFormat('en-KE', {
+                              style: 'currency',
+                              currency: 'KES',
+                            }).format(inv.allocated_amount)}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
             </div>
           )}
 

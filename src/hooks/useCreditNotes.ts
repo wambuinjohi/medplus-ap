@@ -389,6 +389,8 @@ export function useDeleteCreditNote() {
       queryClient.invalidateQueries({ queryKey: ['creditNotes'] });
       queryClient.invalidateQueries({ queryKey: ['customerCreditNotes'] });
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['payments'] });
+      queryClient.invalidateQueries({ queryKey: ['creditNoteAllocations'] });
       toast.success('Credit note deleted successfully! All related records have been updated.');
     },
     onError: (error: any) => {
