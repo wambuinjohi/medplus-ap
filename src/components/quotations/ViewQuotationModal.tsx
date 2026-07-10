@@ -458,21 +458,31 @@ export function ViewQuotationModal({
     </Dialog>
 
     <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-      <AlertDialogContent>
+      <AlertDialogContent className="max-w-sm">
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete Quotation</AlertDialogTitle>
-          <AlertDialogDescription>
-            Are you sure you want to delete quotation {quotation.quotation_number}? This action cannot be undone.
+          <AlertDialogTitle className="text-destructive">Delete Quotation</AlertDialogTitle>
+          <AlertDialogDescription className="space-y-3 mt-4">
+            <p>Are you sure you want to delete quotation <span className="font-semibold text-foreground">{quotation.quotation_number}</span>?</p>
+            <div className="bg-destructive/10 border border-destructive/20 rounded-md p-3 text-sm space-y-1">
+              <p className="font-medium text-destructive">This action will:</p>
+              <ul className="list-disc list-inside text-destructive/90 space-y-1">
+                <li>Permanently delete this quotation and all its items</li>
+                {quotation.status === 'converted' && <li>Delete any associated invoices</li>}
+              </ul>
+            </div>
+            <p className="text-xs text-muted-foreground">This action cannot be undone.</p>
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <AlertDialogAction
-          onClick={handleDeleteConfirm}
-          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-          disabled={deleteQuotation.isPending || !canDelete('quotation')}
-        >
-          {deleteQuotation.isPending ? 'Deleting...' : 'Delete'}
-        </AlertDialogAction>
-        <AlertDialogCancel>Cancel</AlertDialogCancel>
+        <div className="flex gap-3 justify-end">
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={handleDeleteConfirm}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            disabled={deleteQuotation.isPending || !canDelete('quotation')}
+          >
+            {deleteQuotation.isPending ? 'Deleting...' : 'Delete Quotation'}
+          </AlertDialogAction>
+        </div>
       </AlertDialogContent>
     </AlertDialog>
     </>
