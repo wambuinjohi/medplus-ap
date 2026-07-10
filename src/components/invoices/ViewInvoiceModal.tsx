@@ -367,21 +367,32 @@ export function ViewInvoiceModal({
     </Dialog>
 
     <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-      <AlertDialogContent>
+      <AlertDialogContent className="max-w-sm">
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete Invoice</AlertDialogTitle>
-          <AlertDialogDescription>
-            Are you sure you want to delete invoice {invoice.invoice_number}? This action cannot be undone.
+          <AlertDialogTitle className="text-destructive">Delete Invoice</AlertDialogTitle>
+          <AlertDialogDescription className="space-y-3 mt-4">
+            <p>Are you sure you want to delete invoice <span className="font-semibold text-foreground">{invoice.invoice_number}</span>?</p>
+            <div className="bg-destructive/10 border border-destructive/20 rounded-md p-3 text-sm space-y-1">
+              <p className="font-medium text-destructive">This action will:</p>
+              <ul className="list-disc list-inside text-destructive/90 space-y-1">
+                <li>Permanently delete this invoice</li>
+                {invoice.quotation_id && <li>Reset linked quotation status to draft</li>}
+                {invoice.quotation_id && <li>Restore product stock quantities</li>}
+              </ul>
+            </div>
+            <p className="text-xs text-muted-foreground">This action cannot be undone.</p>
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <AlertDialogAction
-          onClick={handleDeleteConfirm}
-          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-          disabled={deleteInvoice.isPending}
-        >
-          {deleteInvoice.isPending ? 'Deleting...' : 'Delete'}
-        </AlertDialogAction>
-        <AlertDialogCancel>Cancel</AlertDialogCancel>
+        <div className="flex gap-3 justify-end">
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={handleDeleteConfirm}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            disabled={deleteInvoice.isPending}
+          >
+            {deleteInvoice.isPending ? 'Deleting...' : 'Delete Invoice'}
+          </AlertDialogAction>
+        </div>
       </AlertDialogContent>
     </AlertDialog>
     </>

@@ -92,7 +92,9 @@ export const useInvoicesFixed = (companyId?: string) => {
             tax_amount,
             tax_inclusive,
             line_total,
-            sort_order
+            sort_order,
+            batch_no,
+            expiry_date
           `)
           .in('invoice_id', invoiceIds) : { data: [], error: null };
 
@@ -251,7 +253,9 @@ export const useCustomerInvoicesFixed = (customerId?: string, companyId?: string
             tax_amount,
             tax_inclusive,
             line_total,
-            sort_order
+            sort_order,
+            batch_no,
+            expiry_date
           `)
           .in('invoice_id', invoiceIds) : { data: [], error: null };
 
@@ -315,7 +319,7 @@ export const useCustomerInvoicesFixed = (customerId?: string, companyId?: string
   });
 };
 
-// Delete an invoice (audited, cleans up items)
+// Delete an invoice (audited, cleans up items, reverses quotation conversion if applicable)
 export const useDeleteInvoice = () => {
   const queryClient = useQueryClient();
 
@@ -336,17 +340,24 @@ export const useDeleteInvoice = () => {
         throw new Error('You do not have permission to delete invoices');
       }
 
+      // Fetch invoice with quotation_id and invoice_items
+      const { data: invoice } = await supabase
+        .from('invoices')
+        .select(`*, invoice_items(*)`)
+        .eq('id', invoiceId)
+        .single();
+
+      if (!invoice) {
+        throw new Error('Invoice not found');
+      }
+
+      const companyId = invoice.company_id;
+      const quotationId = (invoice as any)?.quotation_id;
+
       // Snapshot for audit
       let snapshot: any = null;
-      let companyId: string | null = null;
       try {
-        const { data } = await supabase
-          .from('invoices')
-          .select(`*, invoice_items(*)`)
-          .eq('id', invoiceId)
-          .single();
-        snapshot = data;
-        companyId = (data as any)?.company_id ?? null;
+        snapshot = invoice;
       } catch {}
 
       try {
@@ -356,11 +367,82 @@ export const useDeleteInvoice = () => {
         console.warn('Invoice delete audit failed:', (e as any)?.message || e);
       }
 
+      // If invoice was created from a quotation, reverse the conversion
+      if (quotationId) {
+        // Reverse stock movements: fetch OUT movements for this invoice
+        const { data: outMovements } = await supabase
+          .from('stock_movements')
+          .select('*')
+          .eq('reference_type', 'INVOICE')
+          .eq('reference_id', invoiceId)
+          .eq('movement_type', 'OUT');
+
+        if (outMovements && outMovements.length > 0) {
+          // Create IN movements to restore stock
+          const reverseMovements = outMovements.map((movement: any) => ({
+            company_id: movement.company_id,
+            product_id: movement.product_id,
+            movement_type: 'IN' as const,
+            reference_type: 'INVOICE_REVERSAL' as const,
+            reference_id: invoiceId,
+            quantity: Math.abs(movement.quantity),
+            cost_per_unit: movement.cost_per_unit,
+            notes: `Stock restoration from invoice ${(invoice as any)?.invoice_number} deletion (reversal of quotation conversion)`
+          }));
+
+          // Insert reverse movements
+          const { error: reverseError } = await supabase
+            .from('stock_movements')
+            .insert(reverseMovements);
+
+          if (reverseError) {
+            console.warn('Failed to create reverse stock movements:', reverseError);
+          } else {
+            // Update product stock quantities
+            const stockUpdatePromises = reverseMovements.map(movement =>
+              supabase.rpc('update_product_stock', {
+                product_uuid: movement.product_id,
+                movement_type: 'IN',
+                quantity: movement.quantity
+              })
+            );
+
+            const results = await Promise.allSettled(stockUpdatePromises);
+            results.forEach((result, index) => {
+              if (result.status === 'rejected') {
+                console.warn(`Failed to restore stock for product ${reverseMovements[index].product_id}:`, result.reason);
+              }
+            });
+          }
+        }
+
+        // Reset quotation status back to draft
+        const { error: quotationError } = await supabase
+          .from('quotations')
+          .update({ status: 'draft' })
+          .eq('id', quotationId);
+
+        if (quotationError) {
+          console.warn('Failed to reset quotation status:', quotationError);
+        }
+      }
+
       // Delete child items first (best-effort)
       try {
         await supabase.from('invoice_items').delete().eq('invoice_id', invoiceId);
       } catch (e) {
         console.warn('Invoice items delete skipped/failed:', (e as any)?.message || e);
+      }
+
+      // Delete stock movements for this invoice (both OUT and any reversal IN)
+      try {
+        await supabase
+          .from('stock_movements')
+          .delete()
+          .eq('reference_id', invoiceId)
+          .in('reference_type', ['INVOICE', 'INVOICE_REVERSAL']);
+      } catch (e) {
+        console.warn('Stock movements delete skipped/failed:', (e as any)?.message || e);
       }
 
       // Delete parent record
@@ -376,6 +458,9 @@ export const useDeleteInvoice = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['invoices_fixed'] });
+      queryClient.invalidateQueries({ queryKey: ['quotations'] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['stock_movements'] });
       toast.success('Invoice deleted successfully!');
     },
     onError: (error) => {
