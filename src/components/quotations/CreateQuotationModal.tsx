@@ -11,13 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { SearchableCustomerSelect } from '@/components/ui/searchable-customer-select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -438,29 +432,15 @@ export function CreateQuotationModal({ open, onOpenChange, onSuccess }: CreateQu
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Customer Selection */}
-                <div className="space-y-2">
-                  <Label htmlFor="customer">Customer *</Label>
-                  <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a customer" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {loadingCustomers ? (
-                        <SelectItem value="loading" disabled>Loading customers...</SelectItem>
-                      ) : !currentCompany ? (
-                        <SelectItem value="no-company" disabled>No company found - please refresh</SelectItem>
-                      ) : !customers || customers.length === 0 ? (
-                        <SelectItem value="no-customers" disabled>No customers found - create customers first</SelectItem>
-                      ) : (
-                        customers.map((customer) => (
-                          <SelectItem key={customer.id} value={customer.id}>
-                            {customer.name} ({customer.customer_code})
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
+                <SearchableCustomerSelect
+                  customers={customers || []}
+                  isLoading={loadingCustomers}
+                  value={selectedCustomerId}
+                  onChange={setSelectedCustomerId}
+                  label="Customer"
+                  required={true}
+                  placeholder="Search and select a customer..."
+                />
 
                 {/* Dates */}
                 <div className="grid grid-cols-2 gap-4">

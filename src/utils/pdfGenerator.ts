@@ -1100,6 +1100,8 @@ export const downloadInvoicePDF = async (invoice: any, documentType: 'INVOICE' |
         tax_inclusive: item.tax_inclusive || false,
         line_total: Number(item.line_total ?? computedLineTotal),
         unit_of_measure: resolvedUoM,
+        batch_no: item.batch_no || '',
+        expiry_date: item.expiry_date || null,
       };
     })
   );
@@ -1151,12 +1153,15 @@ export const downloadQuotationPDF = async (quotation: any, company?: CompanyDeta
         quantity: quantity,
         unit_price: unitPrice,
         discount_percentage: Number(item.discount_percentage || 0),
+        discount_before_vat: Number(item.discount_before_vat || 0),
         discount_amount: discountAmount,
         tax_percentage: Number(item.tax_percentage || 0),
         tax_amount: taxAmount,
         tax_inclusive: item.tax_inclusive || false,
         line_total: Number(item.line_total ?? computedLineTotal),
         unit_of_measure: resolvedUoM,
+        batch_no: item.batch_no || '',
+        expiry_date: item.expiry_date || null,
       };
     })
   );
@@ -1391,6 +1396,8 @@ export const downloadDeliveryNotePDF = async (deliveryNote: any, company?: Compa
         tax_inclusive: false,
         line_total: 0,
         unit_of_measure: resolvedUoM,
+        batch_no: item.batch_no || '',
+        expiry_date: item.expiry_date || null,
         // Add delivery-specific details
         quantity_ordered: item.quantity_ordered || item.quantity || 0,
         quantity_delivered: item.quantity_delivered || item.quantity || 0,
@@ -1446,12 +1453,15 @@ export const downloadLPOPDF = async (lpo: any, company?: CompanyDetails) => {
         quantity: quantity,
         unit_price: unitPrice,
         discount_percentage: 0,
+        discount_before_vat: Number(item.discount_before_vat || 0),
         discount_amount: 0,
         tax_percentage: Number(item.tax_rate || 0),
         tax_amount: taxAmount,
         tax_inclusive: false,
         line_total: Number(item.line_total ?? computedLineTotal),
         unit_of_measure: resolvedUoM,
+        batch_no: item.batch_no || '',
+        expiry_date: item.expiry_date || null,
       };
     })
   );
