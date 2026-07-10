@@ -61,8 +61,6 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
     new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
   );
   const [lpoNumber, setLpoNumber] = useState('');
-  const [batchNo, setBatchNo] = useState('');
-  const [expiryDate, setExpiryDate] = useState('');
   const [notes, setNotes] = useState('');
   const [termsAndConditions, setTermsAndConditions] = useState(getTermsAndConditions());
 
@@ -362,8 +360,6 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
         total_amount: totalAmount,
         paid_amount: 0,
         balance_due: balanceDue,
-        batch_no: batchNo || 'N/A',
-        expiry_date: expiryDate || null,
         terms_and_conditions: termsAndConditions,
         notes: notes,
         created_by: profile?.id
@@ -444,8 +440,6 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
     setInvoiceDate(new Date().toISOString().split('T')[0]);
     setDueDate(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
     setLpoNumber('');
-    setBatchNo('');
-    setExpiryDate('');
     setNotes('');
     setTermsAndConditions(getTermsAndConditions());
     setItems([]);
@@ -515,29 +509,6 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
                     value={lpoNumber}
                     onChange={(e) => setLpoNumber(e.target.value)}
                     placeholder="Enter LPO reference number"
-                  />
-                </div>
-
-                {/* Batch Number */}
-                <div className="space-y-2">
-                  <Label htmlFor="batch_no">Batch Number (Optional)</Label>
-                  <Input
-                    id="batch_no"
-                    type="text"
-                    value={batchNo}
-                    onChange={(e) => setBatchNo(e.target.value)}
-                    placeholder="Enter batch number"
-                  />
-                </div>
-
-                {/* Expiry Date */}
-                <div className="space-y-2">
-                  <Label htmlFor="expiry_date">Expiry Date (Optional)</Label>
-                  <Input
-                    id="expiry_date"
-                    type="date"
-                    value={expiryDate}
-                    onChange={(e) => setExpiryDate(e.target.value)}
                   />
                 </div>
 

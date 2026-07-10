@@ -136,8 +136,6 @@ export interface Invoice {
   affects_inventory?: boolean;
   created_at?: string;
   updated_at?: string;
-  batch_no?: string;
-  expiry_date?: string;
 }
 
 export interface Payment {
