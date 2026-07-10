@@ -997,13 +997,13 @@ export const generatePDF = (data: DocumentData) => {
             <tbody>
               ${data.appliedCreditNotes.map(cn => `
               <tr>
-                <td style="padding: 6px 8px; border-bottom: 1px solid #e5e7eb;">${cn.credit_note_number}</td>
-                <td style="padding: 6px 8px; text-align: right; border-bottom: 1px solid #e5e7eb;">${formatCurrency(cn.allocated_amount)}</td>
+                <td style="padding: 6px 8px; border-bottom: 1px solid #e5e7eb;">${cn.credit_note_number || ''}</td>
+                <td style="padding: 6px 8px; text-align: right; border-bottom: 1px solid #e5e7eb;">${formatCurrency(cn.allocated_amount || 0)}</td>
               </tr>
               `).join('')}
               <tr style="background-color: #f3f4f6;">
                 <td style="padding: 8px; font-weight: bold; border-top: 2px solid #e5e7eb;">Total Applied</td>
-                <td style="padding: 8px; text-align: right; font-weight: bold; border-top: 2px solid #e5e7eb;">${formatCurrency(data.appliedCreditNotes.reduce((sum, cn) => sum + cn.allocated_amount, 0))}</td>
+                <td style="padding: 8px; text-align: right; font-weight: bold; border-top: 2px solid #e5e7eb;">${formatCurrency(data.appliedCreditNotes.reduce((sum, cn) => sum + (cn.allocated_amount || 0), 0))}</td>
               </tr>
             </tbody>
           </table>

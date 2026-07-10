@@ -752,12 +752,12 @@ Website: www.biolegendscientific.co.ke`;
                                       {allocation.credit_notes?.credit_note_number && (
                                         <span>{allocation.credit_notes.credit_note_number}: </span>
                                       )}
-                                      <span className="font-medium">{formatCurrency(allocation.allocated_amount)}</span>
+                                      <span className="font-medium">{formatCurrency(allocation.allocated_amount || 0)}</span>
                                     </div>
                                   ))}
                                   <div className="border-t border-gray-600 pt-1 mt-1 font-semibold text-white">
                                     Total Applied: {formatCurrency(
-                                      invoice.appliedCreditNotes.reduce((sum, a) => sum + a.allocated_amount, 0)
+                                      invoice.appliedCreditNotes.reduce((sum, a) => sum + (a.allocated_amount || 0), 0)
                                     )}
                                   </div>
                                 </div>
