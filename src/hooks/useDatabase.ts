@@ -163,8 +163,6 @@ export interface RemittanceAdvice {
   notes?: string;
   created_at?: string;
   updated_at?: string;
-  batch_no?: string;
-  expiry_date?: string;
 }
 
 export interface DeliveryNote {
@@ -186,8 +184,6 @@ export interface DeliveryNote {
   invoice_number?: string;
   created_at?: string;
   updated_at?: string;
-  batch_no?: string;
-  expiry_date?: string;
   // Related data
   customers?: {
     name: string;
@@ -243,8 +239,6 @@ export interface LPO {
   created_by?: string;
   created_at?: string;
   updated_at?: string;
-  batch_no?: string;
-  expiry_date?: string;
   // Related data
   suppliers?: {
     name: string;
@@ -725,8 +719,6 @@ export const useInvoices = (companyId?: string) => {
             notes,
             terms_and_conditions,
             lpo_number,
-            batch_no,
-            expiry_date,
             created_at,
             updated_at
           `)
