@@ -110,7 +110,8 @@ export const useOptimizedProductSearch = (companyId?: string, enabled: boolean =
       }
     },
     enabled: enabled && !!companyId,
-    staleTime: 30000, // Cache for 30 seconds
+    staleTime: 30000,
+    refetchOnMount: true
   });
 
   return {
@@ -216,7 +217,8 @@ export const usePopularProducts = (companyId?: string, limit: number = 20) => {
       }
     },
     enabled: !!companyId,
-    staleTime: 60000, // Cache for 1 minute
+    staleTime: 60000,
+    refetchOnMount: true,
     retry: 3,
     retryDelay: 1000,
   });
