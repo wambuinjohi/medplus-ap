@@ -101,7 +101,7 @@ export default function Quotations() {
   const currentCompany = companies?.[0];
   const { data: quotations, isLoading, error, refetch } = useQuotations(currentCompany?.id);
   const deleteQuotation = useDeleteQuotation();
-  const { canDelete, canEdit } = usePermissions();
+  const { canDelete, canEdit, canCreate } = usePermissions();
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-KE', {
@@ -355,6 +355,8 @@ Website: www.biolegendscientific.co.ke`;
             className="gradient-primary text-primary-foreground hover:opacity-90 shadow-card"
             size="lg"
             onClick={() => setShowCreateModal(true)}
+            disabled={!canCreate('quotation')}
+            title={!canCreate('quotation') ? 'You do not have permission to create quotations' : 'Create a new quotation'}
           >
             <Plus className="h-4 w-4 mr-2" />
             New Quotation
@@ -422,9 +424,11 @@ Website: www.biolegendscientific.co.ke`;
                 }
               </p>
               {!searchTerm && (
-                <Button 
+                <Button
                   onClick={() => setShowCreateModal(true)}
                   className="gradient-primary text-primary-foreground hover:opacity-90"
+                  disabled={!canCreate('quotation')}
+                  title={!canCreate('quotation') ? 'You do not have permission to create quotations' : 'Create a new quotation'}
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Create First Quotation

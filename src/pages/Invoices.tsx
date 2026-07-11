@@ -170,7 +170,7 @@ export default function Invoices() {
   // Use the fixed invoices hook
   const { data: invoices, isLoading, error, refetch } = useInvoices(currentCompany?.id);
   const deleteInvoice = useDeleteInvoice();
-  const { canDelete } = usePermissions();
+  const { canDelete, canCreate } = usePermissions();
 
   // Auto-reconcile invoices on component mount to fix any status mismatches
   useEffect(() => {
@@ -529,6 +529,8 @@ Website: www.biolegendscientific.co.ke`;
             className="gradient-primary text-primary-foreground hover:opacity-90 shadow-card"
             size="lg"
             onClick={() => setShowCreateModal(true)}
+            disabled={!canCreate('invoice')}
+            title={!canCreate('invoice') ? 'You do not have permission to create invoices' : 'Create a new invoice'}
           >
             <Plus className="h-4 w-4 mr-2" />
             New Invoice

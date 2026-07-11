@@ -143,7 +143,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<Exclude<RoleType, 'custom'>, Permi
   stock_manager: [
     // Stock managers handle inventory and delivery notes
     'create_quotation', 'view_quotation', 'edit_quotation',
-    'view_invoice', 'view_credit_note',
+    'create_invoice', 'view_invoice', 'view_credit_note',
     'view_proforma', 'create_proforma',
     'create_inventory', 'view_inventory', 'edit_inventory', 'manage_inventory',
     'view_reports', 'view_inventory_reports',
@@ -153,7 +153,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<Exclude<RoleType, 'custom'>, Permi
   sales: [
     // Sales team members - can create and view quotations, invoices, proforma without delete permissions
     'create_quotation', 'view_quotation', 'edit_quotation', 'export_quotation',
-    'view_invoice', 'export_invoice',
+    'create_invoice', 'view_invoice', 'export_invoice',
     'create_proforma', 'view_proforma', 'edit_proforma', 'export_proforma',
     'view_credit_note',
     'create_customer', 'view_customer', 'edit_customer',
@@ -165,10 +165,10 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<Exclude<RoleType, 'custom'>, Permi
   accounts: [
     // Accounts team members - can manage payments, invoices, credit notes without delete permissions
     'create_invoice', 'view_invoice', 'edit_invoice', 'export_invoice',
+    'create_quotation', 'view_quotation', 'edit_quotation', 'export_quotation',
     'create_payment', 'view_payment', 'edit_payment',
     'create_credit_note', 'view_credit_note', 'edit_credit_note', 'export_credit_note',
     'view_proforma', 'export_proforma',
-    'view_quotation', 'export_quotation',
     'view_customer',
     'create_remittance', 'view_remittance', 'edit_remittance',
     'view_lpo',
@@ -179,7 +179,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<Exclude<RoleType, 'custom'>, Permi
   user: [
     // Basic users have limited viewing permissions
     'create_quotation', 'view_quotation', 'edit_quotation',
-    'view_invoice', 'view_credit_note', 'view_proforma',
+    'create_invoice', 'view_invoice', 'view_credit_note', 'view_proforma',
     'view_inventory', 'view_reports', 'view_customer_reports', 'view_sales_reports',
     'view_customer', 'view_delivery_note',
     'view_lpo', 'view_payment',
