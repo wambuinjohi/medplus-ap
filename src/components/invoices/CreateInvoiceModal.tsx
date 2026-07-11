@@ -103,6 +103,14 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
   // Use optimized search results or popular products when no search term
   const displayProducts = searchProduct.trim() ? searchedProducts : popularProducts;
 
+  const normalizeExpiryDate = (value: string | null | undefined): string | null => {
+    if (!value) return null;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+    const d = new Date(value);
+    if (isNaN(d.getTime())) return null;
+    return d.toISOString().split('T')[0];
+  };
+
   const addItem = (product: any) => {
     const existingItem = items.find(item => item.product_id === product.id);
 
@@ -132,7 +140,7 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
       tax_inclusive: true,
       line_total: price,
       batch_no: product.batch_no || '',
-      expiry_date: product.expiry_date || null
+      expiry_date: normalizeExpiryDate(product.expiry_date)
     };
 
     // Calculate initial tax and line total with default tax

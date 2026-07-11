@@ -22,7 +22,8 @@ import {
   Search,
   Calculator
 } from 'lucide-react';
-import { useCustomers, useProducts, useGenerateDocumentNumber, useTaxSettings, useCompanies } from '@/hooks/useDatabase';
+import { useCustomers, useGenerateDocumentNumber, useTaxSettings, useCompanies } from '@/hooks/useDatabase';
+import { useOptimizedProductSearch, usePopularProducts } from '@/hooks/useOptimizedProducts';
 import { useCreateQuotationWithItems } from '@/hooks/useQuotationItems';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -66,7 +67,14 @@ export function CreateQuotationModal({ open, onOpenChange, onSuccess }: CreateQu
   const { data: companies } = useCompanies();
   const currentCompany = companies?.[0];
   const { data: customers, isLoading: loadingCustomers } = useCustomers(currentCompany?.id);
-  const { data: products, isLoading: loadingProducts } = useProducts(currentCompany?.id);
+  const {
+    data: searchedProducts,
+    isLoading: loadingProducts,
+    searchTerm: _searchTerm,
+    setSearchTerm: setOptimizedSearchTerm,
+    isSearching
+  } = useOptimizedProductSearch(currentCompany?.id, open);
+  const { data: popularProducts } = usePopularProducts(currentCompany?.id, 20);
   const { data: taxSettings } = useTaxSettings(currentCompany?.id);
 
   // Log for debugging if needed
@@ -80,10 +88,15 @@ export function CreateQuotationModal({ open, onOpenChange, onSuccess }: CreateQu
   const defaultTax = taxSettings?.find(tax => tax.is_default && tax.is_active);
   const defaultTaxRate = defaultTax?.rate || 16; // Fallback to 16% if no default is set
 
-  const filteredProducts = products?.filter(product =>
-    product.name.toLowerCase().includes(searchProduct.toLowerCase()) ||
-    product.product_code.toLowerCase().includes(searchProduct.toLowerCase())
-  ) || [];
+  const displayProducts = searchProduct.trim() ? searchedProducts : popularProducts;
+
+  const normalizeExpiryDate = (value: string | null | undefined): string | null => {
+    if (!value) return null;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+    const d = new Date(value);
+    if (isNaN(d.getTime())) return null;
+    return d.toISOString().split('T')[0];
+  };
 
   const calculateItemTotal = (quantity: number, unitPrice: number, taxPercentage: number, taxInclusive: boolean) => {
     const baseAmount = quantity * unitPrice;
@@ -130,7 +143,7 @@ export function CreateQuotationModal({ open, onOpenChange, onSuccess }: CreateQu
       vat_inclusive: false,
       line_total: calculateItemTotal(1, product.selling_price, 0, false),
       batch_no: product.batch_no || '',
-      expiry_date: product.expiry_date || null
+      expiry_date: normalizeExpiryDate(product.expiry_date)
     };
 
     setItems([...items, newItem]);
@@ -504,20 +517,23 @@ export function CreateQuotationModal({ open, onOpenChange, onSuccess }: CreateQu
                     <Input
                       placeholder="Search products by name or code..."
                       value={searchProduct}
-                      onChange={(e) => setSearchProduct(e.target.value)}
+                      onChange={(e) => {
+                        setSearchProduct(e.target.value);
+                        setOptimizedSearchTerm(e.target.value);
+                      }}
                       className="pl-10"
                     />
                   </div>
 
                   {/* Product List */}
-                  {searchProduct && (
+                  {(searchProduct || (displayProducts && displayProducts.length > 0)) && (
                     <div className="max-h-64 overflow-y-auto border rounded-lg">
-                      {loadingProducts ? (
+                      {loadingProducts || isSearching ? (
                         <div className="p-4 text-center text-muted-foreground">Loading products...</div>
-                      ) : filteredProducts.length === 0 ? (
+                      ) : !displayProducts || displayProducts.length === 0 ? (
                         <div className="p-4 text-center text-muted-foreground">No products found</div>
                       ) : (
-                        filteredProducts.map((product) => (
+                        displayProducts.map((product) => (
                           <div
                             key={product.id}
                             className="p-3 hover:bg-muted/50 cursor-pointer border-b last:border-b-0 transition-smooth"

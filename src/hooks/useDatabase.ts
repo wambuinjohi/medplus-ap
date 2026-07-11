@@ -563,6 +563,8 @@ export const useCreateProduct = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['popular_products'] });
+      queryClient.invalidateQueries({ queryKey: ['products_search'] });
     },
   });
 };
@@ -584,6 +586,8 @@ export const useUpdateProduct = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['popular_products'] });
+      queryClient.invalidateQueries({ queryKey: ['products_search'] });
     },
   });
 };
