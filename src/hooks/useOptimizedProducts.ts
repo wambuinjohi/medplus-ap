@@ -11,6 +11,8 @@ export interface ProductSearchResult {
   selling_price?: number; // For compatibility with invoice creation
   stock_quantity: number;
   category_name?: string;
+  batch_no?: string;
+  expiry_date?: string | null;
 }
 
 /**
@@ -46,7 +48,9 @@ export const useOptimizedProductSearch = (companyId?: string, enabled: boolean =
             unit_of_measure,
             selling_price,
             stock_quantity,
-            category_id
+            category_id,
+            batch_no,
+            expiry_date
           `)
           .eq('company_id', companyId)
           .eq('is_active', true);
@@ -94,7 +98,9 @@ export const useOptimizedProductSearch = (companyId?: string, enabled: boolean =
           // Ensure both price fields are available for compatibility
           selling_price: product.selling_price || product.unit_price || 0,
           stock_quantity: product.stock_quantity || 0,
-          category_name: categoryMap.get(product.category_id) || 'Uncategorized'
+          category_name: categoryMap.get(product.category_id) || 'Uncategorized',
+          batch_no: product.batch_no || '',
+          expiry_date: product.expiry_date || null
         }));
 
         return transformedData;
@@ -151,7 +157,9 @@ export const usePopularProducts = (companyId?: string, limit: number = 20) => {
             unit_of_measure,
             selling_price,
             stock_quantity,
-            category_id
+            category_id,
+            batch_no,
+            expiry_date
           `)
           .eq('company_id', companyId)
           .eq('is_active', true)
@@ -195,7 +203,9 @@ export const usePopularProducts = (companyId?: string, limit: number = 20) => {
           // Ensure both price fields are available for compatibility
           selling_price: product.selling_price || product.unit_price || 0,
           stock_quantity: product.stock_quantity || 0,
-          category_name: categoryMap.get(product.category_id) || 'Uncategorized'
+          category_name: categoryMap.get(product.category_id) || 'Uncategorized',
+          batch_no: product.batch_no || '',
+          expiry_date: product.expiry_date || null
         }));
 
         console.log('Popular products transformed successfully:', transformedData.length);
