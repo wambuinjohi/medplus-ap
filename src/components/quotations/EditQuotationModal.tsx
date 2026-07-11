@@ -29,7 +29,8 @@ import {
   Calculator,
   FileText
 } from 'lucide-react';
-import { useCustomers, useProducts, useTaxSettings, useCompanies } from '@/hooks/useDatabase';
+import { useCustomers, useTaxSettings, useCompanies } from '@/hooks/useDatabase';
+import { useOptimizedProductSearch, usePopularProducts } from '@/hooks/useOptimizedProducts';
 import { useUpdateQuotationWithItems } from '@/hooks/useQuotationItems';
 import { toast } from 'sonner';
 import { getTermsAndConditions } from '@/utils/termsManager';
@@ -71,13 +72,22 @@ export function EditQuotationModal({ open, onOpenChange, onSuccess, quotation }:
   const { data: companies } = useCompanies();
   const currentCompany = companies?.[0];
   const { data: customers, isLoading: loadingCustomers } = useCustomers(currentCompany?.id);
-  const { data: products, isLoading: loadingProducts } = useProducts(currentCompany?.id);
+  const {
+    data: searchedProducts,
+    isLoading: loadingProducts,
+    searchTerm: _searchTerm,
+    setSearchTerm: setOptimizedSearchTerm,
+    isSearching
+  } = useOptimizedProductSearch(currentCompany?.id, open);
+  const { data: popularProducts } = usePopularProducts(currentCompany?.id, 20);
   const { data: taxSettings } = useTaxSettings(currentCompany?.id);
   const updateQuotationWithItems = useUpdateQuotationWithItems();
 
   // Get default tax rate
   const defaultTax = taxSettings?.find(tax => tax.is_default && tax.is_active);
   const defaultTaxRate = defaultTax?.rate || 16; // Fallback to 16% if no default is set
+
+  const displayProducts = searchProduct.trim() ? searchedProducts : popularProducts;
 
   // Load quotation data when modal opens
   useEffect(() => {
@@ -87,7 +97,7 @@ export function EditQuotationModal({ open, onOpenChange, onSuccess, quotation }:
       setValidUntil(quotation.valid_until || '');
       setNotes(quotation.notes || '');
       setTermsAndConditions(quotation.terms_and_conditions || getTermsAndConditions());
-      
+
       // Convert quotation items to local format
       const quotationItems = (quotation.quotation_items || []).map((item: any, index: number) => ({
         id: item.id || `existing-${index}`,
@@ -104,15 +114,10 @@ export function EditQuotationModal({ open, onOpenChange, onSuccess, quotation }:
         batch_no: item.batch_no || '',
         expiry_date: item.expiry_date || null,
       }));
-      
+
       setItems(quotationItems);
     }
   }, [quotation, open]);
-
-  const filteredProducts = products?.filter(product =>
-    product.name.toLowerCase().includes(searchProduct.toLowerCase()) ||
-    product.product_code.toLowerCase().includes(searchProduct.toLowerCase())
-  ) || [];
 
   const calculateLineTotal = (item: QuotationItem, quantity?: number, unitPrice?: number, discountPercentage?: number, taxPercentage?: number, taxInclusive?: boolean) => {
     const qty = quantity ?? item.quantity;
@@ -444,20 +449,23 @@ export function EditQuotationModal({ open, onOpenChange, onSuccess, quotation }:
                     <Input
                       placeholder="Search products by name or code..."
                       value={searchProduct}
-                      onChange={(e) => setSearchProduct(e.target.value)}
+                      onChange={(e) => {
+                        setSearchProduct(e.target.value);
+                        setOptimizedSearchTerm(e.target.value);
+                      }}
                       className="pl-10"
                     />
                   </div>
 
                   {/* Product List */}
-                  {searchProduct && (
+                  {(searchProduct || (displayProducts && displayProducts.length > 0)) && (
                     <div className="max-h-64 overflow-y-auto border rounded-lg">
-                      {loadingProducts ? (
+                      {loadingProducts || isSearching ? (
                         <div className="p-4 text-center text-muted-foreground">Loading products...</div>
-                      ) : filteredProducts.length === 0 ? (
+                      ) : !displayProducts || displayProducts.length === 0 ? (
                         <div className="p-4 text-center text-muted-foreground">No products found</div>
                       ) : (
-                        filteredProducts.map((product) => (
+                        displayProducts.map((product) => (
                           <div
                             key={product.id}
                             className="p-3 hover:bg-muted/50 cursor-pointer border-b last:border-b-0 transition-smooth"
