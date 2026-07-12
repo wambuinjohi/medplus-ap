@@ -51,7 +51,11 @@ const computeCustomerStatements = (customers: any[], invoices: any[], payments: 
     const today = new Date();
     let current = 0, days30 = 0, days60 = 0, days90 = 0;
 
-    customerInvoices.forEach(invoice => {
+    const outstandingInvoices = customerInvoices.filter(invoice =>
+      (Number(invoice.total_amount) || 0) - (Number(invoice.paid_amount) || 0) > 0
+    );
+
+    outstandingInvoices.forEach(invoice => {
       const dueDate = new Date(invoice.due_date || invoice.invoice_date);
       const daysPastDue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
       const unpaidAmount = Number(invoice.total_amount) - Number(invoice.paid_amount || 0);
