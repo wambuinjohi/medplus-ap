@@ -871,7 +871,7 @@ export const generatePDF = (data: DocumentData) => {
                 <th style="width: 12%;">Reference</th>
                 <th style="width: 10%;">Debit</th>
                 <th style="width: 10%;">Credit</th>
-                <th style="width: 12%;">Balance</th>
+                <th style="width: 12%;">Balance Due</th>
                 <th style="width: 16%;">Aging Status</th>
                 ` : data.type === 'remittance' ? `
                 <th style="width: 15%;">Date</th>
