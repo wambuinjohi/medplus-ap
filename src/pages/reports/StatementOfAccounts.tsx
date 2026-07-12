@@ -499,6 +499,7 @@ const StatementOfAccounts = () => {
           <CardTitle>Customer Account Statements</CardTitle>
           <CardDescription>
             Detailed account statements with aging analysis
+            {dateRange !== 'all_time' && ` • Period: ${getStatementDateRangeLabel(dateFilter)}`}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -514,7 +515,12 @@ const StatementOfAccounts = () => {
                       <div className="flex items-center space-x-4">
                         <Building2 className="h-8 w-8 text-primary" />
                         <div>
-                          <h3 className="text-lg font-semibold">{statement.customerName}</h3>
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-lg font-semibold">{statement.customerName}</h3>
+                            <Badge variant="secondary" className="text-xs">
+                              {getStatementDateRangeLabel(dateFilter)}
+                            </Badge>
+                          </div>
                           <p className="text-sm text-muted-foreground">
                             {statement.customerCode} • {statement.email}
                           </p>
