@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -130,12 +130,38 @@ const computeCustomerStatements = (customers: any[], invoices: any[], payments: 
 
 const StatementOfAccounts = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCustomer, setSelectedCustomer] = useState<string>('all');
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
   const [showOverdueOnly, setShowOverdueOnly] = useState(false);
   const [dateRange, setDateRange] = useState('all_time');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const dateFilter = { range: dateRange, startDate, endDate };
+  const [dateValidationError, setDateValidationError] = useState('');
+
+  const isDateRangeValid = !startDate || !endDate || new Date(startDate) <= new Date(endDate);
+
+  const handleDateChange = (type: 'start' | 'end', value: string) => {
+    if (type === 'start') {
+      setStartDate(value);
+      if (endDate && new Date(value) > new Date(endDate)) {
+        setDateValidationError('Start date cannot be after end date');
+      } else {
+        setDateValidationError('');
+      }
+    } else {
+      setEndDate(value);
+      if (startDate && new Date(startDate) > new Date(value)) {
+        setDateValidationError('End date cannot be before start date');
+      } else {
+        setDateValidationError('');
+      }
+    }
+  };
+
+  const dateFilter = {
+    range: dateRange,
+    startDate: isDateRangeValid ? startDate : '',
+    endDate: isDateRangeValid ? endDate : ''
+  };
 
   // Real data hooks
   const { data: companies } = useCompanies();
@@ -152,6 +178,13 @@ const StatementOfAccounts = () => {
   const filteredPayments = (payments || []).filter(payment => isStatementDateInRange(payment.payment_date, dateFilter));
 
   const computedStatements = computeCustomerStatements(customers || [], filteredInvoices, filteredPayments, creditNoteAllocations);
+
+  // Set first customer as default on load
+  useEffect(() => {
+    if (!selectedCustomerId && computedStatements.length > 0) {
+      setSelectedCustomerId(computedStatements[0].customerId.toString());
+    }
+  }, [computedStatements, selectedCustomerId]);
 
   const handleDownloadStatement = async (statement: any) => {
     try {
@@ -264,10 +297,13 @@ const StatementOfAccounts = () => {
   const filteredStatements = computedStatements.filter(statement => {
     const matchesSearch = statement.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          statement.customerCode.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCustomer = selectedCustomer === 'all' || statement.customerId.toString() === selectedCustomer;
     const matchesOverdue = !showOverdueOnly || statement.overdueAmount > 0;
-    return matchesSearch && matchesCustomer && matchesOverdue;
+    return matchesSearch && matchesOverdue;
   });
+
+  const selectedStatement = selectedCustomerId
+    ? computedStatements.find(s => s.customerId.toString() === selectedCustomerId)
+    : null;
 
   const getAccountStatus = (currentBalance: number, overdueAmount: number, creditLimit: number) => {
     if (overdueAmount > 0) {
@@ -298,14 +334,29 @@ const StatementOfAccounts = () => {
           <h1 className="text-3xl font-bold text-foreground">Statement of Accounts</h1>
           <p className="text-muted-foreground">
             Customer account statements and aging analysis
+            {selectedStatement && ` • ${selectedStatement.customerName}`}
             {dateRange !== 'all_time' && ` • Period: ${getStatementDateRangeLabel(dateFilter)}`}
           </p>
         </div>
         <div className="flex space-x-2">
-          <Button variant="outline" onClick={handleExportAllExcel}>
-            <Download className="mr-2 h-4 w-4" />
-            Export All
-          </Button>
+          {selectedStatement && (
+            <>
+              <Button
+                variant="outline"
+                onClick={() => handleDownloadExcel(selectedStatement)}
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Export Excel
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => handleDownloadStatement(selectedStatement)}
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Export PDF
+              </Button>
+            </>
+          )}
           <Button className="shadow-card">
             <Plus className="mr-2 h-4 w-4" />
             Generate Statements
@@ -313,367 +364,320 @@ const StatementOfAccounts = () => {
         </div>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="shadow-card">
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-2">
-              <DollarSign className="h-8 w-8 text-primary" />
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Total Outstanding</p>
-                <p className="text-lg font-bold text-primary">{formatCurrency(totalOutstanding)}</p>
+      {/* Two-Column Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 min-h-[600px]">
+        {/* Left Pane: Customer List */}
+        <Card className="shadow-card lg:col-span-1">
+          <CardHeader>
+            <CardTitle>Customers</CardTitle>
+            <CardDescription>Click to view statement</CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="px-6 pb-4">
+              <div className="relative mb-4">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Search name or code..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
               </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-card">
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-2">
-              <AlertTriangle className="h-8 w-8 text-destructive" />
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Overdue Amount</p>
-                <p className="text-lg font-bold text-destructive">{formatCurrency(totalOverdue)}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-card">
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-2">
-              <Users className="h-8 w-8 text-secondary" />
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Active Customers</p>
-                <p className="text-lg font-bold text-secondary">{filteredStatements.length}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-card">
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-2">
-              <Clock className="h-8 w-8 text-warning" />
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Overdue Customers</p>
-                <p className="text-lg font-bold text-warning">
-                  {computedStatements.filter(s => s.overdueAmount > 0).length}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Filters */}
-      <Card className="shadow-card">
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <FileText className="h-5 w-5 text-primary" />
-            <span>Filter Customer Statements</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="flex space-x-4">
-              <div className="flex-1">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    placeholder="Search by customer name or code..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-              </div>
-              <Select value={selectedCustomer} onValueChange={setSelectedCustomer}>
-                <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="Select Customer" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Customers</SelectItem>
-                  {computedStatements.map((statement) => (
-                    <SelectItem key={statement.customerId} value={statement.customerId.toString()}>
-                      {statement.customerName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
               <Button
                 variant={showOverdueOnly ? "default" : "outline"}
                 onClick={() => setShowOverdueOnly(!showOverdueOnly)}
+                className="w-full"
+                size="sm"
               >
                 <AlertTriangle className="mr-2 h-4 w-4" />
                 Overdue Only
               </Button>
             </div>
-            <div className="space-y-4 pt-2 border-t">
-              <div className="space-y-2">
-                <Label>Transaction Date Range</Label>
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    variant={dateRange === 'all_time' ? 'default' : 'outline'}
-                    onClick={() => {
-                      setDateRange('all_time');
-                      setStartDate('');
-                      setEndDate('');
-                    }}
-                    size="sm"
-                  >
-                    All Time
-                  </Button>
-                  <Button
-                    variant={dateRange === 'last_30_days' ? 'default' : 'outline'}
-                    onClick={() => {
-                      setDateRange('last_30_days');
-                      setStartDate('');
-                      setEndDate('');
-                    }}
-                    size="sm"
-                  >
-                    Last 30 Days
-                  </Button>
-                  <Button
-                    variant={dateRange === 'last_90_days' ? 'default' : 'outline'}
-                    onClick={() => {
-                      setDateRange('last_90_days');
-                      setStartDate('');
-                      setEndDate('');
-                    }}
-                    size="sm"
-                  >
-                    Last 90 Days
-                  </Button>
-                  <Button
-                    variant={dateRange === 'this_year' ? 'default' : 'outline'}
-                    onClick={() => {
-                      setDateRange('this_year');
-                      setStartDate('');
-                      setEndDate('');
-                    }}
-                    size="sm"
-                  >
-                    This Year
-                  </Button>
-                  <Button
-                    variant={dateRange === 'custom' ? 'default' : 'outline'}
-                    onClick={() => setDateRange('custom')}
-                    size="sm"
-                  >
-                    Custom Range
-                  </Button>
-                </div>
-              </div>
-              {dateRange === 'custom' && (
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="start_date">Start Date</Label>
-                    <Input
-                      id="start_date"
-                      type="date"
-                      value={startDate}
-                      onChange={(e) => setStartDate(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="end_date">End Date</Label>
-                    <Input
-                      id="end_date"
-                      type="date"
-                      value={endDate}
-                      onChange={(e) => setEndDate(e.target.value)}
-                    />
-                  </div>
+
+            {/* Customer List */}
+            <div className="border-t max-h-[500px] overflow-y-auto">
+              {filteredStatements.length > 0 ? (
+                filteredStatements.map((statement) => {
+                  const statusInfo = getAccountStatus(statement.currentBalance, statement.overdueAmount, statement.creditLimit);
+                  const isSelected = selectedCustomerId === statement.customerId.toString();
+                  return (
+                    <button
+                      key={statement.customerId}
+                      onClick={() => setSelectedCustomerId(statement.customerId.toString())}
+                      className={`w-full text-left px-6 py-3 border-b transition-colors ${
+                        isSelected
+                          ? 'bg-primary/10 border-l-4 border-l-primary'
+                          : 'hover:bg-muted/50'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm truncate">{statement.customerName}</p>
+                          <p className="text-xs text-muted-foreground">{statement.customerCode}</p>
+                          <p className={`text-xs font-semibold mt-1 ${
+                            statement.overdueAmount > 0 ? 'text-destructive' : 'text-success'
+                          }`}>
+                            {formatCurrency(statement.currentBalance)}
+                          </p>
+                        </div>
+                        <Badge className={statusInfo.color} variant="default" className="text-xs flex-shrink-0">
+                          {statusInfo.status === 'good' && '✓'}
+                          {statusInfo.status === 'overdue' && '!'}
+                          {statusInfo.status === 'near_limit' && '⚠'}
+                        </Badge>
+                      </div>
+                    </button>
+                  );
+                })
+              ) : (
+                <div className="p-6 text-center text-muted-foreground text-sm">
+                  No customers match your search
                 </div>
               )}
             </div>
-          </div>
-        </CardContent>
-      </Card>
 
-      {/* Customer Statements List */}
-      <Card className="shadow-card">
-        <CardHeader>
-          <CardTitle>Customer Account Statements</CardTitle>
-          <CardDescription>
-            Detailed account statements with aging analysis
-            {dateRange !== 'all_time' && ` • Period: ${getStatementDateRangeLabel(dateFilter)}`}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-6">
-            {filteredStatements.map((statement) => {
-              const statusInfo = getAccountStatus(statement.currentBalance, statement.overdueAmount, statement.creditLimit);
-              const StatusIcon = statusInfo.icon;
-
-              return (
-                <Card key={statement.customerId} className="border-l-4 border-l-primary">
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-4">
-                        <Building2 className="h-8 w-8 text-primary" />
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <h3 className="text-lg font-semibold">{statement.customerName}</h3>
-                            <Badge variant="secondary" className="text-xs">
-                              {getStatementDateRangeLabel(dateFilter)}
-                            </Badge>
-                          </div>
-                          <p className="text-sm text-muted-foreground">
-                            {statement.customerCode} • {statement.email}
-                          </p>
-                          <p className="text-sm text-muted-foreground">{statement.address}</p>
-                        </div>
-                      </div>
-                      <div className="text-right space-y-2">
-                        <Badge className={statusInfo.color}>
-                          <StatusIcon className="mr-1 h-3 w-3" />
-                          {statusInfo.status.replace('_', ' ').toUpperCase()}
-                        </Badge>
-                        <div className="space-x-2">
-                          <Button variant="outline" size="sm">
-                            <FileText className="mr-1 h-3 w-3" />
-                            View Statement
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDownloadExcel(statement)}
-                          >
-                            <Download className="mr-1 h-3 w-3" />
-                            Excel
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDownloadStatement(statement)}
-                          >
-                            <Download className="mr-1 h-3 w-3" />
-                            PDF
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    {/* Account Summary */}
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg">
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">Current Balance</p>
-                        <p className="text-sm font-bold text-primary">{formatCurrency(statement.currentBalance)}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">Credit Limit</p>
-                        <p className="text-sm font-bold">{formatCurrency(statement.creditLimit)}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">Available Credit</p>
-                        <p className="text-sm font-bold text-success">
-                          {formatCurrency(statement.creditLimit - statement.currentBalance)}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">Overdue Amount</p>
-                        <p className={`text-sm font-bold ${statement.overdueAmount > 0 ? 'text-destructive' : 'text-success'}`}>
-                          {formatCurrency(statement.overdueAmount)}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Aging Analysis */}
-                    <div className="mb-6">
-                      <h4 className="text-md font-semibold mb-3">Aging Analysis</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                        <div className="text-center p-3 bg-success/10 rounded-lg">
-                          <p className="text-sm font-medium text-muted-foreground">Current (0-30 days)</p>
-                          <p className="text-sm font-bold text-success">{formatCurrency(statement.agingAnalysis.current)}</p>
-                        </div>
-                        <div className="text-center p-3 bg-warning/10 rounded-lg">
-                          <p className="text-sm font-medium text-muted-foreground">31-60 days</p>
-                          <p className="text-sm font-bold text-warning">{formatCurrency(statement.agingAnalysis.days30)}</p>
-                        </div>
-                        <div className="text-center p-3 bg-orange-100 rounded-lg">
-                          <p className="text-sm font-medium text-muted-foreground">61-90 days</p>
-                          <p className="text-sm font-bold text-orange-600">{formatCurrency(statement.agingAnalysis.days60)}</p>
-                        </div>
-                        <div className="text-center p-3 bg-destructive/10 rounded-lg">
-                          <p className="text-sm font-medium text-muted-foreground">90+ days</p>
-                          <p className="text-sm font-bold text-destructive">{formatCurrency(statement.agingAnalysis.days90)}</p>
-                        </div>
-                        <div className="text-center p-3 bg-primary/10 rounded-lg">
-                          <p className="text-sm font-medium text-muted-foreground">Total</p>
-                          <p className="text-sm font-bold text-primary">{formatCurrency(statement.agingAnalysis.total)}</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Recent Transactions */}
-                    <div>
-                      <h4 className="text-md font-semibold mb-3">Recent Transactions</h4>
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Date</TableHead>
-                            <TableHead>Type</TableHead>
-                            <TableHead>Reference</TableHead>
-                            <TableHead>Description</TableHead>
-                            <TableHead className="text-right">Debit</TableHead>
-                            <TableHead className="text-right">Credit</TableHead>
-                            <TableHead className="text-right">Balance</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {statement.transactions.map((transaction, index) => (
-                            <TableRow key={index}>
-                              <TableCell>
-                                <div className="flex items-center space-x-2">
-                                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                                  <span>{new Date(transaction.date).toLocaleDateString()}</span>
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                <Badge variant={transaction.type === 'Payment' ? 'default' : 'secondary'}>
-                                  {transaction.type}
-                                </Badge>
-                              </TableCell>
-                              <TableCell className="font-medium">{transaction.reference}</TableCell>
-                              <TableCell>{transaction.description}</TableCell>
-                              <TableCell className="text-right text-destructive">
-                                {transaction.debit > 0 ? formatCurrency(transaction.debit) : ''}
-                              </TableCell>
-                              <TableCell className="text-right text-success">
-                                {transaction.credit > 0 ? formatCurrency(transaction.credit) : ''}
-                              </TableCell>
-                              <TableCell className="text-right font-medium">
-                                {formatCurrency(transaction.balance)}
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-
-          {filteredStatements.length === 0 && (
-            <div className="text-center py-8">
-              <FileText className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium text-foreground mb-2">No customer statements found</h3>
-              <p className="text-muted-foreground mb-4">
-                {searchTerm || selectedCustomer !== 'all' || showOverdueOnly
-                  ? 'Try adjusting your search criteria'
-                  : 'No customer statements available'
-                }
-              </p>
+            {/* Summary */}
+            <div className="border-t p-6 space-y-3 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Total Outstanding</span>
+                <span className="font-semibold">{formatCurrency(totalOutstanding)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Overdue</span>
+                <span className="font-semibold text-destructive">{formatCurrency(totalOverdue)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Active Customers</span>
+                <span className="font-semibold">{filteredStatements.length}</span>
+              </div>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Right Pane: Individual Statement */}
+        <div className="lg:col-span-2">
+          {selectedStatement ? (
+            <Card className="shadow-card">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-semibold">{selectedStatement.customerName}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {selectedStatement.customerCode} • {selectedStatement.email}
+                    </p>
+                    <p className="text-sm text-muted-foreground">{selectedStatement.address}</p>
+                  </div>
+                  <Badge className={getAccountStatus(selectedStatement.currentBalance, selectedStatement.overdueAmount, selectedStatement.creditLimit).color}>
+                    {getAccountStatus(selectedStatement.currentBalance, selectedStatement.overdueAmount, selectedStatement.creditLimit).status.replace('_', ' ').toUpperCase()}
+                  </Badge>
+                </div>
+              </CardHeader>
+
+              <CardContent className="space-y-6">
+                {/* Date Range Filter */}
+                <div className="space-y-3 p-4 bg-muted/30 rounded-lg border">
+                  <Label className="font-semibold">Transaction Date Range</Label>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      variant={dateRange === 'all_time' ? 'default' : 'outline'}
+                      onClick={() => {
+                        setDateRange('all_time');
+                        setStartDate('');
+                        setEndDate('');
+                      }}
+                      size="sm"
+                    >
+                      All Time
+                    </Button>
+                    <Button
+                      variant={dateRange === 'last_30_days' ? 'default' : 'outline'}
+                      onClick={() => {
+                        setDateRange('last_30_days');
+                        setStartDate('');
+                        setEndDate('');
+                      }}
+                      size="sm"
+                    >
+                      Last 30 Days
+                    </Button>
+                    <Button
+                      variant={dateRange === 'last_90_days' ? 'default' : 'outline'}
+                      onClick={() => {
+                        setDateRange('last_90_days');
+                        setStartDate('');
+                        setEndDate('');
+                      }}
+                      size="sm"
+                    >
+                      Last 90 Days
+                    </Button>
+                    <Button
+                      variant={dateRange === 'this_year' ? 'default' : 'outline'}
+                      onClick={() => {
+                        setDateRange('this_year');
+                        setStartDate('');
+                        setEndDate('');
+                      }}
+                      size="sm"
+                    >
+                      This Year
+                    </Button>
+                    <Button
+                      variant={dateRange === 'custom' ? 'default' : 'outline'}
+                      onClick={() => setDateRange('custom')}
+                      size="sm"
+                    >
+                      Custom Range
+                    </Button>
+                  </div>
+
+                  {dateRange === 'custom' && (
+                    <div className="space-y-3 pt-2">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-2">
+                          <Label htmlFor="start_date" className="text-xs">Start Date</Label>
+                          <Input
+                            id="start_date"
+                            type="date"
+                            value={startDate}
+                            onChange={(e) => handleDateChange('start', e.target.value)}
+                            className={`h-9 ${startDate && endDate && new Date(startDate) > new Date(endDate) ? 'border-destructive' : ''}`}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="end_date" className="text-xs">End Date</Label>
+                          <Input
+                            id="end_date"
+                            type="date"
+                            value={endDate}
+                            onChange={(e) => handleDateChange('end', e.target.value)}
+                            className={`h-9 ${startDate && endDate && new Date(startDate) > new Date(endDate) ? 'border-destructive' : ''}`}
+                          />
+                        </div>
+                      </div>
+                      {dateValidationError && (
+                        <p className="text-xs text-destructive flex items-center gap-1">
+                          <AlertTriangle className="h-3 w-3" />
+                          {dateValidationError}
+                        </p>
+                      )}
+                      {startDate && endDate && isDateRangeValid && (
+                        <div className="text-xs text-muted-foreground pt-2 px-3 py-2 bg-success/10 rounded border border-success/20">
+                          ✓ Showing transactions from {new Date(startDate).toLocaleDateString()} to {new Date(endDate).toLocaleDateString()}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Account Summary */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-muted/30 rounded-lg">
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground">Current Balance</p>
+                    <p className="text-sm font-bold text-primary">{formatCurrency(selectedStatement.currentBalance)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground">Credit Limit</p>
+                    <p className="text-sm font-bold">{formatCurrency(selectedStatement.creditLimit)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground">Available Credit</p>
+                    <p className="text-sm font-bold text-success">
+                      {formatCurrency(selectedStatement.creditLimit - selectedStatement.currentBalance)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground">Overdue Amount</p>
+                    <p className={`text-sm font-bold ${selectedStatement.overdueAmount > 0 ? 'text-destructive' : 'text-success'}`}>
+                      {formatCurrency(selectedStatement.overdueAmount)}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Aging Analysis */}
+                <div>
+                  <h4 className="text-sm font-semibold mb-3">Aging Analysis</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+                    <div className="text-center p-3 bg-success/10 rounded-lg">
+                      <p className="text-xs font-medium text-muted-foreground">Current (0-30)</p>
+                      <p className="text-sm font-bold text-success">{formatCurrency(selectedStatement.agingAnalysis.current)}</p>
+                    </div>
+                    <div className="text-center p-3 bg-warning/10 rounded-lg">
+                      <p className="text-xs font-medium text-muted-foreground">31-60 days</p>
+                      <p className="text-sm font-bold text-warning">{formatCurrency(selectedStatement.agingAnalysis.days30)}</p>
+                    </div>
+                    <div className="text-center p-3 bg-orange-100 rounded-lg">
+                      <p className="text-xs font-medium text-muted-foreground">61-90 days</p>
+                      <p className="text-sm font-bold text-orange-600">{formatCurrency(selectedStatement.agingAnalysis.days60)}</p>
+                    </div>
+                    <div className="text-center p-3 bg-destructive/10 rounded-lg">
+                      <p className="text-xs font-medium text-muted-foreground">90+ days</p>
+                      <p className="text-sm font-bold text-destructive">{formatCurrency(selectedStatement.agingAnalysis.days90)}</p>
+                    </div>
+                    <div className="text-center p-3 bg-primary/10 rounded-lg">
+                      <p className="text-xs font-medium text-muted-foreground">Total</p>
+                      <p className="text-sm font-bold text-primary">{formatCurrency(selectedStatement.agingAnalysis.total)}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Recent Transactions */}
+                <div>
+                  <h4 className="text-sm font-semibold mb-3">Recent Transactions</h4>
+                  <div className="border rounded-lg overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="text-xs">Date</TableHead>
+                          <TableHead className="text-xs">Type</TableHead>
+                          <TableHead className="text-xs">Reference</TableHead>
+                          <TableHead className="text-xs">Description</TableHead>
+                          <TableHead className="text-right text-xs">Debit</TableHead>
+                          <TableHead className="text-right text-xs">Credit</TableHead>
+                          <TableHead className="text-right text-xs">Balance</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {selectedStatement.transactions.map((transaction, index) => (
+                          <TableRow key={index}>
+                            <TableCell className="text-xs">
+                              {new Date(transaction.date).toLocaleDateString()}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={transaction.type === 'Payment' ? 'default' : 'secondary'} className="text-xs">
+                                {transaction.type}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-xs font-medium">{transaction.reference}</TableCell>
+                            <TableCell className="text-xs">{transaction.description}</TableCell>
+                            <TableCell className="text-right text-xs text-destructive">
+                              {transaction.debit > 0 ? formatCurrency(transaction.debit) : ''}
+                            </TableCell>
+                            <TableCell className="text-right text-xs text-success">
+                              {transaction.credit > 0 ? formatCurrency(transaction.credit) : ''}
+                            </TableCell>
+                            <TableCell className="text-right text-xs font-medium">
+                              {formatCurrency(transaction.balance)}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="shadow-card flex items-center justify-center min-h-[600px]">
+              <CardContent className="text-center">
+                <FileText className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-medium text-foreground mb-2">Select a Customer</h3>
+                <p className="text-muted-foreground">Choose a customer from the list to view their statement</p>
+              </CardContent>
+            </Card>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 };
