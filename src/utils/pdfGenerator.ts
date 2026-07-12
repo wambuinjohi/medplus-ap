@@ -1272,13 +1272,12 @@ export const downloadQuotationPDF = async (quotation: any, company?: CompanyDeta
 };
 
 // Function for generating customer statement PDF
-export const generateCustomerStatementPDF = async (customer: any, invoices: any[], payments: any[], statementData?: any, company?: CompanyDetails, creditNotes: any[] = []) => {
+export const generateCustomerStatementPDF = async (customer: any, invoices: any[], payments: any[], statementData?: any, company?: CompanyDetails, creditNoteAllocations: any[] = []) => {
   const today = new Date();
   const statementDate = statementData?.statement_date || today.toISOString().split('T')[0];
 
-  // Calculate outstanding amounts (adjusted for credit notes)
-  const totalCreditNotes = creditNotes.reduce((sum, cn) =>
-    sum + (Number(cn.total_amount) || 0), 0
+  const totalCreditNotes = creditNoteAllocations.reduce((sum, allocation) =>
+    sum + (Number(allocation.allocated_amount) || 0), 0
   );
   const totalOutstanding = invoices.reduce((sum, inv) =>
     sum + ((inv.total_amount || 0) - (inv.paid_amount || 0)), 0
@@ -1337,18 +1336,23 @@ export const generateCustomerStatementPDF = async (customer: any, invoices: any[
       credit: pay.amount || 0,
       due_date: null
     })),
-    // Add all credit notes as credits (reducing balance)
-    ...creditNotes.map(cn => ({
-      date: cn.credit_note_date,
-      type: 'credit_note',
-      reference: cn.credit_note_number,
-      description: cn.invoices?.invoice_number
-        ? `Credit Note ${cn.credit_note_number} - Applied to Invoice ${cn.invoices.invoice_number}`
-        : `Credit Note ${cn.credit_note_number}${cn.reason ? ` - ${cn.reason}` : ''}`,
-      debit: 0,
-      credit: cn.total_amount || 0,
-      due_date: null
-    }))
+    ...creditNoteAllocations.map(allocation => {
+      const creditNote = allocation.credit_notes || allocation.credit_note || {};
+      const invoice = allocation.invoices || allocation.invoice || {};
+      const reference = creditNote.credit_note_number || allocation.credit_note_number || 'Credit Note';
+
+      return {
+        date: allocation.allocation_date || creditNote.credit_note_date,
+        type: 'credit_note',
+        reference,
+        description: invoice.invoice_number
+          ? `Credit Note ${reference} - Applied to Invoice ${invoice.invoice_number}`
+          : `Credit Note ${reference}${creditNote.reason ? ` - ${creditNote.reason}` : ''}`,
+        debit: 0,
+        credit: Number(allocation.allocated_amount) || 0,
+        due_date: null
+      };
+    })
   ];
 
   // Sort by date
@@ -1406,7 +1410,7 @@ export const generateCustomerStatementPDF = async (customer: any, invoices: any[
     subtotal: finalBalance,
     tax_amount: 0,
     total_amount: finalBalance,
-    notes: `Statement of Account as of ${new Date(statementDate).toLocaleDateString()}\n\nThis statement shows all transactions including invoices (debits), payments (credits), and credit notes (credits) with running balance.\n\nTotal Credit Notes: ${formatCurrency(totalCreditNotes)}\n\nAging Summary for Outstanding Invoices:\nCurrent: ${formatCurrency(current)}\n1-30 Days: ${formatCurrency(days30)}\n31-60 Days: ${formatCurrency(days60)}\n61-90 Days: ${formatCurrency(days90)}\nOver 90 Days: ${formatCurrency(over90)}`,
+    notes: `Statement of Account as of ${new Date(statementDate).toLocaleDateString()}\nTransaction period: ${statementData?.date_range_label || 'All time'}\n\nThis statement shows all transactions including invoices (debits), payments (credits), and allocated credit notes (credits) with running balance.\n\nTotal Allocated Credit Notes: ${formatCurrency(totalCreditNotes)}\n\nAging Summary for Outstanding Invoices:\nCurrent: ${formatCurrency(current)}\n1-30 Days: ${formatCurrency(days30)}\n31-60 Days: ${formatCurrency(days60)}\n61-90 Days: ${formatCurrency(days90)}\nOver 90 Days: ${formatCurrency(over90)}`,
     terms_and_conditions: 'Please remit payment for any outstanding amounts. Contact us if you have any questions about this statement.',
   };
 
