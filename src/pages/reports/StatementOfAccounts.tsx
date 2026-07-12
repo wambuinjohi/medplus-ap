@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -297,6 +298,7 @@ const StatementOfAccounts = () => {
           <h1 className="text-3xl font-bold text-foreground">Statement of Accounts</h1>
           <p className="text-muted-foreground">
             Customer account statements and aging analysis
+            {dateRange !== 'all_time' && ` • Period: ${getStatementDateRangeLabel(dateFilter)}`}
           </p>
         </div>
         <div className="flex space-x-2">
@@ -373,38 +375,120 @@ const StatementOfAccounts = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex space-x-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder="Search by customer name or code..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
+          <div className="space-y-4">
+            <div className="flex space-x-4">
+              <div className="flex-1">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by customer name or code..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
               </div>
+              <Select value={selectedCustomer} onValueChange={setSelectedCustomer}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Select Customer" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Customers</SelectItem>
+                  {computedStatements.map((statement) => (
+                    <SelectItem key={statement.customerId} value={statement.customerId.toString()}>
+                      {statement.customerName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                variant={showOverdueOnly ? "default" : "outline"}
+                onClick={() => setShowOverdueOnly(!showOverdueOnly)}
+              >
+                <AlertTriangle className="mr-2 h-4 w-4" />
+                Overdue Only
+              </Button>
             </div>
-            <Select value={selectedCustomer} onValueChange={setSelectedCustomer}>
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Select Customer" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Customers</SelectItem>
-                {computedStatements.map((statement) => (
-                  <SelectItem key={statement.customerId} value={statement.customerId.toString()}>
-                    {statement.customerName}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button 
-              variant={showOverdueOnly ? "default" : "outline"}
-              onClick={() => setShowOverdueOnly(!showOverdueOnly)}
-            >
-              <AlertTriangle className="mr-2 h-4 w-4" />
-              Overdue Only
-            </Button>
+            <div className="space-y-4 pt-2 border-t">
+              <div className="space-y-2">
+                <Label>Transaction Date Range</Label>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant={dateRange === 'all_time' ? 'default' : 'outline'}
+                    onClick={() => {
+                      setDateRange('all_time');
+                      setStartDate('');
+                      setEndDate('');
+                    }}
+                    size="sm"
+                  >
+                    All Time
+                  </Button>
+                  <Button
+                    variant={dateRange === 'last_30_days' ? 'default' : 'outline'}
+                    onClick={() => {
+                      setDateRange('last_30_days');
+                      setStartDate('');
+                      setEndDate('');
+                    }}
+                    size="sm"
+                  >
+                    Last 30 Days
+                  </Button>
+                  <Button
+                    variant={dateRange === 'last_90_days' ? 'default' : 'outline'}
+                    onClick={() => {
+                      setDateRange('last_90_days');
+                      setStartDate('');
+                      setEndDate('');
+                    }}
+                    size="sm"
+                  >
+                    Last 90 Days
+                  </Button>
+                  <Button
+                    variant={dateRange === 'this_year' ? 'default' : 'outline'}
+                    onClick={() => {
+                      setDateRange('this_year');
+                      setStartDate('');
+                      setEndDate('');
+                    }}
+                    size="sm"
+                  >
+                    This Year
+                  </Button>
+                  <Button
+                    variant={dateRange === 'custom' ? 'default' : 'outline'}
+                    onClick={() => setDateRange('custom')}
+                    size="sm"
+                  >
+                    Custom Range
+                  </Button>
+                </div>
+              </div>
+              {dateRange === 'custom' && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="start_date">Start Date</Label>
+                    <Input
+                      id="start_date"
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="end_date">End Date</Label>
+                    <Input
+                      id="end_date"
+                      type="date"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -415,6 +499,7 @@ const StatementOfAccounts = () => {
           <CardTitle>Customer Account Statements</CardTitle>
           <CardDescription>
             Detailed account statements with aging analysis
+            {dateRange !== 'all_time' && ` • Period: ${getStatementDateRangeLabel(dateFilter)}`}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -430,7 +515,12 @@ const StatementOfAccounts = () => {
                       <div className="flex items-center space-x-4">
                         <Building2 className="h-8 w-8 text-primary" />
                         <div>
-                          <h3 className="text-lg font-semibold">{statement.customerName}</h3>
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-lg font-semibold">{statement.customerName}</h3>
+                            <Badge variant="secondary" className="text-xs">
+                              {getStatementDateRangeLabel(dateFilter)}
+                            </Badge>
+                          </div>
                           <p className="text-sm text-muted-foreground">
                             {statement.customerCode} • {statement.email}
                           </p>

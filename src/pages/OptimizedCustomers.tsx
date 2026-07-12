@@ -49,6 +49,7 @@ import { CreateCustomerModal } from '@/components/customers/CreateCustomerModal'
 import { CreateInvoiceModal } from '@/components/invoices/CreateInvoiceModal';
 import { generateCustomerStatementPDF } from '@/utils/pdfGenerator';
 import { applyTermsToInvoiceForPDF } from '@/utils/pdfTermsManager';
+import { fetchCustomerCreditNoteAllocations } from '@/utils/statementHelpers';
 
 // Memoized customer row component for better performance
 const CustomerRow = React.memo(({ 
@@ -291,10 +292,10 @@ export default function OptimizedCustomers() {
   const handleViewStatement = useCallback(async (customer: OptimizedCustomer) => {
     try {
       // Fetch real invoices and payments for this customer
-      const [invoicesResponse, paymentsResponse] = await Promise.all([
+      const [invoicesResponse, paymentsResponse, creditNoteAllocations] = await Promise.all([
         supabase
           .from('invoices')
-          .select('invoice_date, invoice_number, total_amount, due_date, status')
+          .select('invoice_date, invoice_number, total_amount, due_date, status, paid_amount')
           .eq('customer_id', customer.id)
           .eq('company_id', currentCompany?.id || '550e8400-e29b-41d4-a716-446655440000')
           .order('invoice_date', { ascending: true }),
@@ -303,7 +304,8 @@ export default function OptimizedCustomers() {
           .select('payment_date, payment_number, amount, payment_method')
           .eq('customer_id', customer.id)
           .eq('company_id', currentCompany?.id || '550e8400-e29b-41d4-a716-446655440000')
-          .order('payment_date', { ascending: true })
+          .order('payment_date', { ascending: true }),
+        fetchCustomerCreditNoteAllocations(customer.id, { range: 'all_time' })
       ]);
 
       if (invoicesResponse.error) throw invoicesResponse.error;
@@ -321,7 +323,18 @@ export default function OptimizedCustomers() {
         currentCompany?.id
       );
 
-      generateCustomerStatementPDF(customerWithTerms, invoices, payments);
+      const companyDetails = currentCompany ? {
+        name: currentCompany.name,
+        address: currentCompany.address,
+        city: currentCompany.city,
+        country: currentCompany.country,
+        phone: currentCompany.phone,
+        email: currentCompany.email,
+        tax_number: currentCompany.tax_number,
+        logo_url: currentCompany.logo_url
+      } : undefined;
+
+      generateCustomerStatementPDF(customerWithTerms, invoices, payments, undefined, companyDetails, creditNoteAllocations);
       toast.success(`Statement generated for ${customer.name}`);
     } catch (error) {
       console.error('Error generating statement:', error);
