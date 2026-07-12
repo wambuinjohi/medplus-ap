@@ -95,7 +95,8 @@ interface Invoice {
 
 function calculateActualBalance(invoice: Invoice): number {
   const balanceDue = invoice.balance_due || 0;
-  return Math.max(0, balanceDue);
+  const appliedCredits = invoice.appliedCreditNotes?.reduce((sum, cn) => sum + (cn.allocated_amount || 0), 0) || 0;
+  return Math.max(0, balanceDue - appliedCredits);
 }
 
 function calculateActualStatus(invoice: Invoice): 'draft' | 'sent' | 'paid' | 'partial' | 'overdue' {
