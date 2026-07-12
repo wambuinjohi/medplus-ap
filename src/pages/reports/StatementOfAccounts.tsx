@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -297,6 +298,7 @@ const StatementOfAccounts = () => {
           <h1 className="text-3xl font-bold text-foreground">Statement of Accounts</h1>
           <p className="text-muted-foreground">
             Customer account statements and aging analysis
+            {dateRange !== 'all_time' && ` • Period: ${getStatementDateRangeLabel(dateFilter)}`}
           </p>
         </div>
         <div className="flex space-x-2">
@@ -373,38 +375,79 @@ const StatementOfAccounts = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex space-x-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder="Search by customer name or code..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
+          <div className="space-y-4">
+            <div className="flex space-x-4">
+              <div className="flex-1">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by customer name or code..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
               </div>
+              <Select value={selectedCustomer} onValueChange={setSelectedCustomer}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Select Customer" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Customers</SelectItem>
+                  {computedStatements.map((statement) => (
+                    <SelectItem key={statement.customerId} value={statement.customerId.toString()}>
+                      {statement.customerName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                variant={showOverdueOnly ? "default" : "outline"}
+                onClick={() => setShowOverdueOnly(!showOverdueOnly)}
+              >
+                <AlertTriangle className="mr-2 h-4 w-4" />
+                Overdue Only
+              </Button>
             </div>
-            <Select value={selectedCustomer} onValueChange={setSelectedCustomer}>
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Select Customer" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Customers</SelectItem>
-                {computedStatements.map((statement) => (
-                  <SelectItem key={statement.customerId} value={statement.customerId.toString()}>
-                    {statement.customerName}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button 
-              variant={showOverdueOnly ? "default" : "outline"}
-              onClick={() => setShowOverdueOnly(!showOverdueOnly)}
-            >
-              <AlertTriangle className="mr-2 h-4 w-4" />
-              Overdue Only
-            </Button>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2 border-t">
+              <div className="space-y-2">
+                <Label htmlFor="statement_date_range">Date Range</Label>
+                <Select value={dateRange} onValueChange={setDateRange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select date range" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all_time">All Time</SelectItem>
+                    <SelectItem value="last_30_days">Last 30 Days</SelectItem>
+                    <SelectItem value="last_90_days">Last 90 Days</SelectItem>
+                    <SelectItem value="this_year">This Year</SelectItem>
+                    <SelectItem value="custom">Custom Range</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {dateRange === 'custom' && (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="start_date">Start Date</Label>
+                    <Input
+                      id="start_date"
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="end_date">End Date</Label>
+                    <Input
+                      id="end_date"
+                      type="date"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                    />
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
