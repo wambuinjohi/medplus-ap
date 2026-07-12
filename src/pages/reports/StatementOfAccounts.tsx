@@ -409,24 +409,65 @@ const StatementOfAccounts = () => {
                 Overdue Only
               </Button>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2 border-t">
+            <div className="space-y-4 pt-2 border-t">
               <div className="space-y-2">
-                <Label htmlFor="statement_date_range">Date Range</Label>
-                <Select value={dateRange} onValueChange={setDateRange}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select date range" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all_time">All Time</SelectItem>
-                    <SelectItem value="last_30_days">Last 30 Days</SelectItem>
-                    <SelectItem value="last_90_days">Last 90 Days</SelectItem>
-                    <SelectItem value="this_year">This Year</SelectItem>
-                    <SelectItem value="custom">Custom Range</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label>Transaction Date Range</Label>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant={dateRange === 'all_time' ? 'default' : 'outline'}
+                    onClick={() => {
+                      setDateRange('all_time');
+                      setStartDate('');
+                      setEndDate('');
+                    }}
+                    size="sm"
+                  >
+                    All Time
+                  </Button>
+                  <Button
+                    variant={dateRange === 'last_30_days' ? 'default' : 'outline'}
+                    onClick={() => {
+                      setDateRange('last_30_days');
+                      setStartDate('');
+                      setEndDate('');
+                    }}
+                    size="sm"
+                  >
+                    Last 30 Days
+                  </Button>
+                  <Button
+                    variant={dateRange === 'last_90_days' ? 'default' : 'outline'}
+                    onClick={() => {
+                      setDateRange('last_90_days');
+                      setStartDate('');
+                      setEndDate('');
+                    }}
+                    size="sm"
+                  >
+                    Last 90 Days
+                  </Button>
+                  <Button
+                    variant={dateRange === 'this_year' ? 'default' : 'outline'}
+                    onClick={() => {
+                      setDateRange('this_year');
+                      setStartDate('');
+                      setEndDate('');
+                    }}
+                    size="sm"
+                  >
+                    This Year
+                  </Button>
+                  <Button
+                    variant={dateRange === 'custom' ? 'default' : 'outline'}
+                    onClick={() => setDateRange('custom')}
+                    size="sm"
+                  >
+                    Custom Range
+                  </Button>
+                </div>
               </div>
               {dateRange === 'custom' && (
-                <>
+                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="start_date">Start Date</Label>
                     <Input
@@ -445,7 +486,7 @@ const StatementOfAccounts = () => {
                       onChange={(e) => setEndDate(e.target.value)}
                     />
                   </div>
-                </>
+                </div>
               )}
             </div>
           </div>
