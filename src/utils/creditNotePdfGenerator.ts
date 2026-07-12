@@ -685,7 +685,7 @@ export const generateCreditNotePDF = async (creditNote: CreditNotePDFData, compa
           <div class="section-title" style="margin-bottom: 15px;">Invoice Allocations Detail</div>
           ${creditNote.credit_note_allocations.map((allocation, index) => {
             if (!allocation.invoices) return '';
-            const newBalance = allocation.invoices.balance_due - allocation.allocated_amount;
+            const newBalance = allocation.invoices.balance_due;
             return `
             <div style="margin-bottom: 25px; page-break-inside: avoid;">
               <div style="background: #e8f5e9; border-left: 4px solid #2BB673; padding: 10px; margin-bottom: 10px;">
