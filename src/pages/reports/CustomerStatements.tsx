@@ -35,6 +35,7 @@ import { generateCustomerStatementPDF } from '@/utils/pdfGenerator';
 import { applyTermsToInvoiceForPDF } from '@/utils/pdfTermsManager';
 import { exportCustomerStatementsToCSV, exportCustomerStatementSummaryToCSV, exportCustomerStatementsToExcel } from '@/utils/csvExporter';
 import CustomerStatementPreviewModal from '@/components/statements/CustomerStatementPreviewModal';
+import { fetchCustomerCreditNoteAllocations, getStatementDateRangeLabel, isStatementDateInRange } from '@/utils/statementHelpers';
 
 interface CustomerStatement {
   customer_id: string;
@@ -55,7 +56,10 @@ export default function CustomerStatements() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [dateRange, setDateRange] = useState('all_time');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [statementDate, setStatementDate] = useState(new Date().toISOString().split('T')[0]);
+  const dateFilter = { range: dateRange, startDate, endDate };
   const [showPreview, setShowPreview] = useState(false);
   const [previewCustomer, setPreviewCustomer] = useState<CustomerStatement | null>(null);
 
@@ -77,26 +81,7 @@ export default function CustomerStatements() {
   const calculateCustomerStatements = (): CustomerStatement[] => {
     if (!customers || !invoices || !payments) return [];
 
-    // Helper to filter invoices by selected dateRange
-    const invoiceInRange = (inv: any) => {
-      if (!inv || !inv.invoice_date) return false;
-      const invDate = new Date(inv.invoice_date);
-      const today = new Date();
-
-      switch (dateRange) {
-        case 'last_30_days':
-          return invDate >= new Date(today.getFullYear(), today.getMonth(), today.getDate() - 30);
-        case 'last_90_days':
-          return invDate >= new Date(today.getFullYear(), today.getMonth(), today.getDate() - 90);
-        case 'this_year':
-          return invDate.getFullYear() === today.getFullYear();
-        case 'custom':
-          // No custom range UI - fall back to all
-        case 'all_time':
-        default:
-          return true;
-      }
-    };
+    const invoiceInRange = (inv: any) => isStatementDateInRange(inv?.invoice_date, dateFilter);
 
     return customers.map(customer => {
       // Get customer invoices (apply date range filter)
@@ -131,7 +116,9 @@ export default function CustomerStatements() {
       const currentDue = totalOutstanding - overdueAmount;
 
       // Get last payment info
-      const customerPayments = payments.filter(pay => pay.customer_id === customer.id);
+      const customerPayments = payments.filter(pay =>
+        pay.customer_id === customer.id && isStatementDateInRange(pay.payment_date, dateFilter)
+      );
       const lastPayment = customerPayments.sort((a, b) => 
         new Date(b.payment_date).getTime() - new Date(a.payment_date).getTime()
       )[0];
@@ -246,7 +233,10 @@ export default function CustomerStatements() {
           const customerInvoices = invoices?.filter(inv =>
             inv.customer_id === customer.id && invoiceInRange(inv)
           ) || [];
-          const customerPayments = payments?.filter(pay => pay.customer_id === customer.id) || [];
+          const customerPayments = payments?.filter(pay =>
+            pay.customer_id === customer.id && isStatementDateInRange(pay.payment_date, dateFilter)
+          ) || [];
+          const creditNoteAllocations = await fetchCustomerCreditNoteAllocations(customer.id, dateFilter);
 
           // Apply dynamic company terms before generating statement
           const customerWithTerms = await applyTermsToInvoiceForPDF(
@@ -255,8 +245,9 @@ export default function CustomerStatements() {
           );
 
           await generateCustomerStatementPDF(customerWithTerms, customerInvoices, customerPayments, {
-            statement_date: statementDate
-          }, companyDetails);
+            statement_date: statementDate,
+            date_range_label: getStatementDateRangeLabel(dateFilter)
+          }, companyDetails, creditNoteAllocations);
         }
       }
 
@@ -301,7 +292,10 @@ export default function CustomerStatements() {
           const customerInvoices = invoices?.filter(inv =>
             inv.customer_id === customer.id && invoiceInRange(inv)
           ) || [];
-          const customerPayments = payments?.filter(pay => pay.customer_id === customer.id) || [];
+          const customerPayments = payments?.filter(pay =>
+            pay.customer_id === customer.id && isStatementDateInRange(pay.payment_date, dateFilter)
+          ) || [];
+          const creditNoteAllocations = await fetchCustomerCreditNoteAllocations(customer.id, dateFilter);
 
           // Apply dynamic company terms before generating statement
           const customerWithTerms = await applyTermsToInvoiceForPDF(
@@ -310,8 +304,9 @@ export default function CustomerStatements() {
           );
 
           await generateCustomerStatementPDF(customerWithTerms, customerInvoices, customerPayments, {
-            statement_date: statementDate
-          }, companyDetails);
+            statement_date: statementDate,
+            date_range_label: getStatementDateRangeLabel(dateFilter)
+          }, companyDetails, creditNoteAllocations);
         }
       }
 
@@ -520,6 +515,18 @@ export default function CustomerStatements() {
                 </SelectContent>
               </Select>
             </div>
+            {dateRange === 'custom' && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="start_date">Start Date</Label>
+                  <Input id="start_date" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="end_date">End Date</Label>
+                  <Input id="end_date" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+                </div>
+              </>
+            )}
             <div className="space-y-2">
               <Label htmlFor="search">Search Customers</Label>
               <div className="relative">

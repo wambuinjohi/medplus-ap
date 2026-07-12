@@ -10,6 +10,8 @@ import { generateCustomerStatementPDF } from '@/utils/pdfGenerator';
 import { exportCustomerStatementDetailToExcel } from '@/utils/csvExporter';
 import { getAgingNarrative } from '@/utils/ageCalculations';
 import { toast } from 'sonner';
+import { useQuery } from '@tanstack/react-query';
+import { fetchCustomerCreditNoteAllocations, getStatementDateRangeLabel, isStatementDateInRange } from '@/utils/statementHelpers';
 
 interface CustomerStatementPreviewModalProps {
   isOpen: boolean;
@@ -44,31 +46,21 @@ export default function CustomerStatementPreviewModal({
   const { data: invoices } = useInvoices();
   const { data: payments } = usePayments();
 
-  // Helper to filter invoices by date range
-  const invoiceInRange = (inv: any) => {
-    if (!inv || !inv.invoice_date) return false;
-    const invDate = new Date(inv.invoice_date);
-    const today = new Date();
-
-    switch (dateRange) {
-      case 'last_30_days':
-        return invDate >= new Date(today.getFullYear(), today.getMonth(), today.getDate() - 30);
-      case 'last_90_days':
-        return invDate >= new Date(today.getFullYear(), today.getMonth(), today.getDate() - 90);
-      case 'this_year':
-        return invDate.getFullYear() === today.getFullYear();
-      case 'custom':
-      case 'all_time':
-      default:
-        return true;
-    }
-  };
+  const dateFilter = { range: dateRange };
+  const { data: creditNoteAllocations = [] } = useQuery({
+    queryKey: ['statementCreditNoteAllocations', customer.customer_id, dateRange],
+    queryFn: () => fetchCustomerCreditNoteAllocations(customer.customer_id, dateFilter),
+    enabled: isOpen
+  });
+  const invoiceInRange = (inv: any) => isStatementDateInRange(inv?.invoice_date, dateFilter);
 
   // Get customer's invoices and payments
   const customerInvoices = invoices?.filter(inv =>
     inv.customer_id === customer.customer_id && invoiceInRange(inv)
   ) || [];
-  const customerPayments = payments?.filter(pay => pay.customer_id === customer.customer_id) || [];
+  const customerPayments = payments?.filter(pay =>
+    pay.customer_id === customer.customer_id && isStatementDateInRange(pay.payment_date, dateFilter)
+  ) || [];
 
   // Get outstanding invoices
   const outstandingInvoices = customerInvoices.filter(inv =>
@@ -141,8 +133,9 @@ export default function CustomerStatementPreviewModal({
       } : undefined;
 
       await generateCustomerStatementPDF(customerData, customerInvoices, customerPayments, {
-        statement_date: statementDate
-      }, companyDetails);
+        statement_date: statementDate,
+        date_range_label: getStatementDateRangeLabel(dateFilter)
+      }, companyDetails, creditNoteAllocations);
       
       toast.success('Statement PDF generated successfully!');
     } catch (error) {
@@ -221,6 +214,10 @@ export default function CustomerStatementPreviewModal({
                 <div>
                   <p className="text-sm text-muted-foreground">Statement Date</p>
                   <p className="font-medium">{new Date(statementDate).toLocaleDateString()}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Transaction Period</p>
+                  <p className="font-medium">{getStatementDateRangeLabel(dateFilter)}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Customer Email</p>
@@ -348,6 +345,36 @@ export default function CustomerStatementPreviewModal({
                           <TableCell>{payment.reference_number || '-'}</TableCell>
                         </TableRow>
                       ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          )}
+
+          {creditNoteAllocations.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Allocated Credit Notes</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Credit Note</TableHead>
+                      <TableHead>Invoice</TableHead>
+                      <TableHead className="text-right">Allocated Amount</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {creditNoteAllocations.map((allocation) => (
+                      <TableRow key={allocation.id}>
+                        <TableCell>{new Date(allocation.allocation_date).toLocaleDateString()}</TableCell>
+                        <TableCell className="font-medium">{allocation.credit_notes?.credit_note_number || 'Credit Note'}</TableCell>
+                        <TableCell>{allocation.invoices?.invoice_number || '-'}</TableCell>
+                        <TableCell className="text-right text-success">${Number(allocation.allocated_amount).toFixed(2)}</TableCell>
+                      </TableRow>
+                    ))}
                   </TableBody>
                 </Table>
               </CardContent>

@@ -28,24 +28,22 @@ import { generateCustomerStatementPDF } from '@/utils/pdfGenerator';
 import { toast } from 'sonner';
 import { useCustomers, usePayments, useCompanies } from '@/hooks/useDatabase';
 import { useInvoicesFixed as useInvoices } from '@/hooks/useInvoicesFixed';
-import { useCreditNotes } from '@/hooks/useCreditNotes';
-import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
+import { fetchCompanyCreditNoteAllocations, getStatementDateRangeLabel, isStatementDateInRange } from '@/utils/statementHelpers';
 import { exportDataToExcel } from '@/utils/csvExporter';
 
 // Helper function to compute customer statements from real data
-const computeCustomerStatements = (customers: any[], invoices: any[], payments: any[], creditNotes: any[] = []) => {
+const computeCustomerStatements = (customers: any[], invoices: any[], payments: any[], creditNoteAllocations: any[] = []) => {
   if (!customers || !invoices || !payments) return [];
 
   return customers.map(customer => {
-    // Get customer invoices, payments, and credit notes
     const customerInvoices = invoices.filter(inv => inv.customer_id === customer.id);
     const customerPayments = payments.filter(pay => pay.customer_id === customer.id);
-    const customerCreditNotes = creditNotes.filter(cn => cn.customer_id === customer.id);
+    const customerCreditNoteAllocations = creditNoteAllocations.filter(allocation => allocation.credit_notes?.customer_id === customer.id);
 
-    // Calculate totals including credit notes
     const totalInvoiced = customerInvoices.reduce((sum, inv) => sum + (Number(inv.total_amount) || 0), 0);
     const totalPaid = customerPayments.reduce((sum, pay) => sum + (Number(pay.amount) || 0), 0);
-    const totalCreditNotes = customerCreditNotes.reduce((sum, cn) => sum + (Number(cn.total_amount) || 0), 0);
+    const totalCreditNotes = customerCreditNoteAllocations.reduce((sum, allocation) => sum + (Number(allocation.allocated_amount) || 0), 0);
     const currentBalance = totalInvoiced - totalPaid - totalCreditNotes;
 
     // Calculate aging analysis
@@ -85,14 +83,16 @@ const computeCustomerStatements = (customers: any[], invoices: any[], payments: 
         credit: Number(pay.amount) || 0,
         balance: 0 // Will be calculated
       })),
-      ...customerCreditNotes.map(cn => ({
-        date: cn.credit_note_date,
+      ...customerCreditNoteAllocations.map(allocation => ({
+        date: allocation.allocation_date,
         type: 'Credit Note',
-        reference: cn.credit_note_number,
-        description: `Credit Note - ${cn.reason || cn.credit_note_number}`,
+        reference: allocation.credit_notes?.credit_note_number || 'Credit Note',
+        description: allocation.invoices?.invoice_number
+          ? `Credit Note ${allocation.credit_notes?.credit_note_number || ''} - Applied to Invoice ${allocation.invoices.invoice_number}`
+          : `Credit Note - ${allocation.credit_notes?.credit_note_number || ''}`,
         debit: 0,
-        credit: Number(cn.total_amount) || 0,
-        balance: 0 // Will be calculated
+        credit: Number(allocation.allocated_amount) || 0,
+        balance: 0
       }))
     ];
 
@@ -131,6 +131,10 @@ const StatementOfAccounts = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState<string>('all');
   const [showOverdueOnly, setShowOverdueOnly] = useState(false);
+  const [dateRange, setDateRange] = useState('all_time');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const dateFilter = { range: dateRange, startDate, endDate };
 
   // Real data hooks
   const { data: companies } = useCompanies();
@@ -138,10 +142,15 @@ const StatementOfAccounts = () => {
   const { data: customers } = useCustomers(currentCompany?.id);
   const { data: invoices } = useInvoices(currentCompany?.id);
   const { data: payments } = usePayments(currentCompany?.id);
-  const { data: creditNotes } = useCreditNotes(currentCompany?.id);
+  const { data: creditNoteAllocations = [] } = useQuery({
+    queryKey: ['statementCreditNoteAllocations', currentCompany?.id, dateRange, startDate, endDate],
+    queryFn: () => fetchCompanyCreditNoteAllocations(currentCompany?.id, dateFilter),
+    enabled: Boolean(currentCompany?.id)
+  });
+  const filteredInvoices = (invoices || []).filter(invoice => isStatementDateInRange(invoice.invoice_date, dateFilter));
+  const filteredPayments = (payments || []).filter(payment => isStatementDateInRange(payment.payment_date, dateFilter));
 
-  // Compute statements from real data
-  const computedStatements = computeCustomerStatements(customers || [], invoices || [], payments || [], creditNotes || []);
+  const computedStatements = computeCustomerStatements(customers || [], filteredInvoices, filteredPayments, creditNoteAllocations);
 
   const handleDownloadStatement = async (statement: any) => {
     try {
@@ -152,10 +161,9 @@ const StatementOfAccounts = () => {
         return;
       }
 
-      // Get real invoices, payments, and credit notes for this customer
-      const customerInvoices = invoices?.filter(inv => inv.customer_id === customer.id) || [];
-      const customerPayments = payments?.filter(pay => pay.customer_id === customer.id) || [];
-      const customerCreditNotes = creditNotes?.filter(cn => cn.customer_id === customer.id) || [];
+      const customerInvoices = filteredInvoices.filter(inv => inv.customer_id === customer.id);
+      const customerPayments = filteredPayments.filter(pay => pay.customer_id === customer.id);
+      const customerCreditNoteAllocations = creditNoteAllocations.filter(allocation => allocation.credit_notes?.customer_id === customer.id);
 
       // Prepare company details for PDF
       const companyDetails = currentCompany ? {
@@ -181,10 +189,11 @@ const StatementOfAccounts = () => {
         customerInvoices,
         customerPayments,
         {
-          statement_date: new Date().toISOString().split('T')[0]
+          statement_date: new Date().toISOString().split('T')[0],
+          date_range_label: getStatementDateRangeLabel(dateFilter)
         },
         companyDetails,
-        customerCreditNotes
+        customerCreditNoteAllocations
       );
 
       toast.success(`Statement PDF generated for ${statement.customerName}`);
