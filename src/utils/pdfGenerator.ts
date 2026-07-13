@@ -1210,7 +1210,7 @@ export const downloadInvoicePDF = async (invoice: any, documentType: 'INVOICE' |
     total_amount: invoice.total_amount,
     paid_amount: invoice.paid_amount || 0,
     net_total: netTotal,
-    balance_due: invoice.balance_due || (netTotal - (invoice.paid_amount || 0)),
+    balance_due: netTotal - (invoice.paid_amount || 0),
     notes: invoice.notes,
     terms_and_conditions: invoice.terms_and_conditions,
     appliedCreditNotes: appliedCreditNotes.length > 0 ? appliedCreditNotes : undefined,
