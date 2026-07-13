@@ -98,6 +98,7 @@ export interface DocumentData {
     credit_note_number: string;
     allocated_amount: number;
   }>;
+  net_total?: number; // Total amount minus applied credits
   // Delivery note specific fields
   delivery_date?: string;
   delivery_address?: string;
@@ -967,7 +968,7 @@ export const generatePDF = (data: DocumentData) => {
             ` : ''}
             <tr class="total-row">
               <td class="label">${data.type === 'statement' ? 'TOTAL OUTSTANDING:' : 'TOTAL:'}</td>
-              <td class="amount">${formatCurrency(data.total_amount)}</td>
+              <td class="amount">${formatCurrency(data.net_total !== undefined ? data.net_total : data.total_amount)}</td>
             </tr>
             ${(data.type === 'invoice' || data.type === 'proforma') && data.paid_amount !== undefined ? `
             <tr class="payment-info">
@@ -1185,6 +1186,9 @@ export const downloadInvoicePDF = async (invoice: any, documentType: 'INVOICE' |
     }));
   }
 
+  const totalAppliedCredits = appliedCreditNotes.reduce((sum, cn) => sum + (cn.allocated_amount || 0), 0);
+  const netTotal = invoice.total_amount - totalAppliedCredits;
+
   const documentData: DocumentData = {
     type: documentType === 'PROFORMA' ? 'proforma' : 'invoice',
     number: invoice.invoice_number,
@@ -1205,7 +1209,8 @@ export const downloadInvoicePDF = async (invoice: any, documentType: 'INVOICE' |
     tax_amount: invoice.tax_amount,
     total_amount: invoice.total_amount,
     paid_amount: invoice.paid_amount || 0,
-    balance_due: invoice.balance_due || (invoice.total_amount - (invoice.paid_amount || 0)),
+    net_total: netTotal,
+    balance_due: invoice.balance_due || (netTotal - (invoice.paid_amount || 0)),
     notes: invoice.notes,
     terms_and_conditions: invoice.terms_and_conditions,
     appliedCreditNotes: appliedCreditNotes.length > 0 ? appliedCreditNotes : undefined,
