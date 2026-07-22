@@ -18,7 +18,8 @@ import {
   FileSpreadsheet,
   ShoppingCart,
   RotateCcw,
-  Globe
+  Globe,
+  TrendingUp
 } from 'lucide-react';
 import { BiolegendLogo } from '@/components/ui/biolegend-logo';
 import { useAuth } from '@/contexts/AuthContext';
@@ -100,6 +101,7 @@ const sidebarItems: SidebarItem[] = [
     icon: BarChart3,
     children: [
       { title: 'Sales Reports', icon: BarChart3, href: '/app/reports/sales', requiredPermission: 'view_reports' },
+      { title: 'Historical Product Sales', icon: TrendingUp, href: '/app/reports/sales-by-product', requiredPermission: 'view_reports' },
       { title: 'Inventory Reports', icon: Package, href: '/app/reports/inventory', requiredPermission: 'view_reports' },
       { title: 'Customer Statements', icon: FileSpreadsheet, href: '/app/reports/statements', requiredPermission: 'view_reports' }
     ]

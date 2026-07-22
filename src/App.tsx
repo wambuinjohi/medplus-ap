@@ -24,6 +24,7 @@ import Customers from "./pages/Customers";
 import DeliveryNotes from "./pages/DeliveryNotes";
 import Proforma from "./pages/Proforma";
 import SalesReports from "./pages/reports/SalesReports";
+import HistoricalProductSales from "./pages/reports/HistoricalProductSales";
 import InventoryReports from "./pages/reports/InventoryReports";
 import StatementOfAccounts from "./pages/reports/StatementOfAccounts";
 import CompanySettings from "./pages/settings/CompanySettings";
@@ -240,6 +241,14 @@ const App = () => {
             element={
               <ProtectedRoute>
                 <SalesReports />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/app/reports/sales-by-product"
+            element={
+              <ProtectedRoute>
+                <HistoricalProductSales />
               </ProtectedRoute>
             }
           />
