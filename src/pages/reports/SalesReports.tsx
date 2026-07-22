@@ -53,6 +53,7 @@ export default function SalesReports() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [creatorFilter, setCreatorFilter] = useState<string>('all');
+  const [productFilter, setProductFilter] = useState<string>('all');
 
   const companyId = useCurrentCompanyId();
   const { users, fetchUsers } = useUserManagement();
@@ -83,7 +84,7 @@ export default function SalesReports() {
     }
   }, [permissionsLoading, canViewReports]);
 
-  // Get filtered invoices based on date range and creator filter
+  // Get filtered invoices based on date range, creator, and product filters
   const getFilteredInvoices = () => {
     if (!invoices) return [];
 
@@ -119,8 +120,14 @@ export default function SalesReports() {
       return invoices.filter(invoice => new Date(invoice.invoice_date) >= filterStart);
     })();
 
-    if (creatorFilter === 'all') return byDateRange;
-    return byDateRange.filter(inv => inv.created_by === creatorFilter);
+    const byCreator = creatorFilter === 'all'
+      ? byDateRange
+      : byDateRange.filter(inv => inv.created_by === creatorFilter);
+
+    if (productFilter === 'all') return byCreator;
+    return byCreator.filter(inv =>
+      inv.invoice_items?.some((item: any) => item.product_id === productFilter)
+    );
   };
 
   // Calculate monthly sales data from filtered invoices
@@ -440,6 +447,20 @@ export default function SalesReports() {
               <SelectItem value="all">All creators</SelectItem>
               {(creators || []).map(creator => (
                 <SelectItem key={creator.id} value={creator.id}>{creator.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Product filter */}
+          <Select value={productFilter} onValueChange={setProductFilter}>
+            <SelectTrigger className="w-56">
+              <Package className="h-4 w-4 mr-2" />
+              <SelectValue placeholder="Filter by product" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All products</SelectItem>
+              {(products || []).map(product => (
+                <SelectItem key={product.id} value={product.id}>{product.name}</SelectItem>
               ))}
             </SelectContent>
           </Select>
