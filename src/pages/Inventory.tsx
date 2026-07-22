@@ -536,19 +536,9 @@ export default function Inventory() {
                   Previous
                 </Button>
 
-                <div className="flex items-center space-x-1">
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                    <Button
-                      key={page}
-                      variant={currentPage === page ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => handlePageChange(page)}
-                      className="w-8 h-8 p-0"
-                    >
-                      {page}
-                    </Button>
-                  ))}
-                </div>
+                <span className="text-sm text-muted-foreground whitespace-nowrap">
+                  Page {currentPage} of {totalPages}
+                </span>
 
                 <Button
                   variant="outline"
