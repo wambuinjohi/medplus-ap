@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -45,7 +45,6 @@ import { usePermissions } from '@/hooks/usePermissions';
 import useUserManagement from '@/hooks/useUserManagement';
 import { exportDataToExcel } from '@/utils/csvExporter';
 import { toast } from 'sonner';
-import { useMemo } from 'react';
 
 export default function SalesReports() {
   const [dateRange, setDateRange] = useState('last_30_days');
@@ -54,6 +53,9 @@ export default function SalesReports() {
   const [endDate, setEndDate] = useState('');
   const [creatorFilter, setCreatorFilter] = useState<string>('all');
   const [productFilter, setProductFilter] = useState<string>('all');
+  const [productSearchOpen, setProductSearchOpen] = useState(false);
+  const [productSearchQuery, setProductSearchQuery] = useState('');
+  const productSearchRef = useRef<HTMLDivElement>(null);
 
   const companyId = useCurrentCompanyId();
   const { users, fetchUsers } = useUserManagement();
@@ -83,6 +85,19 @@ export default function SalesReports() {
       toast.error('You do not have permission to view sales reports');
     }
   }, [permissionsLoading, canViewReports]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (productSearchRef.current && !productSearchRef.current.contains(event.target as Node)) {
+        setProductSearchOpen(false);
+      }
+    };
+
+    if (productSearchOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [productSearchOpen]);
 
   // Get filtered invoices based on date range, creator, and product filters
   const getFilteredInvoices = () => {
@@ -415,16 +430,16 @@ export default function SalesReports() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 lg:gap-0">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Sales Reports</h1>
           <p className="text-muted-foreground">
             Analyze sales performance and trends for {dateRange === 'custom' && startDate && endDate ? `${startDate} to ${endDate}` : dateRange.replace('_', ' ')}
           </p>
         </div>
-        <div className="flex items-center space-x-3">
+        <div className="flex flex-col sm:flex-row sm:flex-wrap lg:flex-nowrap items-start sm:items-center gap-3 w-full lg:w-auto">
           <Select value={dateRange} onValueChange={handleDateRangeChange}>
-            <SelectTrigger className="w-48">
+            <SelectTrigger className="w-full sm:w-48">
               <Calendar className="h-4 w-4 mr-2" />
               <SelectValue placeholder="Select date range" />
             </SelectTrigger>
@@ -438,12 +453,12 @@ export default function SalesReports() {
           </Select>
 
           {/* Creator filter */}
-                  <Select value={creatorFilter} onValueChange={(v) => setCreatorFilter(v)}>
-            <SelectTrigger className="w-56">
+          <Select value={creatorFilter} onValueChange={(v) => setCreatorFilter(v)}>
+            <SelectTrigger className="w-full sm:w-56">
               <Users className="h-4 w-4 mr-2" />
               <SelectValue placeholder="Filter by creator" />
             </SelectTrigger>
-              <SelectContent>
+            <SelectContent>
               <SelectItem value="all">All creators</SelectItem>
               {(creators || []).map(creator => (
                 <SelectItem key={creator.id} value={creator.id}>{creator.name}</SelectItem>
@@ -451,21 +466,75 @@ export default function SalesReports() {
             </SelectContent>
           </Select>
 
-          {/* Product filter */}
-          <Select value={productFilter} onValueChange={setProductFilter}>
-            <SelectTrigger className="w-56">
-              <Package className="h-4 w-4 mr-2" />
-              <SelectValue placeholder="Filter by product" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All products</SelectItem>
-              {(products || []).map(product => (
-                <SelectItem key={product.id} value={product.id}>{product.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {/* Product filter with search */}
+          <div className="relative w-full sm:w-56" ref={productSearchRef}>
+            <button
+              onClick={() => setProductSearchOpen(!productSearchOpen)}
+              className="w-full px-3 py-2 border border-input rounded-md bg-background text-sm text-left flex items-center justify-between hover:bg-accent"
+            >
+              <span className="flex items-center gap-2">
+                <Package className="h-4 w-4" />
+                {productFilter === 'all' ? 'All products' : products?.find(p => p.id === productFilter)?.name || 'Filter by product'}
+              </span>
+              <svg className="h-4 w-4 opacity-50" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </button>
 
-          <Button variant="outline" onClick={handleExport} disabled={!canExportReports('export_reports')}>
+            {productSearchOpen && (
+              <div className="absolute top-full left-0 right-0 mt-2 border border-input rounded-md bg-background shadow-lg z-50">
+                <div className="p-2 border-b border-input sticky top-0">
+                  <Input
+                    placeholder="Search products..."
+                    value={productSearchQuery}
+                    onChange={(e) => setProductSearchQuery(e.target.value)}
+                    autoFocus
+                    className="h-8"
+                  />
+                </div>
+                <div className="max-h-60 overflow-y-auto">
+                  <button
+                    onClick={() => {
+                      setProductFilter('all');
+                      setProductSearchOpen(false);
+                      setProductSearchQuery('');
+                    }}
+                    className={`w-full px-3 py-2 text-left text-sm hover:bg-accent ${productFilter === 'all' ? 'bg-accent font-medium' : ''}`}
+                  >
+                    All products
+                  </button>
+                  {(products || [])
+                    .filter(product =>
+                      product.name.toLowerCase().includes(productSearchQuery.toLowerCase())
+                    )
+                    .map(product => (
+                      <button
+                        key={product.id}
+                        onClick={() => {
+                          setProductFilter(product.id);
+                          setProductSearchOpen(false);
+                          setProductSearchQuery('');
+                        }}
+                        className={`w-full px-3 py-2 text-left text-sm hover:bg-accent ${
+                          productFilter === product.id ? 'bg-accent font-medium' : ''
+                        }`}
+                      >
+                        {product.name}
+                      </button>
+                    ))}
+                  {productSearchQuery && (products || []).filter(product =>
+                    product.name.toLowerCase().includes(productSearchQuery.toLowerCase())
+                  ).length === 0 && (
+                    <div className="px-3 py-2 text-sm text-muted-foreground text-center">
+                      No products found
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <Button variant="outline" onClick={handleExport} disabled={!canExportReports('export_reports')} className="w-full sm:w-auto">
             <Download className="h-4 w-4 mr-2" />
             Export
           </Button>
