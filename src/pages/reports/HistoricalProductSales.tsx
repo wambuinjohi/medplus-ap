@@ -3,6 +3,7 @@ import {
   ArrowDown,
   ArrowUp,
   Calendar,
+  Download,
   DollarSign,
   FileText,
   Lock,
@@ -19,6 +20,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -30,10 +32,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useCurrentCompanyId } from '@/contexts/CompanyContext';
+import { useCurrentCompany, useCurrentCompanyId } from '@/contexts/CompanyContext';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useProducts } from '@/hooks/useDatabase';
 import { useInvoicesFixed as useInvoices } from '@/hooks/useInvoicesFixed';
+import { exportDataToExcel } from '@/utils/csvExporter';
 
 interface SaleRow {
   id: string;
@@ -41,6 +44,8 @@ interface SaleRow {
   invoiceNumber: string;
   customer: string;
   product: string;
+  sku: string;
+  salesperson: string;
   quantity: number;
   unitPrice: number;
   discount: number;
@@ -57,7 +62,7 @@ interface InvoiceItemRecord {
   discount_before_vat?: number;
   tax_amount?: number;
   line_total?: number;
-  products?: { name?: string } | null;
+  products?: { name?: string; product_code?: string } | null;
 }
 
 interface InvoiceRecord {
@@ -65,6 +70,8 @@ interface InvoiceRecord {
   invoice_date: string;
   invoice_number?: string;
   customers?: { name?: string } | null;
+  created_by?: string;
+  created_by_profile?: { full_name?: string } | null;
   invoice_items?: InvoiceItemRecord[];
 }
 
@@ -75,6 +82,7 @@ const formatDate = (value: string) => new Date(value).toLocaleDateString('en-KE'
 
 export default function HistoricalProductSales() {
   const companyId = useCurrentCompanyId();
+  const { currentCompany } = useCurrentCompany();
   const { can: canViewReports, loading: permissionsLoading } = usePermissions();
   const { data: invoices, isLoading: invoicesLoading, error: invoicesError } = useInvoices(companyId);
   const { data: products, isLoading: productsLoading } = useProducts(companyId);
@@ -119,6 +127,8 @@ export default function HistoricalProductSales() {
             invoiceNumber: invoice.invoice_number || '—',
             customer: invoice.customers?.name || 'Unknown customer',
             product: item.products?.name || item.description || 'Unknown product',
+            sku: item.products?.product_code || '—',
+            salesperson: invoice.created_by_profile?.full_name || invoice.created_by || 'System',
             quantity,
             unitPrice,
             discount,
@@ -177,11 +187,56 @@ export default function HistoricalProductSales() {
     else { setSortKey(key); setSortAscending(false); }
   };
 
+  const handleExport = () => {
+    const headers = ['Sale Date', 'Invoice Number', 'Product', 'SKU', 'Quantity', 'Historical Unit Price', 'Customer', 'Salesperson'];
+    const data = filteredRows.map(row => [
+      formatDate(row.date),
+      row.invoiceNumber,
+      row.product,
+      row.sku,
+      row.quantity,
+      row.unitPrice,
+      row.customer,
+      row.salesperson,
+    ]);
+
+    exportDataToExcel(
+      data,
+      headers,
+      `historical-product-sales-${new Date().toISOString().split('T')[0]}.xls`,
+      {
+        title: 'Historical Product Sales',
+        companyInfo: currentCompany ? {
+          name: currentCompany.name,
+          address: currentCompany.address,
+          city: currentCompany.city,
+          country: currentCompany.country,
+          phone: currentCompany.phone,
+          email: currentCompany.email,
+          tax_number: currentCompany.tax_number,
+          logo_url: currentCompany.logo_url,
+          bank_name: currentCompany.bank_name,
+          bank_account_number: currentCompany.bank_account_number,
+          bank_account_name: currentCompany.bank_account_name,
+          swift_code: currentCompany.swift_code,
+          branch_code: currentCompany.branch_code,
+          paybill_number: currentCompany.paybill_number,
+        } : undefined,
+      },
+    );
+  };
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">Historical Product Sales</h1>
-        <p className="text-muted-foreground">Review the prices and details captured on every product sale.</p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Historical Product Sales</h1>
+          <p className="text-muted-foreground">Review the prices and details captured on every product sale.</p>
+        </div>
+        <Button variant="outline" onClick={handleExport} disabled={!filteredRows.length}>
+          <Download className="h-4 w-4" />
+          Export
+        </Button>
       </div>
 
       <Card>
