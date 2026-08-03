@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useParams, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -28,8 +28,8 @@ export default function ProductDetail() {
   const { fetchVariantImages } = useWebManager();
 
   // Try to fetch as category first, then as variant
-  const { category, variants } = useWebCategoryBySlug(productSlug || '');
-  const { variant } = useWebVariantBySlug(productSlug || '');
+  const { category, variants, loading: categoryLoading } = useWebCategoryBySlug(productSlug || '');
+  const { variant, loading: variantLoading } = useWebVariantBySlug(productSlug || '');
 
   const [variantImages, setVariantImages] = useState<VariantImage[]>([]);
   const [categoryVariantImages, setCategoryVariantImages] = useState<Record<string, VariantImage[]>>({});
@@ -264,39 +264,16 @@ export default function ProductDetail() {
     }
   };
 
-  if (!variant && !isCategory) {
+  if (categoryLoading || variantLoading) {
     return (
-      <div className="min-h-screen bg-white">
-        <header className="sticky top-0 bg-white shadow-sm z-50 border-b border-gray-200">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-20">
-              <Link to="/" className="flex-shrink-0">
-                <BiolegendLogo size="md" showText={true} />
-              </Link>
-              <nav className="hidden md:flex items-center space-x-8">
-                <Link to="/" className="text-gray-700 hover:text-primary transition-colors font-medium">Home</Link>
-                <Link to="/about-us" className="text-gray-700 hover:text-primary transition-colors font-medium">About Us</Link>
-                <Link to="/products" className="text-gray-700 hover:text-primary transition-colors font-medium">Our Products</Link>
-                <Link to="/contact" className="text-gray-700 hover:text-primary transition-colors font-medium">Contact Us</Link>
-              </nav>
-            </div>
-          </div>
-        </header>
-
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="text-center">
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">Product Not Found</h1>
-            <p className="text-gray-600 mb-8">The product you're looking for doesn't exist.</p>
-            <Link to="/products">
-              <Button className="bg-primary hover:bg-primary/90 text-white font-semibold">
-                <ArrowLeft size={16} className="mr-2" />
-                Back to Products
-              </Button>
-            </Link>
-          </div>
-        </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader className="animate-spin text-primary" size={32} />
       </div>
     );
+  }
+
+  if (!variant && !isCategory) {
+    return <Navigate to="/products" replace />;
   }
 
   // Render category view
