@@ -32,6 +32,7 @@ export function PublicHeader({ currentPage }: PublicHeaderProps) {
 
   const navigationItems = [
     { label: 'Home', href: '/' },
+    { label: 'Offers', href: '/offers' },
     { label: 'About Us', href: '#about' },
     {
       label: 'Our Products',
@@ -78,6 +79,21 @@ export function PublicHeader({ currentPage }: PublicHeaderProps) {
                     to="/contact"
                     className={`transition-colors font-medium ${
                       isCurrentPage('contact')
+                        ? 'text-primary'
+                        : 'text-gray-700 hover:text-primary'
+                    }`}
+                  >
+                    {item.label}
+                  </Link>
+                );
+              }
+              if (item.label === 'Offers') {
+                return (
+                  <Link
+                    key={item.label}
+                    to="/offers"
+                    className={`transition-colors font-medium ${
+                      isCurrentPage('offers')
                         ? 'text-primary'
                         : 'text-gray-700 hover:text-primary'
                     }`}
@@ -176,6 +192,17 @@ export function PublicHeader({ currentPage }: PublicHeaderProps) {
                   <Link
                     to="/contact"
                     className="w-full text-left px-4 py-2 text-gray-700 hover:bg-primary/10 rounded font-medium"
+                  >
+                    {item.label}
+                  </Link>
+                ) : item.label === 'Offers' ? (
+                  <Link
+                    to="/offers"
+                    className={`w-full text-left px-4 py-2 rounded font-medium ${
+                      isCurrentPage('offers')
+                        ? 'text-primary bg-primary/10'
+                        : 'text-gray-700 hover:bg-primary/10'
+                    }`}
                   >
                     {item.label}
                   </Link>

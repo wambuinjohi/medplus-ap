@@ -424,7 +424,7 @@ const StatementOfAccounts = () => {
                             {formatCurrency(statement.currentBalance)}
                           </p>
                         </div>
-                        <Badge className={statusInfo.color} variant="default" className="text-xs flex-shrink-0">
+                        <Badge className={`${statusInfo.color} text-xs flex-shrink-0`} variant="default">
                           {statusInfo.status === 'good' && '✓'}
                           {statusInfo.status === 'overdue' && '!'}
                           {statusInfo.status === 'near_limit' && '⚠'}
