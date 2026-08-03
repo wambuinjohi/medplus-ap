@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { BiolegendLogo } from '@/components/ui/biolegend-logo';
 import { PublicFooter } from '@/components/PublicFooter';
@@ -35,6 +36,7 @@ export default function Offers() {
       description: 'Limited time offer on selected hospital equipment. Perfect for facility upgrades.',
       validUntil: 'January 31, 2025',
       category: 'Equipment',
+      href: '/products/hospital-equipments',
       featured: true
     },
     {
@@ -44,6 +46,7 @@ export default function Offers() {
       description: 'Buy our curated bundle of essential medical supplies and save big.',
       validUntil: 'February 15, 2025',
       category: 'Supplies',
+      href: '/products/others',
       featured: true
     },
     {
@@ -53,6 +56,7 @@ export default function Offers() {
       description: 'Enhanced protection with our infection control range at special pricing.',
       validUntil: 'February 28, 2025',
       category: 'Safety',
+      href: '/products/infection-control',
       featured: false
     },
     {
@@ -62,6 +66,7 @@ export default function Offers() {
       description: 'Transform your facility with quality furniture at unbeatable prices.',
       validUntil: 'January 31, 2025',
       category: 'Furniture',
+      href: '/products/hospital-furniture',
       featured: true
     },
     {
@@ -71,6 +76,7 @@ export default function Offers() {
       description: 'Special pricing for bulk orders. Perfect for large healthcare facilities.',
       validUntil: 'Ongoing',
       category: 'Program',
+      href: '/products/others',
       featured: false
     },
     {
@@ -80,6 +86,7 @@ export default function Offers() {
       description: 'Make room for new inventory. Selected items heavily discounted.',
       validUntil: 'January 20, 2025',
       category: 'Clearance',
+      href: '/products/others',
       featured: false
     },
   ];
@@ -180,8 +187,8 @@ export default function Offers() {
                     Valid until: {offer.validUntil}
                   </p>
                 </div>
-                <Button className="bg-primary hover:bg-primary/90 text-white font-semibold whitespace-nowrap">
-                  Learn More
+                <Button asChild className="bg-primary hover:bg-primary/90 text-white font-semibold whitespace-nowrap">
+                  <Link to={offer.href}>Learn More</Link>
                 </Button>
               </div>
             ))}

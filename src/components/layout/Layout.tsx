@@ -17,7 +17,7 @@ export function Layout({ children }: LayoutProps) {
 
   // Routes that don't require authentication
   const publicRoutes = ['/', '/about-us', '/products', '/contact', '/media', '/offers', '/auth-test', '/manual-setup', '/database-fix-page', '/auto-fix', '/audit', '/auto-payment-sync', '/payment-sync'];
-  const isPublicRoute = publicRoutes.includes(location.pathname) || location.pathname.startsWith('/products/');
+  const isPublicRoute = publicRoutes.includes(location.pathname) || location.pathname.startsWith('/products/') || location.pathname.startsWith('/product/');
   const isLandingPage = location.pathname === '/';
 
   // Show login after initial auth completes to avoid redirect bounce

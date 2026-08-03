@@ -1,7 +1,7 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { Routes, Route } from "react-router-dom";
+import { Navigate, Routes, Route, useParams } from "react-router-dom";
 import { enableResizeObserverErrorSuppression } from "@/utils/resizeObserverErrorHandler";
 import { useEffect } from "react";
 import { Layout } from "@/components/layout/Layout";
@@ -44,6 +44,11 @@ import CustomerPerformanceOptimizerPage from "./pages/CustomerPerformanceOptimiz
 import SetupAndTest from "./components/SetupAndTest";
 import AuthTest from "./components/AuthTest";
 
+const ProductAliasRedirect = () => {
+  const { productSlug } = useParams<{ productSlug: string }>();
+  return <Navigate to={`/products/${productSlug}`} replace />;
+};
+
 const App = () => {
 
   useEffect(() => {
@@ -66,6 +71,7 @@ const App = () => {
           <Route path="/about-us" element={<AboutUs />} />
           <Route path="/products" element={<OurProducts />} />
           <Route path="/products/:productSlug" element={<ProductDetail />} />
+          <Route path="/product/:productSlug" element={<ProductAliasRedirect />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/media" element={<Media />} />
           <Route path="/offers" element={<Offers />} />
