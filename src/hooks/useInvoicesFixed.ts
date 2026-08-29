@@ -1,0 +1,523 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+
+/**
+ * Fixed hook for fetching invoices with customer data
+ * Uses separate queries to avoid relationship ambiguity
+ */
+export const useInvoicesFixed = (companyId?: string) => {
+  return useQuery({
+    queryKey: ['invoices_fixed', companyId],
+    queryFn: async () => {
+      if (!companyId) return [];
+
+      try {
+        console.log('Fetching invoices for company:', companyId);
+
+        // Step 1: Get invoices without embedded relationships
+        const { data: invoices, error: invoicesError } = await supabase
+          .from('invoices')
+          .select(`
+            id,
+            company_id,
+            customer_id,
+            invoice_number,
+            invoice_date,
+            due_date,
+            status,
+            subtotal,
+            tax_amount,
+            total_amount,
+            paid_amount,
+            balance_due,
+            notes,
+            terms_and_conditions,
+            lpo_number,
+            created_at,
+            updated_at,
+            created_by
+          `)
+          .eq('company_id', companyId)
+          .order('created_at', { ascending: false });
+
+        if (invoicesError) {
+          console.error('Error fetching invoices:', invoicesError);
+          throw new Error(`Failed to fetch invoices: ${invoicesError.message}`);
+        }
+
+        console.log('Invoices fetched successfully:', invoices?.length || 0);
+
+        if (!invoices || invoices.length === 0) {
+          return [];
+        }
+
+        // Step 2: Get unique customer IDs (filter out invalid UUIDs)
+        const customerIds = [...new Set(invoices.map(invoice => invoice.customer_id).filter(id => id && typeof id === 'string' && id.length === 36))];
+        console.log('Fetching customer data for IDs:', customerIds.length);
+
+        // Step 3: Get customers separately
+        const { data: customers, error: customersError } = customerIds.length > 0 ? await supabase
+          .from('customers')
+          .select('id, name, email, phone, address, city, country')
+          .in('id', customerIds) : { data: [], error: null };
+
+        if (customersError) {
+          console.error('Error fetching customers (non-fatal):', customersError);
+          // Don't throw here, just continue without customer data
+        }
+
+        console.log('Customers fetched:', customers?.length || 0);
+
+        // Step 4: Create customer lookup map
+        const customerMap = new Map();
+        (customers || []).forEach(customer => {
+          customerMap.set(customer.id, customer);
+        });
+
+        // Step 5: Get invoice items for each invoice
+        const invoiceIds = invoices.map(inv => inv.id);
+        const { data: invoiceItems, error: itemsError } = invoiceIds.length > 0 ? await supabase
+          .from('invoice_items')
+          .select(`
+            id,
+            invoice_id,
+            product_id,
+            description,
+            quantity,
+            unit_price,
+            discount_percentage,
+            discount_before_vat,
+            tax_percentage,
+            tax_amount,
+            tax_inclusive,
+            line_total,
+            sort_order,
+            batch_no,
+            expiry_date
+          `)
+          .in('invoice_id', invoiceIds) : { data: [], error: null };
+
+        if (itemsError) {
+          console.error('Error fetching invoice items (non-fatal):', (itemsError as any)?.message || itemsError);
+          // Don't throw here, invoices can exist without items
+        }
+
+        // Step 5b: Get product details separately if items exist
+        const productsMap = new Map();
+        if (invoiceItems && invoiceItems.length > 0) {
+          const productIds = [...new Set(invoiceItems.map(item => item.product_id).filter(id => id))];
+          if (productIds.length > 0) {
+            const { data: products, error: productsError } = await supabase
+              .from('products')
+              .select('id, name, product_code, unit_of_measure')
+              .in('id', productIds);
+
+            if (!productsError && products) {
+              products.forEach(product => {
+                productsMap.set(product.id, product);
+              });
+            } else if (productsError) {
+              console.warn('Could not fetch product details (non-fatal):', productsError);
+            }
+          }
+        }
+
+        // Step 6: Group invoice items by invoice_id and attach product data
+        const itemsMap = new Map();
+        (invoiceItems || []).forEach(item => {
+          if (!itemsMap.has(item.invoice_id)) {
+            itemsMap.set(item.invoice_id, []);
+          }
+          const itemWithProduct = {
+            ...item,
+            products: productsMap.get(item.product_id) || null
+          };
+          itemsMap.get(item.invoice_id).push(itemWithProduct);
+        });
+
+        // Step 7: Fetch creators (profiles) for created_by mapping
+        const creatorIds = [...new Set(invoices.map(inv => inv.created_by).filter(id => id && typeof id === 'string'))];
+        const { data: creators } = creatorIds.length > 0 ? await supabase
+          .from('profiles')
+          .select('id, full_name')
+          .in('id', creatorIds) : { data: [] };
+
+        const creatorMap = new Map();
+        (creators || []).forEach(c => creatorMap.set(c.id, c));
+
+        // Step 7b: Fetch credit note allocations for each invoice
+        const { data: allocations, error: allocationsError } = invoiceIds.length > 0 ? await supabase
+          .from('credit_note_allocations')
+          .select(`
+            id,
+            invoice_id,
+            credit_note_id,
+            allocated_amount,
+            credit_notes(id, credit_note_number, total_amount)
+          `)
+          .in('invoice_id', invoiceIds) : { data: [], error: null };
+
+        if (allocationsError) {
+          console.warn('Error fetching credit note allocations (non-fatal):', allocationsError);
+        }
+
+        // Group allocations by invoice_id
+        const allocationsMap = new Map();
+        (allocations || []).forEach(allocation => {
+          if (!allocationsMap.has(allocation.invoice_id)) {
+            allocationsMap.set(allocation.invoice_id, []);
+          }
+          allocationsMap.get(allocation.invoice_id).push(allocation);
+        });
+
+        // Step 8: Combine data
+        const enrichedInvoices = invoices.map(invoice => ({
+          ...invoice,
+          customers: customerMap.get(invoice.customer_id) || {
+            name: 'Unknown Customer',
+            email: null,
+            phone: null
+          },
+          invoice_items: itemsMap.get(invoice.id) || [],
+          created_by_profile: creatorMap.get(invoice.created_by) || null,
+          appliedCreditNotes: allocationsMap.get(invoice.id) || []
+        }));
+
+        console.log('Invoices enriched successfully:', enrichedInvoices.length);
+        return enrichedInvoices;
+
+      } catch (error) {
+        console.error('Error in useInvoicesFixed:', error);
+        throw error;
+      }
+    },
+    enabled: !!companyId,
+    staleTime: 30000, // Cache for 30 seconds
+    retry: 3,
+    retryDelay: 1000,
+  });
+};
+
+/**
+ * Hook for fetching customer invoices (for a specific customer)
+ */
+export const useCustomerInvoicesFixed = (customerId?: string, companyId?: string) => {
+  return useQuery({
+    queryKey: ['customer_invoices_fixed', customerId, companyId],
+    queryFn: async () => {
+      if (!customerId) return [];
+
+      try {
+        console.log('Fetching invoices for customer:', customerId);
+
+        // Get invoices for specific customer
+        let query = supabase
+          .from('invoices')
+          .select(`
+            id,
+            company_id,
+            customer_id,
+            invoice_number,
+            invoice_date,
+            due_date,
+            status,
+            subtotal,
+            tax_amount,
+            total_amount,
+            paid_amount,
+            balance_due,
+            notes,
+            terms_and_conditions,
+            lpo_number,
+            created_at,
+            updated_at
+          `)
+          .eq('customer_id', customerId)
+          .order('created_at', { ascending: false });
+
+        if (companyId) {
+          query = query.eq('company_id', companyId);
+        }
+
+        const { data: invoices, error: invoicesError } = await query;
+
+        if (invoicesError) {
+          console.error('Error fetching customer invoices:', invoicesError);
+          throw new Error(`Failed to fetch customer invoices: ${invoicesError.message}`);
+        }
+
+        if (!invoices || invoices.length === 0) {
+          return [];
+        }
+
+        // Get customer data
+        const { data: customer, error: customerError } = await supabase
+          .from('customers')
+          .select('id, name, email, phone, address, city, country')
+          .eq('id', customerId)
+          .single();
+
+        if (customerError) {
+          console.error('Error fetching customer:', customerError);
+        }
+
+        // Get invoice items
+        const invoiceIds = invoices.map(inv => inv.id);
+        const { data: invoiceItems, error: itemsError } = invoiceIds.length > 0 ? await supabase
+          .from('invoice_items')
+          .select(`
+            id,
+            invoice_id,
+            product_id,
+            description,
+            quantity,
+            unit_price,
+            discount_percentage,
+            discount_before_vat,
+            tax_percentage,
+            tax_amount,
+            tax_inclusive,
+            line_total,
+            sort_order,
+            batch_no,
+            expiry_date
+          `)
+          .in('invoice_id', invoiceIds) : { data: [], error: null };
+
+        if (itemsError) {
+          console.error('Error fetching invoice items:', (itemsError as any)?.message || itemsError);
+        }
+
+        // Get product details separately if items exist
+        const productsMap = new Map();
+        if (invoiceItems && invoiceItems.length > 0) {
+          const productIds = [...new Set(invoiceItems.map(item => item.product_id).filter(id => id))];
+          if (productIds.length > 0) {
+            const { data: products, error: productsError } = await supabase
+              .from('products')
+              .select('id, name, product_code, unit_of_measure')
+              .in('id', productIds);
+
+            if (!productsError && products) {
+              products.forEach(product => {
+                productsMap.set(product.id, product);
+              });
+            } else if (productsError) {
+              console.warn('Could not fetch product details (non-fatal):', productsError);
+            }
+          }
+        }
+
+        // Group items by invoice and attach product data
+        const itemsMap = new Map();
+        (invoiceItems || []).forEach(item => {
+          if (!itemsMap.has(item.invoice_id)) {
+            itemsMap.set(item.invoice_id, []);
+          }
+          const itemWithProduct = {
+            ...item,
+            products: productsMap.get(item.product_id) || null
+          };
+          itemsMap.get(item.invoice_id).push(itemWithProduct);
+        });
+
+        // Fetch credit note allocations for each invoice
+        const { data: allocations, error: allocationsError } = invoiceIds.length > 0 ? await supabase
+          .from('credit_note_allocations')
+          .select(`
+            id,
+            invoice_id,
+            credit_note_id,
+            allocated_amount,
+            credit_notes(id, credit_note_number, total_amount)
+          `)
+          .in('invoice_id', invoiceIds) : { data: [], error: null };
+
+        if (allocationsError) {
+          console.warn('Error fetching credit note allocations (non-fatal):', allocationsError);
+        }
+
+        // Group allocations by invoice_id
+        const allocationsMap = new Map();
+        (allocations || []).forEach(allocation => {
+          if (!allocationsMap.has(allocation.invoice_id)) {
+            allocationsMap.set(allocation.invoice_id, []);
+          }
+          allocationsMap.get(allocation.invoice_id).push(allocation);
+        });
+
+        // Combine data
+        const enrichedInvoices = invoices.map(invoice => ({
+          ...invoice,
+          customers: customer || {
+            name: 'Unknown Customer',
+            email: null,
+            phone: null
+          },
+          invoice_items: itemsMap.get(invoice.id) || [],
+          appliedCreditNotes: allocationsMap.get(invoice.id) || []
+        }));
+
+        return enrichedInvoices;
+
+      } catch (error) {
+        console.error('Error in useCustomerInvoicesFixed:', error);
+        throw error;
+      }
+    },
+    enabled: !!customerId,
+    staleTime: 30000,
+  });
+};
+
+// Delete an invoice (audited, cleans up items, reverses quotation conversion if applicable)
+export const useDeleteInvoice = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (invoiceId: string) => {
+      // Check permission before deletion
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.id) throw new Error('Not authenticated');
+
+      const { data: roleData } = await supabase
+        .from('roles')
+        .select('permissions')
+        .eq('company_id', (await supabase.from('invoices').select('company_id').eq('id', invoiceId).single()).data?.company_id)
+        .in('name', [(await supabase.from('profiles').select('role').eq('id', user.id).single()).data?.role || ''])
+        .single();
+
+      if (!roleData?.permissions?.includes('delete_invoice')) {
+        throw new Error('You do not have permission to delete invoices');
+      }
+
+      // Fetch invoice with quotation_id and invoice_items
+      const { data: invoice } = await supabase
+        .from('invoices')
+        .select(`*, invoice_items(*)`)
+        .eq('id', invoiceId)
+        .single();
+
+      if (!invoice) {
+        throw new Error('Invoice not found');
+      }
+
+      const companyId = invoice.company_id;
+      const quotationId = (invoice as any)?.quotation_id;
+
+      // Snapshot for audit
+      let snapshot: any = null;
+      try {
+        snapshot = invoice;
+      } catch {}
+
+      try {
+        const { logDeletion } = await import('@/utils/auditLogger');
+        await logDeletion('invoice', invoiceId, snapshot, companyId);
+      } catch (e) {
+        console.warn('Invoice delete audit failed:', (e as any)?.message || e);
+      }
+
+      // If invoice was created from a quotation, reverse the conversion
+      if (quotationId) {
+        // Reverse stock movements: fetch OUT movements for this invoice
+        const { data: outMovements } = await supabase
+          .from('stock_movements')
+          .select('*')
+          .eq('reference_type', 'INVOICE')
+          .eq('reference_id', invoiceId)
+          .eq('movement_type', 'OUT');
+
+        if (outMovements && outMovements.length > 0) {
+          // Create IN movements to restore stock
+          const reverseMovements = outMovements.map((movement: any) => ({
+            company_id: movement.company_id,
+            product_id: movement.product_id,
+            movement_type: 'IN' as const,
+            reference_type: 'INVOICE_REVERSAL' as const,
+            reference_id: invoiceId,
+            quantity: Math.abs(movement.quantity),
+            cost_per_unit: movement.cost_per_unit,
+            notes: `Stock restoration from invoice ${(invoice as any)?.invoice_number} deletion (reversal of quotation conversion)`
+          }));
+
+          // Insert reverse movements
+          const { error: reverseError } = await supabase
+            .from('stock_movements')
+            .insert(reverseMovements);
+
+          if (reverseError) {
+            console.warn('Failed to create reverse stock movements:', reverseError);
+          } else {
+            // Update product stock quantities
+            const stockUpdatePromises = reverseMovements.map(movement =>
+              supabase.rpc('update_product_stock', {
+                product_uuid: movement.product_id,
+                movement_type: 'IN',
+                quantity: movement.quantity
+              })
+            );
+
+            const results = await Promise.allSettled(stockUpdatePromises);
+            results.forEach((result, index) => {
+              if (result.status === 'rejected') {
+                console.warn(`Failed to restore stock for product ${reverseMovements[index].product_id}:`, result.reason);
+              }
+            });
+          }
+        }
+
+        // Reset quotation status back to draft
+        const { error: quotationError } = await supabase
+          .from('quotations')
+          .update({ status: 'draft' })
+          .eq('id', quotationId);
+
+        if (quotationError) {
+          console.warn('Failed to reset quotation status:', quotationError);
+        }
+      }
+
+      // Delete child items first (best-effort)
+      try {
+        await supabase.from('invoice_items').delete().eq('invoice_id', invoiceId);
+      } catch (e) {
+        console.warn('Invoice items delete skipped/failed:', (e as any)?.message || e);
+      }
+
+      // Delete stock movements for this invoice (both OUT and any reversal IN)
+      try {
+        await supabase
+          .from('stock_movements')
+          .delete()
+          .eq('reference_id', invoiceId)
+          .in('reference_type', ['INVOICE', 'INVOICE_REVERSAL']);
+      } catch (e) {
+        console.warn('Stock movements delete skipped/failed:', (e as any)?.message || e);
+      }
+
+      // Delete parent record
+      const { error } = await supabase
+        .from('invoices')
+        .delete()
+        .eq('id', invoiceId);
+
+      if (error) {
+        console.error('Error deleting invoice:', error);
+        throw new Error(`Failed to delete invoice: ${error.message}`);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['invoices_fixed'] });
+      queryClient.invalidateQueries({ queryKey: ['quotations'] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['stock_movements'] });
+      toast.success('Invoice deleted successfully!');
+    },
+    onError: (error) => {
+      console.error('Error deleting invoice:', error);
+      toast.error(`Failed to delete invoice: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    },
+  });
+};

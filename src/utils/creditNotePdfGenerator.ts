@@ -1,0 +1,824 @@
+import type { CreditNote } from '@/hooks/useCreditNotes';
+import { supabase } from '@/integrations/supabase/client';
+
+// Helper to detect if a string looks like a UUID
+const isUUID = (str: string): boolean => {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(str);
+};
+
+// Cache for UUID -> abbreviation lookups
+const uuidCache = new Map<string, string>();
+
+// Helper to resolve UUID to unit abbreviation
+const resolveUnitOfMeasure = async (value: string | undefined): Promise<string> => {
+  if (!value) return 'pcs';
+
+  // If it's already an abbreviation (not a UUID), return it
+  if (!isUUID(value)) return value;
+
+  // Check cache first
+  if (uuidCache.has(value)) {
+    return uuidCache.get(value) || 'pcs';
+  }
+
+  try {
+    // Look up the unit in the database
+    const { data, error } = await supabase
+      .from('units_of_measure')
+      .select('abbreviation')
+      .eq('id', value)
+      .single();
+
+    if (!error && data?.abbreviation) {
+      uuidCache.set(value, data.abbreviation);
+      return data.abbreviation;
+    }
+  } catch (err) {
+    console.warn(`Failed to resolve unit UUID ${value}:`, err);
+  }
+
+  // Fallback
+  return 'pcs';
+};
+
+// Helper to render invoice summary card
+const renderInvoiceSummaryCard = (invoice: InvoiceDetail, formatCurrency: (amount: number) => string, formatDate: (dateString: string) => string): string => {
+  return `
+    <div style="background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 6px; padding: 12px; margin-bottom: 15px;">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; font-size: 10px;">
+        <div>
+          <div style="color: #666; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Invoice #</div>
+          <div style="color: #212529; font-size: 12px; font-weight: bold;">${invoice.invoice_number}</div>
+        </div>
+        <div>
+          <div style="color: #666; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Date</div>
+          <div style="color: #212529;">${formatDate(invoice.invoice_date)}</div>
+        </div>
+        <div>
+          <div style="color: #666; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Original Total</div>
+          <div style="color: #212529; font-weight: 600;">${formatCurrency(invoice.total_amount)}</div>
+        </div>
+        <div>
+          <div style="color: #666; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Balance Due</div>
+          <div style="color: #2BB673; font-weight: 600;">${formatCurrency(invoice.balance_due)}</div>
+        </div>
+      </div>
+    </div>
+  `;
+};
+
+// Helper to render invoice items table
+const renderInvoiceItemsTable = (invoice: InvoiceDetail, formatCurrency: (amount: number) => string): string => {
+  if (!invoice.invoice_items || invoice.invoice_items.length === 0) {
+    return '';
+  }
+
+  return `
+    <div style="margin: 20px 0; page-break-inside: avoid;">
+      <table class="items-table" style="margin: 15px 0;">
+        <thead>
+          <tr>
+            <th style="width: 5%;">#</th>
+            <th style="width: 35%;">Description</th>
+            <th style="width: 8%;">Qty</th>
+            <th style="width: 12%;">Unit Price</th>
+            <th style="width: 8%;">Tax %</th>
+            <th style="width: 12%;">Tax Amount</th>
+            <th style="width: 12%;">Line Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${invoice.invoice_items.map((item, index) => `
+            <tr>
+              <td class="center">${index + 1}</td>
+              <td class="description-cell">${item.description}</td>
+              <td class="center">${item.quantity}</td>
+              <td class="amount-cell">${formatCurrency(item.unit_price)}</td>
+              <td class="center">${item.tax_percentage}%</td>
+              <td class="amount-cell">${formatCurrency(item.tax_amount)}</td>
+              <td class="amount-cell">${formatCurrency(item.line_total)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+      <div style="text-align: right; margin-top: 10px;">
+        <table style="width: 300px; margin-left: auto; border-collapse: collapse; font-size: 11px;">
+          <tr>
+            <td style="padding: 4px 10px; text-align: left; color: #495057;">Subtotal:</td>
+            <td style="padding: 4px 10px; text-align: right; color: #212529; font-weight: 500;">${formatCurrency(invoice.subtotal)}</td>
+          </tr>
+          <tr>
+            <td style="padding: 4px 10px; text-align: left; color: #495057; border-top: 1px solid #dee2e6;">Tax Amount:</td>
+            <td style="padding: 4px 10px; text-align: right; color: #212529; font-weight: 500; border-top: 1px solid #dee2e6;">${formatCurrency(invoice.tax_amount)}</td>
+          </tr>
+          <tr style="background: #f0f0f0;">
+            <td style="padding: 6px 10px; text-align: left; color: #212529; font-weight: bold; border-top: 2px solid #2BB673;">Invoice Total:</td>
+            <td style="padding: 6px 10px; text-align: right; color: #2BB673; font-weight: bold; border-top: 2px solid #2BB673;">${formatCurrency(invoice.total_amount)}</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  `;
+};
+
+export interface InvoiceItem {
+  id: string;
+  description: string;
+  quantity: number;
+  unit_price: number;
+  tax_percentage: number;
+  tax_amount: number;
+  line_total: number;
+}
+
+export interface InvoiceDetail {
+  id: string;
+  invoice_number: string;
+  invoice_date: string;
+  subtotal: number;
+  tax_amount: number;
+  total_amount: number;
+  balance_due: number;
+  invoice_items?: InvoiceItem[];
+}
+
+export interface CreditNotePDFData extends CreditNote {
+  customers: {
+    name: string;
+    email?: string;
+    phone?: string;
+    customer_code: string;
+    address?: string;
+    city?: string;
+    country?: string;
+  };
+  credit_note_items?: Array<{
+    id: string;
+    description: string;
+    quantity: number;
+    unit_price: number;
+    tax_percentage: number;
+    tax_amount: number;
+    line_total: number;
+    products?: {
+      name: string;
+      product_code: string;
+    };
+  }>;
+  invoices?: InvoiceDetail;
+  terms_and_conditions?: string;
+  notes?: string;
+  credit_note_allocations?: Array<{
+    id: string;
+    invoice_id: string;
+    allocated_amount: number;
+    allocation_date: string;
+    invoices?: InvoiceDetail;
+  }>;
+}
+
+export interface CompanyData {
+  name: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  city?: string;
+  country?: string;
+  tax_number?: string;
+  registration_number?: string;
+  logo_url?: string;
+  website?: string;
+}
+
+// Default company details (fallback) - logo will be determined dynamically
+const DEFAULT_COMPANY: CompanyData = {
+  name: 'Medplus Africa',
+  address: '',
+  city: 'Nairobi',
+  country: 'Kenya',
+  phone: '',
+  email: 'info@medplusafrica.com',
+  tax_number: '',
+  logo_url: 'https://cdn.builder.io/api/v1/image/assets%2Ffd1c9d5781fc4f20b6ad16683f5b85b3%2F274fc62c033e464584b0f50713695127?format=webp&width=800',
+  website: 'https://www.medplusafrica.com',
+};
+
+export const generateCreditNotePDF = async (creditNote: CreditNotePDFData, company?: CompanyData) => {
+  const companyData: CompanyData = { ...DEFAULT_COMPANY, ...(company || {}) };
+
+  // Resolve all unit_of_measure UUIDs to abbreviations first
+  const resolvedItems = await Promise.all(
+    (creditNote.credit_note_items || []).map(async (item) => ({
+      ...item,
+      unit_of_measure: await resolveUnitOfMeasure(item.products?.unit_of_measure || 'pcs'),
+    }))
+  );
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-KE', {
+      style: 'currency',
+      currency: 'KES',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(amount);
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+  };
+
+  const printWindow = window.open('', '_blank');
+  if (!printWindow) {
+    throw new Error('Could not open print window. Please allow popups.');
+  }
+
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Credit Note ${creditNote.credit_note_number}</title>
+      <meta charset="UTF-8">
+      <style>
+        @page {
+          size: A4;
+          margin: 15mm;
+        }
+        
+        * {
+          box-sizing: border-box;
+        }
+        
+        body {
+          font-family: 'Arial', sans-serif;
+          margin: 0;
+          padding: 0;
+          color: #333;
+          line-height: 1.4;
+          font-size: 12px;
+          background: white;
+        }
+        
+        .page {
+          width: 210mm;
+          min-height: 297mm;
+          margin: 0 auto;
+          background: white;
+          box-shadow: 0 0 10px rgba(0,0,0,0.1);
+          padding: 20mm;
+          position: relative;
+        }
+        
+        .header {
+          display: grid;
+          grid-template-columns: 1fr;
+          grid-template-rows: auto auto;
+          margin-bottom: 30px;
+          gap: 20px;
+        }
+        
+        .header-row-1 {
+          display: grid;
+          grid-template-columns: 1fr 2fr;
+          gap: 20px;
+          align-items: flex-start;
+          padding-bottom: 20px;
+          border-bottom: 2px solid #2BB673;
+        }
+        
+        .header-row-2 {
+          display: grid;
+          grid-template-columns: 50% 50%;
+          gap: 20px;
+        }
+        
+        .company-info {
+          display: contents;
+        }
+        
+        .logo {
+          width: 100%;
+          height: 120px;
+          border-radius: 8px;
+          overflow: hidden;
+          grid-column: 1;
+          grid-row: 1;
+          justify-self: start;
+          align-self: start;
+        }
+        
+        .logo img {
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
+        }
+        
+        .company-details-block {
+          grid-column: 2;
+          grid-row: 1;
+        }
+        
+        .company-name {
+          font-size: 20px;
+          font-weight: bold;
+          margin-bottom: 8px;
+          color: #2BB673;
+        }
+        
+        .company-details {
+          font-size: 10px;
+          line-height: 1.6;
+          color: #666;
+          margin-bottom: 0;
+        }
+        
+        .document-info {
+          text-align: right;
+          width: 100%;
+        }
+        
+        .customer-info-block {
+          text-align: left;
+          width: 100%;
+        }
+        
+        .document-title {
+          font-size: 22px;
+          font-weight: bold;
+          margin: 0 0 12px 0;
+          color: #2DAAE1;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+          text-align: right;
+        }
+        
+        .document-details {
+          background: transparent;
+          padding: 0;
+          border-radius: 0;
+          border: none;
+          text-align: right;
+        }
+        
+        .document-details table {
+          width: 100%;
+          border-collapse: collapse;
+          line-height: 1.4;
+        }
+        
+        .document-details td {
+          padding: 2px 0;
+          border: none;
+          font-size: 10px;
+        }
+        
+        .document-details .label {
+          font-weight: bold;
+          color: #666;
+          text-align: right;
+          padding-right: 10px;
+          width: auto;
+        }
+        
+        .document-details .value {
+          text-align: right;
+          color: #212529;
+          font-weight: normal;
+        }
+        
+        .section-title {
+          font-size: 11px;
+          font-weight: bold;
+          color: #2DAAE1;
+          margin: 0 0 8px 0;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+        
+        .customer-name {
+          font-size: 13px;
+          font-weight: bold;
+          margin-bottom: 4px;
+          color: #212529;
+        }
+        
+        .customer-details, .related-details {
+          font-size: 10px;
+          color: #666;
+          line-height: 1.4;
+          word-wrap: break-word;
+          overflow-wrap: break-word;
+        }
+        
+        .items-section {
+          margin: 30px 0;
+        }
+        
+        .items-table {
+          width: 100%;
+          border-collapse: collapse;
+          margin: 20px 0;
+          font-size: 11px;
+          border: 2px solid #2BB673;
+          border-radius: 8px;
+          overflow: hidden;
+          table-layout: auto;
+        }
+        
+        .items-table thead {
+          background: #f0f0f0;
+          color: #212529;
+        }
+
+        .items-table th {
+          padding: 8px 8px;
+          text-align: center;
+          font-weight: bold;
+          font-size: 10px;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          border-right: 1px solid #d9d9d9;
+          word-break: break-word;
+        }
+        
+        .items-table th:last-child {
+          border-right: none;
+        }
+        
+        .items-table td {
+          padding: 6px 8px;
+          border-bottom: 1px solid #e9ecef;
+          border-right: 1px solid #e9ecef;
+          text-align: center;
+          vertical-align: middle;
+          word-wrap: break-word;
+          overflow-wrap: break-word;
+          hyphens: auto;
+        }
+        
+        .items-table td:last-child {
+          border-right: none;
+        }
+        
+        .items-table tbody tr:last-child td {
+          border-bottom: none;
+        }
+        
+        .items-table tbody tr:nth-child(even) {
+          background: #f8f9fa;
+        }
+        
+        .items-table tbody tr:hover {
+          background: #e3f2fd;
+        }
+        
+        .description-cell {
+          text-align: left !important;
+          word-wrap: break-word;
+          overflow-wrap: break-word;
+        }
+        
+        .amount-cell {
+          text-align: right !important;
+          font-weight: 500;
+          white-space: nowrap;
+        }
+
+        .center {
+          text-align: center !important;
+        }
+        
+        .totals-section {
+          margin-top: 20px;
+          display: flex;
+          justify-content: flex-end;
+        }
+        
+        .totals-table {
+          width: 300px;
+          border-collapse: collapse;
+          font-size: 12px;
+        }
+        
+        .totals-table td {
+          padding: 8px 15px;
+          border: none;
+        }
+        
+        .totals-table .label {
+          text-align: left;
+          color: #495057;
+          font-weight: 500;
+        }
+        
+        .totals-table .amount {
+          text-align: right;
+          font-weight: 600;
+          color: #212529;
+        }
+        
+        .totals-table .subtotal-row {
+          border-top: 1px solid #dee2e6;
+        }
+        
+        .totals-table .total-row {
+          border-top: 2px solid #2BB673;
+          background: #f8f9fa;
+        }
+        
+        .totals-table .total-row .label {
+          font-size: 14px;
+          font-weight: bold;
+          color: #2BB673;
+        }
+        
+        .totals-table .total-row .amount {
+          font-size: 16px;
+          font-weight: bold;
+          color: #2BB673;
+        }
+        
+        .footer {
+          position: absolute;
+          bottom: 20mm;
+          left: 20mm;
+          right: 20mm;
+          text-align: center;
+          font-size: 10px;
+          color: #666;
+          border-top: 1px solid #e9ecef;
+          padding-top: 10px;
+        }
+        
+        .watermark {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%) rotate(-45deg);
+          font-size: 72px;
+          color: rgba(43, 182, 115, 0.1);
+          font-weight: bold;
+          z-index: -1;
+          pointer-events: none;
+          text-transform: uppercase;
+          letter-spacing: 5px;
+        }
+        
+        @media print {
+          body {
+            background: white;
+          }
+          
+          .page {
+            box-shadow: none;
+            margin: 0;
+            padding: 0;
+          }
+        }
+        
+        @media screen {
+          body {
+            background: #f5f5f5;
+            padding: 20px;
+          }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="page">
+        <div class="watermark">Credit Note</div>
+        
+        <!-- Header Section -->
+        <div class="header">
+          <!-- Row 1: Logo (20%) + Company Details (80%) -->
+          <div class="header-row-1">
+            <div class="logo">
+              ${companyData.logo_url ?
+                `<img src="${companyData.logo_url}" alt="${companyData.name} Logo" onerror="this.style.display='none';" />` :
+                `<div style="width:100%; height:100%; background:#f8f9fa; border:2px dashed #e9ecef; display:flex; align-items:center; justify-content:center; font-size:12px; color:#6c757d; text-align:center;">No logo</div>`
+              }
+            </div>
+            <div class="company-details-block">
+              <div class="company-name">${companyData.name}</div>
+              <div class="company-details">
+                ${companyData.tax_number ? `PIN: ${companyData.tax_number}<br>` : ''}
+                ${companyData.address ? `${companyData.address}<br>` : ''}
+                ${companyData.city ? `${companyData.city}` : ''}${companyData.country ? `, ${companyData.country}` : ''}<br>
+                ${companyData.phone ? `Tel: ${companyData.phone}<br>` : ''}
+                ${companyData.email ? `Email: ${companyData.email}<br>` : ''}
+                ${companyData.website ? `Website: <a href="${companyData.website.startsWith('http') ? companyData.website : `https://${companyData.website}`}" style="color:#2DAAE1; text-decoration:none;">${companyData.website}</a>` : ''}
+              </div>
+            </div>
+          </div>
+
+          <!-- Row 2: Customer Details (50%) + Document Details (50%) -->
+          <div class="header-row-2">
+            <div class="customer-info-block">
+              <div class="section-title">Customer</div>
+              <div class="customer-name">${creditNote.customers.name}</div>
+              <div class="customer-details">
+                ${creditNote.customers.email ? `${creditNote.customers.email}<br>` : ''}
+                ${creditNote.customers.phone ? `${creditNote.customers.phone}<br>` : ''}
+                ${creditNote.customers.address ? `${creditNote.customers.address}<br>` : ''}
+                ${creditNote.customers.city ? `${creditNote.customers.city}` : ''}
+                ${creditNote.customers.country ? `, ${creditNote.customers.country}` : ''}<br>
+                ${creditNote.customers.customer_code ? `Customer Code: ${creditNote.customers.customer_code}` : ''}
+              </div>
+              ${(creditNote.credit_note_allocations && creditNote.credit_note_allocations.length > 0) ? `
+              <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e9ecef;">
+                <div class="section-title">Applied To Invoice(s)</div>
+                <div class="related-details">
+                  ${creditNote.credit_note_allocations.map(alloc => `
+                    Invoice #${alloc.invoices?.invoice_number || 'N/A'}: ${formatCurrency(alloc.allocated_amount)}<br>
+                  `).join('')}
+                </div>
+              </div>
+              ` : creditNote.invoice_id && creditNote.invoices ? `
+              <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e9ecef;">
+                <div class="section-title">Related Invoice</div>
+                <div class="related-details">
+                  Invoice #${creditNote.invoices.invoice_number}
+                </div>
+              </div>
+              ` : ''}
+            </div>
+
+            <div class="document-info">
+              <div class="document-title">Credit Note</div>
+              <div class="document-details">
+                <table>
+                  <tr>
+                    <td class="label">Credit Note #:</td>
+                    <td class="value">${creditNote.credit_note_number}</td>
+                  </tr>
+                  <tr>
+                    <td class="label">Date:</td>
+                    <td class="value">${formatDate(creditNote.credit_note_date)}</td>
+                  </tr>
+                  <tr>
+                    <td class="label">Status:</td>
+                    <td class="value">${creditNote.status.toUpperCase()}</td>
+                  </tr>
+                  <tr>
+                    <td class="label">Amount:</td>
+                    <td class="value" style="font-weight: bold; color: #2BB673;">${formatCurrency(creditNote.total_amount)}</td>
+                  </tr>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Related Invoice Details Section -->
+        ${creditNote.invoices ? `
+        <div style="margin: 30px 0; page-break-inside: avoid;">
+          <div class="section-title" style="margin-bottom: 15px;">Related Invoice Summary</div>
+          ${renderInvoiceSummaryCard(creditNote.invoices, formatCurrency, formatDate)}
+          ${renderInvoiceItemsTable(creditNote.invoices, formatCurrency)}
+        </div>
+        ` : ''}
+
+        <!-- Allocated Invoices Details Section -->
+        ${creditNote.credit_note_allocations && creditNote.credit_note_allocations.length > 0 && creditNote.credit_note_allocations.some(a => a.invoices) ? `
+        <div style="margin: 30px 0;">
+          <div class="section-title" style="margin-bottom: 15px;">Invoice Allocations Detail</div>
+          ${creditNote.credit_note_allocations.map((allocation, index) => {
+            if (!allocation.invoices) return '';
+            const newBalance = allocation.invoices.balance_due;
+            return `
+            <div style="margin-bottom: 25px; page-break-inside: avoid;">
+              <div style="background: #e8f5e9; border-left: 4px solid #2BB673; padding: 10px; margin-bottom: 10px;">
+                <div style="font-weight: bold; color: #1b5e20; font-size: 11px;">Allocation ${index + 1}</div>
+                <div style="font-size: 10px; color: #2d4a2b; margin-top: 2px;">Applied: ${formatCurrency(allocation.allocated_amount)} on ${formatDate(allocation.allocation_date)}</div>
+              </div>
+              <div style="margin-left: 10px;">
+                ${renderInvoiceSummaryCard(allocation.invoices, formatCurrency, formatDate)}
+                ${renderInvoiceItemsTable(allocation.invoices, formatCurrency)}
+                <div style="text-align: right; margin-top: 12px; padding: 12px; background: #f5f5f5; border-radius: 4px;">
+                  <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                    <tr>
+                      <td style="padding: 4px 10px; text-align: left; width: 50%;">Applied via Credit Note:</td>
+                      <td style="padding: 4px 10px; text-align: right; font-weight: 600; color: #d32f2f;">${formatCurrency(allocation.allocated_amount)}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 6px 10px; text-align: left; border-top: 2px solid #2BB673; font-weight: bold;">New Balance:</td>
+                      <td style="padding: 6px 10px; text-align: right; border-top: 2px solid #2BB673; font-weight: bold; color: #2BB673;">${formatCurrency(newBalance)}</td>
+                    </tr>
+                  </table>
+                </div>
+              </div>
+            </div>
+            `;
+          }).join('')}
+        </div>
+        ` : ''}
+
+        <!-- Credit Note Items Section -->
+        ${resolvedItems && resolvedItems.length > 0 ? `
+        <div class="items-section">
+          <div class="section-title" style="margin-bottom: 15px;">Credit Note Items</div>
+          <table class="items-table">
+            <thead>
+              <tr>
+                <th style="width: 5%;">#</th>
+                <th style="width: 35%;">Description</th>
+                <th style="width: 8%;">Qty</th>
+                <th style="width: 8%;">UoM</th>
+                <th style="width: 12%;">Unit Price</th>
+                <th style="width: 8%;">Tax %</th>
+                <th style="width: 10%;">Tax Amount</th>
+                <th style="width: 12%;">Line Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${resolvedItems.map((item, index) => `
+                <tr>
+                  <td class="center">${index + 1}</td>
+                  <td class="description-cell">${item.description || item.products?.name || 'Unknown Item'}</td>
+                  <td class="center">${item.quantity}</td>
+                  <td class="center">${item.unit_of_measure || 'pcs'}</td>
+                  <td class="amount-cell">${formatCurrency(item.unit_price)}</td>
+                  <td class="center">${item.tax_percentage}%</td>
+                  <td class="amount-cell">${formatCurrency(item.tax_amount)}</td>
+                  <td class="amount-cell">${formatCurrency(item.line_total)}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+        ` : ''}
+        
+        <!-- Totals Section -->
+        <div class="totals-section">
+          <table class="totals-table">
+            <tr class="subtotal-row">
+              <td class="label">Subtotal:</td>
+              <td class="amount">${formatCurrency(creditNote.subtotal)}</td>
+            </tr>
+            <tr>
+              <td class="label">Tax Amount:</td>
+              <td class="amount">${formatCurrency(creditNote.tax_amount)}</td>
+            </tr>
+            <tr class="total-row">
+              <td class="label">TOTAL CREDIT:</td>
+              <td class="amount">${formatCurrency(creditNote.total_amount)}</td>
+            </tr>
+            <tr>
+              <td class="label">Applied Amount:</td>
+              <td class="amount">${formatCurrency(creditNote.applied_amount)}</td>
+            </tr>
+            <tr class="total-row">
+              <td class="label">REMAINING BALANCE:</td>
+              <td class="amount">${formatCurrency(creditNote.balance)}</td>
+            </tr>
+          </table>
+        </div>
+
+        <!-- Notes and Terms & Conditions -->
+        ${creditNote.notes || creditNote.terms_and_conditions ? `
+        <div style="margin-top: 30px; border-top: 1px solid #ddd; padding-top: 20px;">
+          ${creditNote.notes ? `
+          <div style="margin-bottom: 20px;">
+            <h3 style="margin: 0 0 2px 0; font-size: 13px; font-weight: bold;">Notes</h3>
+            <p style="margin: 0; white-space: pre-wrap; font-size: 11px; line-height: 1.6; word-wrap: break-word; overflow-wrap: break-word;">${creditNote.notes}</p>
+          </div>
+          ` : ''}
+          ${creditNote.terms_and_conditions ? `
+          <div>
+            <h3 style="margin: 0 0 2px 0; font-size: 13px; font-weight: bold;">Terms &amp; Conditions</h3>
+            <p style="margin: 0; white-space: pre-wrap; font-size: 11px; line-height: 1.6; word-wrap: break-word; overflow-wrap: break-word;">${creditNote.terms_and_conditions}</p>
+          </div>
+          ` : ''}
+        </div>
+        ` : ''}
+
+        <!-- Footer -->
+        <div class="footer">
+          <em>This credit note can be applied against future invoices or refunded as per our terms</em>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  printWindow.document.write(htmlContent);
+  printWindow.document.close();
+
+  printWindow.onload = () => {
+    setTimeout(() => {
+      printWindow.print();
+    }, 500);
+  };
+
+  setTimeout(() => {
+    if (printWindow && !printWindow.closed) {
+      printWindow.print();
+    }
+  }, 1000);
+
+  return printWindow;
+};

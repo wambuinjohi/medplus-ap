@@ -1,0 +1,1597 @@
+// PDF Generation utility using HTML to print/PDF conversion
+// Since we don't have jsPDF installed, I'll create a simple HTML-to-print function
+// In a real app, you'd want to use a proper PDF library like jsPDF or react-pdf
+
+import { getFormattedTermsForPDF } from './termsManager';
+import { getAgingNarrative, getAgingCategory } from './ageCalculations';
+import { supabase } from '@/integrations/supabase/client';
+
+// Helper to detect if a string looks like a UUID
+const isUUID = (str: string): boolean => {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(str);
+};
+
+// Cache for UUID -> abbreviation lookups
+const uuidCache = new Map<string, string>();
+
+// Helper to resolve UUID to unit abbreviation
+const resolveUnitOfMeasure = async (value: string | undefined): Promise<string> => {
+  if (!value) return 'pcs';
+
+  // If it's already an abbreviation (not a UUID), return it
+  if (!isUUID(value)) return value;
+
+  // Check cache first
+  if (uuidCache.has(value)) {
+    return uuidCache.get(value) || 'pcs';
+  }
+
+  try {
+    // Look up the unit in the database
+    const { data, error } = await supabase
+      .from('units_of_measure')
+      .select('abbreviation')
+      .eq('id', value)
+      .single();
+
+    if (!error && data?.abbreviation) {
+      uuidCache.set(value, data.abbreviation);
+      return data.abbreviation;
+    }
+  } catch (err) {
+    console.warn(`Failed to resolve unit UUID ${value}:`, err);
+  }
+
+  // Fallback
+  return 'pcs';
+};
+
+export interface DocumentData {
+  type: 'quotation' | 'invoice' | 'remittance' | 'proforma' | 'delivery' | 'statement' | 'receipt' | 'lpo';
+  number: string;
+  date: string;
+  lpo_number?: string;
+  customer: {
+    name: string;
+    email?: string;
+    phone?: string;
+    address?: string;
+    city?: string;
+    country?: string;
+  };
+  company?: CompanyDetails; // Optional company details override
+  items?: Array<{
+    description: string;
+    quantity: number;
+    unit_price: number;
+    discount_percentage?: number;
+    discount_before_vat?: number;
+    discount_amount?: number;
+    tax_percentage?: number;
+    tax_amount?: number;
+    tax_inclusive?: boolean;
+    line_total: number;
+    unit_of_measure?: string;
+    transaction_date?: string;
+    reference?: string;
+    debit?: number;
+    credit?: number;
+    transaction_type?: string;
+    balance?: number;
+    days_overdue?: number;
+    due_date?: string;
+    batch_no?: string;
+    expiry_date?: string;
+  }>;
+  subtotal?: number;
+  tax_amount?: number;
+  total_amount: number;
+  paid_amount?: number;
+  balance_due?: number;
+  notes?: string;
+  terms_and_conditions?: string;
+  valid_until?: string; // For proforma invoices
+  due_date?: string; // For invoices
+  appliedCreditNotes?: Array<{
+    id: string;
+    credit_note_number: string;
+    allocated_amount: number;
+  }>;
+  net_total?: number; // Total amount minus applied credits
+  // Delivery note specific fields
+  delivery_date?: string;
+  delivery_address?: string;
+  delivery_method?: string;
+  carrier?: string;
+  tracking_number?: string;
+  delivered_by?: string;
+  received_by?: string;
+}
+
+// Company details interface
+interface CompanyDetails {
+  name: string;
+  address?: string;
+  city?: string;
+  country?: string;
+  phone?: string;
+  email?: string;
+  tax_number?: string;
+  logo_url?: string;
+  bank_name?: string;
+  bank_account_number?: string;
+  bank_account_name?: string;
+  swift_code?: string;
+  branch_code?: string;
+  paybill_number?: string;
+  website?: string;
+}
+
+// Default company details (fallback) - logo will be determined dynamically
+const DEFAULT_COMPANY: CompanyDetails = {
+  name: 'Medplus Africa',
+  address: '',
+  city: 'Nairobi',
+  country: 'Kenya',
+  phone: '',
+  email: 'info@medplusafrica.com',
+  tax_number: '',
+  logo_url: 'https://cdn.builder.io/api/v1/image/assets%2Ffd1c9d5781fc4f20b6ad16683f5b85b3%2F274fc62c033e464584b0f50713695127?format=webp&width=800', // Will use company settings or fallback gracefully
+  website: 'https://www.medplusafrica.com',
+};
+
+// Terms and conditions are now loaded dynamically from termsManager
+
+// Helper function to build bank details HTML
+const buildBankDetailsHTML = (company: CompanyDetails): string => {
+  const parts: string[] = [];
+
+  if (company.bank_account_name) parts.push(`Account Name: ${company.bank_account_name}`);
+  if (company.bank_name) parts.push(`Bank: ${company.bank_name}`);
+  if (company.bank_account_number) parts.push(`Account No: ${company.bank_account_number}`);
+  if (company.branch_code) parts.push(`Branch Code: ${company.branch_code}`);
+  if (company.swift_code) parts.push(`Swift Code: ${company.swift_code}`);
+  if (company.paybill_number) parts.push(`Paybill No: ${company.paybill_number}`);
+
+  // If no bank details are available, use the original hardcoded fallback
+  if (parts.length === 0) {
+    return 'Account Name: MEDPLUS AFRICA LIMITED • Bank: ABSA BANK • Account No: 2047138798 • Branch Code: 52 • Swift Code: BARCKENX • Paybill No: 303030';
+  }
+
+  return parts.join(' • ');
+};
+
+// Helper function to determine which columns have values
+const analyzeColumns = (items: DocumentData['items']) => {
+  if (!items || items.length === 0) return {
+    taxPercentage: true,
+    taxAmount: true,
+  };
+
+  const columns = {
+    discountPercentage: false,
+    discountBeforeVat: false,
+    discountAmount: false,
+    taxPercentage: true,
+    taxAmount: true,
+  };
+
+  items.forEach(item => {
+    if (item.discount_percentage && item.discount_percentage > 0) {
+      columns.discountPercentage = true;
+    }
+    if (item.discount_before_vat && item.discount_before_vat > 0) {
+      columns.discountBeforeVat = true;
+    }
+    if (item.discount_amount && item.discount_amount > 0) {
+      columns.discountAmount = true;
+    }
+  });
+
+  return columns;
+};
+
+export const generatePDF = (data: DocumentData) => {
+  // Use company details from data or fall back to defaults (merge to preserve website and other defaults)
+  const company: CompanyDetails = { ...DEFAULT_COMPANY, ...(data.company || {}) };
+
+  // Get dynamically stored terms or use default
+  const dynamicTerms = getFormattedTermsForPDF();
+
+  // Analyze which columns have values
+  const visibleColumns = analyzeColumns(data.items);
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-KE', {
+      style: 'currency',
+      currency: 'KES',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(amount);
+  };
+
+  const formatDate = (date: string) => {
+    return new Date(date).toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+  };
+
+  // Create a new window with the document content
+  const printWindow = window.open('', '_blank');
+  if (!printWindow) {
+    throw new Error('Could not open print window. Please allow popups.');
+  }
+
+  const documentTitle = data.type === 'proforma' ? 'Proforma Invoice' :
+                       data.type === 'delivery' ? 'Delivery Note' :
+                       data.type === 'statement' ? 'Customer Statement' :
+                       data.type === 'receipt' ? 'Payment Receipt' :
+                       data.type === 'remittance' ? 'Remittance Advice' :
+                       data.type === 'lpo' ? 'Purchase Order' :
+                       data.type.charAt(0).toUpperCase() + data.type.slice(1);
+  
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>${documentTitle} ${data.number}</title>
+      <meta charset="UTF-8">
+      <style>
+        @page {
+          size: A4;
+          margin: 15mm;
+        }
+        
+        * {
+          box-sizing: border-box;
+        }
+        
+        body {
+          font-family: 'Arial', sans-serif;
+          margin: 0;
+          padding: 0;
+          color: #333;
+          line-height: 1.4;
+          font-size: 12px;
+          background: white;
+        }
+        
+        .page {
+          width: 210mm;
+          min-height: 297mm;
+          margin: 0 auto;
+          background: white;
+          box-shadow: 0 0 10px rgba(0,0,0,0.1);
+          padding: 20mm;
+          position: relative;
+        }
+        
+        .header {
+          display: grid;
+          grid-template-columns: 1fr;
+          grid-template-rows: auto auto;
+          margin-bottom: 30px;
+          gap: 20px;
+        }
+
+        .header-row-1 {
+          display: grid;
+          grid-template-columns: 1fr 2fr;
+          gap: 20px;
+          align-items: flex-start;
+          padding-bottom: 20px;
+          border-bottom: 2px solid #2BB673;
+        }
+
+        .header-row-2 {
+          display: grid;
+          grid-template-columns: 50% 50%;
+          gap: 20px;
+        }
+
+        .company-info {
+          display: contents;
+        }
+
+        .logo {
+          width: 100%;
+          height: 120px;
+          border-radius: 8px;
+          overflow: hidden;
+          grid-column: 1;
+          grid-row: 1;
+          justify-self: start;
+          align-self: start;
+        }
+
+        .logo img {
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
+        }
+
+        .company-details-block {
+          grid-column: 2;
+          grid-row: 1;
+        }
+
+        .company-name {
+          font-size: 20px;
+          font-weight: bold;
+          margin-bottom: 8px;
+          color: #2BB673;
+        }
+
+        .company-details {
+          font-size: 10px;
+          line-height: 1.6;
+          color: #666;
+          margin-bottom: 0;
+        }
+
+        .document-info {
+          text-align: right;
+          width: 100%;
+        }
+
+        .customer-info-block {
+          text-align: left;
+          width: 100%;
+        }
+        
+        .document-title {
+          font-size: 11px;
+          font-weight: bold;
+          margin: 0 0 8px 0;
+          color: #2DAAE1;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          text-align: right;
+        }
+
+        .document-details {
+          background: transparent;
+          padding: 0;
+          border-radius: 0;
+          border: none;
+          text-align: right;
+        }
+
+        .document-details table {
+          width: 100%;
+          border-collapse: collapse;
+          line-height: 1.4;
+        }
+
+        .document-details td {
+          padding: 2px 0;
+          border: none;
+          font-size: 10px;
+        }
+
+        .document-details .label {
+          font-weight: bold;
+          color: #666;
+          text-align: right;
+          padding-right: 10px;
+          width: auto;
+        }
+
+        .document-details .value {
+          text-align: right;
+          color: #212529;
+          font-weight: normal;
+        }
+        
+        
+        .section-title {
+          font-size: 14px;
+          font-weight: bold;
+          color: #2DAAE1;
+          margin: 0 0 15px 0;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+        
+        .customer-name {
+          font-size: 16px;
+          font-weight: bold;
+          margin-bottom: 8px;
+          color: #212529;
+        }
+        
+        .customer-details {
+          color: #666;
+          line-height: 1.6;
+        }
+        
+        .items-section {
+          margin: 30px 0;
+        }
+        
+        .items-table {
+          width: 100%;
+          border-collapse: collapse;
+          margin: 20px 0;
+          font-size: 11px;
+          border: 2px solid #2BB673;
+          border-radius: 8px;
+          overflow: hidden;
+          table-layout: auto;
+        }
+
+        .items-table thead {
+          background: #f0f0f0;
+          color: #212529;
+        }
+
+        .items-table th {
+          padding: 8px 8px;
+          text-align: center;
+          font-weight: bold;
+          font-size: 10px;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          border-right: 1px solid #d9d9d9;
+          word-break: break-word;
+        }
+
+        .items-table th:last-child {
+          border-right: none;
+        }
+
+        .items-table td {
+          padding: 6px 8px;
+          border-bottom: 1px solid #e9ecef;
+          border-right: 1px solid #e9ecef;
+          text-align: center;
+          vertical-align: middle;
+          word-wrap: break-word;
+          overflow-wrap: break-word;
+          hyphens: auto;
+        }
+
+        .items-table td:last-child {
+          border-right: none;
+        }
+
+        .items-table tbody tr:last-child td {
+          border-bottom: none;
+        }
+
+        .items-table tbody tr:nth-child(even) {
+          background: #f8f9fa;
+        }
+
+        .items-table tbody tr:hover {
+          background: #e3f2fd;
+        }
+
+        .description-cell {
+          text-align: left !important;
+          word-wrap: break-word;
+          overflow-wrap: break-word;
+          hyphens: auto;
+        }
+
+        .amount-cell {
+          text-align: right !important;
+          font-weight: 500;
+          white-space: nowrap;
+        }
+
+        .center {
+          text-align: center !important;
+        }
+        
+        .totals-section {
+          margin-top: 20px;
+          display: flex;
+          justify-content: flex-end;
+        }
+        
+        .totals-table {
+          width: 300px;
+          border-collapse: collapse;
+          font-size: 12px;
+        }
+        
+        .totals-table td {
+          padding: 8px 15px;
+          border: none;
+        }
+        
+        .totals-table .label {
+          text-align: left;
+          color: #495057;
+          font-weight: 500;
+        }
+        
+        .totals-table .amount {
+          text-align: right;
+          font-weight: 600;
+          color: #212529;
+        }
+        
+        .totals-table .subtotal-row {
+          border-top: 1px solid #dee2e6;
+        }
+        
+        .totals-table .total-row {
+          border-top: 2px solid #2BB673;
+          background: #f8f9fa;
+        }
+        
+        .totals-table .total-row .label {
+          font-size: 14px;
+          font-weight: bold;
+          color: #2BB673;
+        }
+        
+        .totals-table .total-row .amount {
+          font-size: 16px;
+          font-weight: bold;
+          color: #2BB673;
+        }
+        
+        .notes-section {
+          margin-top: 30px;
+          display: block;
+        }
+
+        .applied-credit-notes-section {
+          margin-top: 25px;
+          margin-bottom: 30px;
+          padding: 0;
+          background: transparent;
+          border-radius: 0;
+          border: none;
+        }
+
+        .notes, .terms {
+          margin-bottom: 20px;
+          padding: 0;
+          background: transparent;
+          border-radius: 0;
+          border: none;
+        }
+        
+        .section-subtitle {
+          font-size: 11px;
+          font-weight: bold;
+          color: #2DAAE1;
+          margin: 0 0 0px 0;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+        
+        .notes-content, .terms-content {
+          font-size: 10px;
+          line-height: 1.5;
+          color: #333;
+          white-space: pre-wrap;
+          word-wrap: break-word;
+          overflow-wrap: break-word;
+          margin: 0;
+          padding: 0;
+        }
+        
+        .footer {
+          position: absolute;
+          bottom: 20mm;
+          left: 20mm;
+          right: 20mm;
+          text-align: center;
+          font-size: 10px;
+          color: #666;
+          border-top: 1px solid #e9ecef;
+          padding-top: 10px;
+        }
+        
+        .delivery-info-section {
+          margin: 25px 0;
+          padding: 0;
+          background: transparent;
+          border-radius: 0;
+          border: none;
+        }
+
+        .delivery-details {
+          margin-top: 15px;
+        }
+
+        .delivery-row {
+          display: flex;
+          gap: 20px;
+          margin-bottom: 12px;
+        }
+
+        .delivery-field {
+          flex: 1;
+          min-width: 0;
+        }
+
+        .delivery-field.full-width {
+          flex: 100%;
+        }
+
+        .field-label {
+          font-size: 10px;
+          font-weight: bold;
+          color: #2DAAE1;
+          margin-bottom: 4px;
+          text-transform: uppercase;
+        }
+
+        .field-value {
+          font-size: 11px;
+          color: #333;
+          line-height: 1.4;
+          word-wrap: break-word;
+        }
+
+        .signature-section {
+          margin: 30px 0 20px 0;
+          padding: 20px;
+          border-top: 1px solid #e9ecef;
+        }
+
+        .signature-row {
+          display: flex;
+          gap: 40px;
+        }
+
+        .signature-box {
+          flex: 1;
+          text-align: center;
+        }
+
+        .signature-label {
+          font-size: 11px;
+          font-weight: bold;
+          color: #2DAAE1;
+          margin-bottom: 20px;
+          text-transform: uppercase;
+        }
+
+        .signature-line {
+          font-size: 12px;
+          font-weight: bold;
+          color: #333;
+          border-bottom: 1px solid #333;
+          margin-bottom: 10px;
+          padding-bottom: 5px;
+          min-height: 20px;
+        }
+
+        .signature-date {
+          font-size: 10px;
+          color: #666;
+        }
+
+        .watermark {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%) rotate(-45deg);
+          font-size: 72px;
+          color: rgba(45, 170, 225, 0.1);
+          font-weight: bold;
+          z-index: -1;
+          pointer-events: none;
+          text-transform: uppercase;
+          letter-spacing: 5px;
+        }
+        
+        @media print {
+          body {
+            background: white;
+          }
+          
+          .page {
+            box-shadow: none;
+            margin: 0;
+            padding: 0;
+          }
+          
+          .watermark {
+            display: ${data.type === 'proforma' ? 'block' : 'none'};
+          }
+        }
+        
+        @media screen {
+          body {
+            background: #f5f5f5;
+            padding: 20px;
+          }
+        }
+        \n        .payment-banner {\n          background: transparent;\n          padding: 8px 0;\n          margin-bottom: 20px;\n          border-left: none;\n          font-size: 10px;\n          color: #333;\n          text-align: center;\n          border-radius: 0;\n          font-weight: 600;\n        }\n        \n        .bank-details {\n          background: transparent;\n          padding: 0;\n          margin: 20px 0;\n          border-left: none;\n          font-size: 10px;\n          color: #333;\n          text-align: left;\n          border-radius: 0;\n          font-weight: 400;\n        }\n      </style>
+    </head>
+    <body>
+      <div class="page">
+        <!-- Watermark for proforma invoices -->
+        ${data.type === 'proforma' ? '<div class="watermark">Proforma</div>' : ''}
+        
+        <!-- Header Section -->
+        <div class="header">
+          <!-- Row 1: Logo (20%) + Company Details (80%) -->
+          <div class="header-row-1">
+            <div class="logo">
+              ${company.logo_url ?
+                `<img src="${company.logo_url}" alt="${company.name} Logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
+                 <div style="display:none; width:100%; height:100%; background:#f8f9fa; border:2px dashed #e9ecef; display:flex; align-items:center; justify-content:center; font-size:12px; color:#6c757d; text-align:center;">Logo not available</div>` :
+                `<div style="width:100%; height:100%; background:#f8f9fa; border:2px dashed #e9ecef; display:flex; align-items:center; justify-content:center; font-size:12px; color:#6c757d; text-align:center;">No logo configured</div>`
+              }
+            </div>
+            <div class="company-details-block">
+              <div class="company-name">${company.name}</div>
+              <div class="company-details">
+                ${company.tax_number ? `PIN: ${company.tax_number}<br>` : ''}
+                ${company.address ? `${company.address}<br>` : ''}
+                ${company.city ? `${company.city}` : ''}${company.country ? `, ${company.country}` : ''}<br>
+                ${company.phone ? `Tel: ${company.phone}<br>` : ''}
+                ${company.email ? `Email: ${company.email}<br>` : ''}
+                ${company.website ? `Website: <a href="${company.website.startsWith('http') ? company.website : `https://${company.website}`}" style="color:#2DAAE1; text-decoration:none;">${company.website}</a>` : ''}
+              </div>
+            </div>
+          </div>
+
+          <!-- Row 2: Customer Details (50%) + Document Details (50%) -->
+          <div class="header-row-2">
+            <!-- Client/Supplier Details Section -->
+            <div class="customer-info-block">
+              <div class="section-title" style="font-size: 11px; font-weight: bold; color: #2DAAE1; margin-bottom: 8px; text-transform: uppercase;">${data.type === 'lpo' ? 'Supplier' : 'Client'}</div>
+              <div class="customer-name" style="font-size: 13px; font-weight: bold; margin-bottom: 4px; color: #212529;">${data.customer.name}</div>
+              <div class="customer-details" style="font-size: 10px; color: #666; line-height: 1.4;">
+                ${data.customer.email ? `${data.customer.email}<br>` : ''}
+                ${data.customer.phone ? `${data.customer.phone}<br>` : ''}
+                ${data.customer.address ? `${data.customer.address}<br>` : ''}
+                ${data.customer.city ? `${data.customer.city}` : ''}
+                ${data.customer.country ? `, ${data.customer.country}` : ''}
+              </div>
+            </div>
+
+            <!-- Document Details Section -->
+            <div class="document-info">
+              <div class="document-title">${documentTitle}</div>
+              <div class="document-details">
+                <table>
+                  <tr>
+                    <td class="label">${data.type === 'receipt' ? 'Receipt #' : data.type === 'remittance' ? 'Advice #' : data.type === 'lpo' ? 'LPO #' : documentTitle + ' #'}:</td>
+                    <td class="value">${data.number}</td>
+                  </tr>
+                  <tr>
+                    <td class="label">${data.type === 'lpo' ? 'Order Date' : 'Date'}:</td>
+                    <td class="value">${formatDate(data.date)}</td>
+                  </tr>
+                  ${data.due_date ? `
+                  <tr>
+                    <td class="label">${data.type === 'lpo' ? 'Expected Delivery' : 'Due Date'}:</td>
+                    <td class="value">${formatDate(data.due_date)}</td>
+                  </tr>
+                  ` : ''}
+                  ${data.valid_until ? `
+                  <tr>
+                    <td class="label">Valid Until:</td>
+                    <td class="value">${formatDate(data.valid_until)}</td>
+                  </tr>
+                  ` : ''}
+                  ${data.lpo_number && data.type !== 'lpo' ? `
+                  <tr>
+                    <td class="label">LPO Number:</td>
+                    <td class="value">${data.lpo_number}</td>
+                  </tr>
+                  ` : ''}
+                  <tr>
+                    <td class="label">${data.type === 'receipt' ? 'Amount Paid' : data.type === 'remittance' ? 'Total Payment' : data.type === 'lpo' ? 'Order Total' : 'Amount'}:</td>
+                    <td class="value" style="font-weight: bold; color: ${data.type === 'receipt' ? '#2BB673' : '#2BB673'};">${formatCurrency(data.total_amount)}</td>
+                  </tr>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Delivery Information Section (for delivery notes) -->
+        ${data.type === 'delivery' ? `
+        <div class="delivery-info-section">
+          <div class="section-title">Delivery Information</div>
+          <div class="delivery-details">
+            <div class="delivery-row">
+              ${data.delivery_date ? `
+              <div class="delivery-field">
+                <div class="field-label">Delivery Date:</div>
+                <div class="field-value">${new Date(data.delivery_date).toLocaleDateString()}</div>
+              </div>
+              ` : ''}
+              ${data.delivery_method ? `
+              <div class="delivery-field">
+                <div class="field-label">Delivery Method:</div>
+                <div class="field-value">${data.delivery_method}</div>
+              </div>
+              ` : ''}
+            </div>
+
+            ${data.delivery_address ? `
+            <div class="delivery-row">
+              <div class="delivery-field full-width">
+                <div class="field-label">Delivery Address:</div>
+                <div class="field-value">${data.delivery_address}</div>
+              </div>
+            </div>
+            ` : ''}
+
+            <div class="delivery-row">
+              ${data.carrier ? `
+              <div class="delivery-field">
+                <div class="field-label">Carrier:</div>
+                <div class="field-value">${data.carrier}</div>
+              </div>
+              ` : ''}
+              ${data.tracking_number ? `
+              <div class="delivery-field">
+                <div class="field-label">Tracking Number:</div>
+                <div class="field-value">${data.tracking_number}</div>
+              </div>
+              ` : ''}
+            </div>
+
+            <div class="delivery-row">
+              ${data.delivered_by ? `
+              <div class="delivery-field">
+                <div class="field-label">Delivered By:</div>
+                <div class="field-value">${data.delivered_by}</div>
+              </div>
+              ` : ''}
+              ${data.received_by ? `
+              <div class="delivery-field">
+                <div class="field-label">Received By:</div>
+                <div class="field-value">${data.received_by}</div>
+              </div>
+              ` : ''}
+            </div>
+          </div>
+        </div>
+        ` : ''}
+
+        <!-- Items Section -->
+        ${data.items && data.items.length > 0 ? `
+        <div class="items-section">
+          <table class="items-table">
+            <thead>
+              <tr>
+                ${data.type === 'delivery' ? `
+                <th style="width: 5%;">#</th>
+                <th style="width: 40%;">Item Description</th>
+                <th style="width: 15%;">Ordered Qty</th>
+                <th style="width: 15%;">Delivered Qty</th>
+                <th style="width: 15%;">Unit</th>
+                <th style="width: 10%;">Status</th>
+                ` : data.type === 'statement' ? `
+                <th style="width: 10%;">Date</th>
+                <th style="width: 20%;">Description</th>
+                <th style="width: 12%;">Reference</th>
+                <th style="width: 10%;">Debit</th>
+                <th style="width: 10%;">Credit</th>
+                <th style="width: 12%;">Balance Due</th>
+                <th style="width: 16%;">Aging Status</th>
+                ` : data.type === 'remittance' ? `
+                <th style="width: 15%;">Date</th>
+                <th style="width: 15%;">Document Type</th>
+                <th style="width: 20%;">Document Number</th>
+                <th style="width: 16%;">Invoice Amount</th>
+                <th style="width: 16%;">Credit Amount</th>
+                <th style="width: 18%;">Payment Amount</th>
+                ` : `
+                <th style="width: 5%;">#</th>
+                <th style="width: ${visibleColumns.discountPercentage || visibleColumns.discountBeforeVat || visibleColumns.discountAmount || visibleColumns.taxPercentage || visibleColumns.taxAmount ? '22%' : '32%'};">Description</th>
+                <th style="width: 8%;">Qty</th>
+                <th style="width: 8%;">UoM</th>
+                <th style="width: 13%;">Unit Price</th>
+                ${visibleColumns.discountPercentage ? '<th style="width: 10%;">Disc %</th>' : ''}
+                ${visibleColumns.discountBeforeVat ? '<th style="width: 12%;">Disc Before VAT</th>' : ''}
+                ${visibleColumns.discountAmount ? '<th style="width: 12%;">Disc Amount</th>' : ''}
+                ${visibleColumns.taxPercentage ? '<th style="width: 10%;">Tax %</th>' : ''}
+                ${visibleColumns.taxAmount ? '<th style="width: 12%;">Tax Amount</th>' : ''}
+                <th style="width: 10%;">Batch No</th>
+                <th style="width: 10%;">Expiry Date</th>
+                <th style="width: 15%;">Total</th>
+                `}
+              </tr>
+            </thead>
+            <tbody>
+              ${data.items.map((item, index) => `
+                <tr>
+                  ${data.type === 'statement' ? `
+                  <td>${formatDate((item as any).transaction_date)}</td>
+                  <td class="description-cell">${item.description}</td>
+                  <td>${(item as any).reference}</td>
+                  <td class="amount-cell">${(item as any).debit > 0 ? formatCurrency((item as any).debit) : ''}</td>
+                  <td class="amount-cell">${(item as any).credit > 0 ? formatCurrency((item as any).credit) : ''}</td>
+                  <td class="amount-cell">${formatCurrency(item.line_total)}</td>
+                  <td style="font-size: 11px;">${(item as any).aging_narrative || ''}</td>
+                  ` : data.type === 'remittance' ? `
+                  <td>${formatDate((item as any).document_date)}</td>
+                  <td>${(item as any).description ? (item as any).description.split(':')[0] : 'Payment'}</td>
+                  <td>${(item as any).description ? (item as any).description.split(':')[1] || (item as any).description : ''}</td>
+                  <td class="amount-cell">${(item as any).invoice_amount ? formatCurrency((item as any).invoice_amount) : ''}</td>
+                  <td class="amount-cell">${(item as any).credit_amount ? formatCurrency((item as any).credit_amount) : ''}</td>
+                  <td class="amount-cell" style="font-weight: bold;">${formatCurrency(item.line_total)}</td>
+                  ` : `
+                  <td>${index + 1}</td>
+                  <td class="description-cell">${item.description}</td>
+                  ${data.type === 'delivery' ? `
+                  <td>${(item as any).quantity_ordered || item.quantity}</td>
+                  <td style="font-weight: bold; color: ${(item as any).quantity_delivered >= (item as any).quantity_ordered ? '#2BB673' : '#F59E0B'};">${(item as any).quantity_delivered || item.quantity}</td>
+                  <td>${(item as any).unit_of_measure || 'pcs'}</td>
+                  <td style="font-size: 10px;">
+                    ${(item as any).quantity_delivered >= (item as any).quantity_ordered ?
+                      '<span style="color: #2BB673; font-weight: bold;">✓ Complete</span>' :
+                      '<span style="color: #F59E0B; font-weight: bold;">⚠ Partial</span>'
+                    }
+                  </td>
+                  ` : `
+                  <td>${item.quantity}</td>
+                  <td>${item.unit_of_measure || 'pcs'}</td>
+                  <td class="amount-cell">${formatCurrency(item.unit_price)}</td>
+                  ${visibleColumns.discountPercentage ? `<td>${item.discount_percentage || 0}%</td>` : ''}
+                  ${visibleColumns.discountBeforeVat ? `<td>${(item.discount_before_vat || 0)}%</td>` : ''}
+                  ${visibleColumns.discountAmount ? `<td class="amount-cell">${formatCurrency(item.discount_amount || 0)}</td>` : ''}
+                  ${visibleColumns.taxPercentage ? `<td>${item.tax_percentage || 0}%</td>` : ''}
+                  ${visibleColumns.taxAmount ? `<td class="amount-cell">${formatCurrency(item.tax_amount || 0)}</td>` : ''}
+                  <td>${(item as any).batch_no || '-'}</td>
+                  <td>${(item as any).expiry_date ? formatDate((item as any).expiry_date) : '-'}</td>
+                  <td class="amount-cell">${formatCurrency(item.line_total)}</td>
+                  `}
+                  `}
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+        ` : ''}
+        
+        <!-- Totals Section (not for delivery notes) -->
+        ${data.type !== 'delivery' ? `
+        <div class="totals-section">
+          <table class="totals-table">
+            ${data.subtotal ? `
+            <tr class="subtotal-row">
+              <td class="label">Subtotal:</td>
+              <td class="amount">${formatCurrency(data.subtotal)}</td>
+            </tr>
+            ` : ''}
+            ${data.tax_amount ? `
+            <tr>
+              <td class="label">Tax Amount:</td>
+              <td class="amount">${formatCurrency(data.tax_amount)}</td>
+            </tr>
+            ` : ''}
+            <tr class="total-row">
+              <td class="label">${data.type === 'statement' ? 'TOTAL OUTSTANDING:' : 'TOTAL:'}</td>
+              <td class="amount">${formatCurrency(data.net_total !== undefined ? data.net_total : data.total_amount)}</td>
+            </tr>
+            ${(data.type === 'invoice' || data.type === 'proforma') && data.paid_amount !== undefined ? `
+            <tr class="payment-info">
+              <td class="label">Paid Amount:</td>
+              <td class="amount" style="color: #2BB673;">${formatCurrency(data.paid_amount || 0)}</td>
+            </tr>
+            ${data.appliedCreditNotes && data.appliedCreditNotes.length > 0 ? `
+            <tr class="credit-notes-info">
+              <td class="label">Applied Credit Notes:</td>
+              <td class="amount" style="color: #2BB673;">${formatCurrency(data.appliedCreditNotes.reduce((sum, cn) => sum + (cn.allocated_amount || 0), 0))}</td>
+            </tr>
+            ` : ''}
+            <tr class="balance-info">
+              <td class="label" style="font-weight: bold;">Balance Due:</td>
+              <td class="amount" style="font-weight: bold; color: ${(data.balance_due || 0) > 0 ? '#DC2626' : '#2BB673'};">${formatCurrency(data.balance_due || 0)}</td>
+            </tr>
+            ` : ''}
+          </table>
+        </div>
+        ` : ''}
+
+        <!-- Applied Credit Notes Section -->
+        ${(data.type === 'invoice' || data.type === 'proforma') && data.appliedCreditNotes && data.appliedCreditNotes.length > 0 ? `
+        <div class="applied-credit-notes-section">
+          <div class="section-subtitle">Applied Credit Notes</div>
+          <table class="details-table" style="margin-top: 10px;">
+            <thead>
+              <tr>
+                <th style="text-align: left; padding: 8px; border-bottom: 2px solid #e5e7eb; font-weight: bold;">Credit Note Number</th>
+                <th style="text-align: right; padding: 8px; border-bottom: 2px solid #e5e7eb; font-weight: bold;">Applied Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${data.appliedCreditNotes.map(cn => `
+              <tr>
+                <td style="padding: 6px 8px; border-bottom: 1px solid #e5e7eb;">${cn.credit_note_number || ''}</td>
+                <td style="padding: 6px 8px; text-align: right; border-bottom: 1px solid #e5e7eb;">${formatCurrency(cn.allocated_amount || 0)}</td>
+              </tr>
+              `).join('')}
+              <tr style="background-color: #f3f4f6;">
+                <td style="padding: 8px; font-weight: bold; border-top: 2px solid #e5e7eb;">Total Applied</td>
+                <td style="padding: 8px; text-align: right; font-weight: bold; border-top: 2px solid #e5e7eb;">${formatCurrency(data.appliedCreditNotes.reduce((sum, cn) => sum + (cn.allocated_amount || 0), 0))}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        ` : ''}
+
+        <!-- Signature Section (for delivery notes) -->
+        ${data.type === 'delivery' ? `
+        <div class="signature-section">
+          <div class="signature-row">
+            <div class="signature-box">
+              <div class="signature-label">Delivered By:</div>
+              <div class="signature-line">${data.delivered_by || '_________________________'}</div>
+              <div class="signature-date">Date: ${data.delivery_date ? new Date(data.delivery_date).toLocaleDateString() : '__________'}</div>
+            </div>
+            <div class="signature-box">
+              <div class="signature-label">Received By:</div>
+              <div class="signature-line">${data.received_by || '_________________________'}</div>
+              <div class="signature-date">Date: __________</div>
+            </div>
+          </div>
+        </div>
+        ` : ''}
+
+        <!-- Terms & Conditions -->
+        ${(data.terms_and_conditions || dynamicTerms) && ['invoice', 'quotation', 'proforma', 'lpo', 'delivery', 'receipt'].includes(data.type) ? `
+        <div class="notes-section">
+          <div class="terms">
+            <div class="section-subtitle">Terms &amp; Conditions</div>
+            <div class="notes-content">${data.terms_and_conditions || dynamicTerms}</div>
+          </div>
+        </div>
+        ` : ''}
+
+        <!-- Bank Details -->
+        ${data.type === 'invoice' || data.type === 'statement' ? `
+        <div class="bank-details">
+          <div class="section-subtitle">Banking Details</div>
+          <div class="notes-content">${buildBankDetailsHTML(company)}</div>
+        </div>
+        ` : ''}
+
+        <!-- Footer -->
+        <div class="footer">
+          ${data.type === 'proforma' ? '<em>This is a proforma invoice and not a request for payment</em>' : ''}
+          ${data.type === 'delivery' ? '<em>This delivery note confirms the items delivered</em>' : ''}
+          ${data.type === 'receipt' ? '<em>This receipt serves as proof of payment received</em>' : ''}
+          ${data.type === 'remittance' ? '<em>This remittance advice details payments made to your account</em>' : ''}
+          ${data.type === 'lpo' ? '<em>This Local Purchase Order serves as an official request for goods/services</em>' : ''}
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  printWindow.document.write(htmlContent);
+  printWindow.document.close();
+
+  // Wait for content to load before printing
+  printWindow.onload = () => {
+    setTimeout(() => {
+      printWindow.print();
+    }, 500);
+  };
+
+  // Fallback if onload doesn't fire
+  setTimeout(() => {
+    if (printWindow && !printWindow.closed) {
+      printWindow.print();
+    }
+  }, 1000);
+
+  return printWindow;
+};
+
+// Function for generating payment receipt PDF with payment details
+export const generatePaymentReceiptPDF = async (payment: any, company?: CompanyDetails) => {
+  const documentData: DocumentData = {
+    type: 'receipt',
+    number: payment.number || payment.payment_number || `REC-${Date.now()}`,
+    date: payment.date || payment.payment_date || new Date().toISOString().split('T')[0],
+    company: company,
+    customer: {
+      name: payment.customer || payment.customers?.name || 'Unknown Customer',
+      email: payment.customers?.email,
+      phone: payment.customers?.phone,
+    },
+    // Add payment allocations as items to display in table
+    items: (payment.payment_allocations || []).map((allocation: any) => ({
+      description: `Invoice ${allocation.invoice_number} - ${allocation.invoice_date ? new Date(allocation.invoice_date).toLocaleDateString() : 'N/A'}`,
+      quantity: 1,
+      unit_price: allocation.allocated_amount || 0,
+      tax_percentage: 0,
+      tax_amount: 0,
+      tax_inclusive: false,
+      line_total: allocation.allocated_amount || 0,
+      unit_of_measure: 'payment',
+    })),
+    subtotal: typeof payment.amount === 'string' ?
+      parseFloat(payment.amount.replace('$', '').replace(',', '')) :
+      payment.amount,
+    tax_amount: 0,
+    total_amount: typeof payment.amount === 'string' ?
+      parseFloat(payment.amount.replace('$', '').replace(',', '')) :
+      payment.amount,
+    notes: `Payment Method: ${payment.payment_method?.replace('_', ' ') || payment.method?.replace('_', ' ') || 'Unknown'}\nReference: ${payment.reference_number || 'N/A'}`,
+  };
+
+  return generatePDF(documentData);
+};
+
+// Specific function for invoice PDF generation
+export const downloadInvoicePDF = async (invoice: any, documentType: 'INVOICE' | 'PROFORMA' = 'INVOICE', company?: CompanyDetails) => {
+  // Resolve all unit_of_measure UUIDs to abbreviations first
+  const resolvedItems = await Promise.all(
+    (invoice.invoice_items || []).map(async (item: any) => {
+      const quantity = Number(item.quantity || 0);
+      const unitPrice = Number(item.unit_price || 0);
+      const taxAmount = Number(item.tax_amount || 0);
+      const discountAmount = Number(item.discount_amount || 0);
+      const computedLineTotal = quantity * unitPrice - discountAmount + taxAmount;
+
+      const uomValue = item.products?.unit_of_measure || item.unit_of_measure || 'pcs';
+      const resolvedUoM = await resolveUnitOfMeasure(uomValue);
+
+      return {
+        description: item.description || item.product_name || item.products?.name || 'Unknown Item',
+        quantity: quantity,
+        unit_price: unitPrice,
+        discount_percentage: Number(item.discount_percentage || 0),
+        discount_before_vat: Number(item.discount_before_vat || 0),
+        discount_amount: discountAmount,
+        tax_percentage: Number(item.tax_percentage || 0),
+        tax_amount: taxAmount,
+        tax_inclusive: item.tax_inclusive || false,
+        line_total: Number(item.line_total ?? computedLineTotal),
+        unit_of_measure: resolvedUoM,
+        batch_no: item.batch_no || '',
+        expiry_date: item.expiry_date || null,
+      };
+    })
+  );
+
+  // Fetch applied credit notes if not already in invoice object
+  let appliedCreditNotes = invoice.appliedCreditNotes || [];
+  if (!appliedCreditNotes || appliedCreditNotes.length === 0) {
+    try {
+      const { data: allocations } = await supabase
+        .from('credit_note_allocations')
+        .select(`
+          id,
+          credit_note_id,
+          allocated_amount,
+          credit_notes(id, credit_note_number, total_amount)
+        `)
+        .eq('invoice_id', invoice.id);
+
+      appliedCreditNotes = (allocations || []).map(a => ({
+        id: a.id,
+        credit_note_number: a.credit_notes?.credit_note_number || '',
+        allocated_amount: a.allocated_amount
+      }));
+    } catch (error) {
+      console.warn('Failed to fetch credit notes for PDF:', error);
+      appliedCreditNotes = [];
+    }
+  } else {
+    // Transform existing format
+    appliedCreditNotes = (appliedCreditNotes || []).map(a => ({
+      id: a.id,
+      credit_note_number: a.credit_notes?.credit_note_number || '',
+      allocated_amount: a.allocated_amount
+    }));
+  }
+
+  const totalAppliedCredits = appliedCreditNotes.reduce((sum, cn) => sum + (cn.allocated_amount || 0), 0);
+  const netTotal = invoice.total_amount - totalAppliedCredits;
+
+  const documentData: DocumentData = {
+    type: documentType === 'PROFORMA' ? 'proforma' : 'invoice',
+    number: invoice.invoice_number,
+    date: invoice.invoice_date,
+    due_date: invoice.due_date,
+    lpo_number: invoice.lpo_number,
+    company: company, // Pass company details
+    customer: {
+      name: invoice.customers?.name || 'Unknown Customer',
+      email: invoice.customers?.email,
+      phone: invoice.customers?.phone,
+      address: invoice.customers?.address,
+      city: invoice.customers?.city,
+      country: invoice.customers?.country,
+    },
+    items: resolvedItems,
+    subtotal: invoice.subtotal,
+    tax_amount: invoice.tax_amount,
+    total_amount: invoice.total_amount,
+    paid_amount: invoice.paid_amount || 0,
+    net_total: netTotal,
+    balance_due: netTotal - (invoice.paid_amount || 0),
+    notes: invoice.notes,
+    terms_and_conditions: invoice.terms_and_conditions,
+    appliedCreditNotes: appliedCreditNotes.length > 0 ? appliedCreditNotes : undefined,
+  };
+
+  return generatePDF(documentData);
+};
+
+// Function for quotation PDF generation
+export const downloadQuotationPDF = async (quotation: any, company?: CompanyDetails) => {
+  // Resolve all unit_of_measure UUIDs to abbreviations first
+  const resolvedItems = await Promise.all(
+    (quotation.quotation_items || []).map(async (item: any) => {
+      const quantity = Number(item.quantity || 0);
+      const unitPrice = Number(item.unit_price || 0);
+      const taxAmount = Number(item.tax_amount || 0);
+      const discountAmount = Number(item.discount_amount || 0);
+      const computedLineTotal = quantity * unitPrice - discountAmount + taxAmount;
+
+      const uomValue = item.products?.unit_of_measure || item.unit_of_measure || 'pcs';
+      const resolvedUoM = await resolveUnitOfMeasure(uomValue);
+
+      return {
+        description: item.description || item.product_name || item.products?.name || 'Unknown Item',
+        quantity: quantity,
+        unit_price: unitPrice,
+        discount_percentage: Number(item.discount_percentage || 0),
+        discount_before_vat: Number(item.discount_before_vat || 0),
+        discount_amount: discountAmount,
+        tax_percentage: Number(item.tax_percentage || 0),
+        tax_amount: taxAmount,
+        tax_inclusive: item.tax_inclusive || false,
+        line_total: Number(item.line_total ?? computedLineTotal),
+        unit_of_measure: resolvedUoM,
+        batch_no: item.batch_no || '',
+        expiry_date: item.expiry_date || null,
+      };
+    })
+  );
+
+  const documentData: DocumentData = {
+    type: 'quotation',
+    number: quotation.quotation_number,
+    date: quotation.quotation_date,
+    valid_until: quotation.valid_until,
+    company: company, // Pass company details
+    customer: {
+      name: quotation.customers?.name || 'Unknown Customer',
+      email: quotation.customers?.email,
+      phone: quotation.customers?.phone,
+      address: quotation.customers?.address,
+      city: quotation.customers?.city,
+      country: quotation.customers?.country,
+    },
+    items: resolvedItems,
+    subtotal: quotation.subtotal,
+    tax_amount: quotation.tax_amount,
+    total_amount: quotation.total_amount,
+    notes: quotation.notes,
+    terms_and_conditions: quotation.terms_and_conditions,
+  };
+
+  return generatePDF(documentData);
+};
+
+// Function for generating customer statement PDF
+export const generateCustomerStatementPDF = async (customer: any, invoices: any[], payments: any[], statementData?: any, company?: CompanyDetails, creditNoteAllocations: any[] = []) => {
+  const today = new Date();
+  const statementDate = statementData?.statement_date || today.toISOString().split('T')[0];
+
+  const creditByInvoice = new Map<string, number>();
+  creditNoteAllocations.forEach((a: any) => {
+    const iid = a.invoice_id;
+    if (!iid) return;
+    creditByInvoice.set(iid, (creditByInvoice.get(iid) || 0) + (Number(a.allocated_amount) || 0));
+  });
+  const getNetOutstanding = (inv: any) => {
+    const gross = (Number(inv.total_amount) || 0) - (Number(inv.paid_amount) || 0);
+    const credited = creditByInvoice.get(inv.id) || 0;
+    return Math.max(0, gross - credited);
+  };
+  const totalCreditNotes = creditNoteAllocations.reduce((sum, allocation) =>
+    sum + (Number(allocation.allocated_amount) || 0), 0
+  );
+  const totalOutstanding = invoices.reduce((sum, inv) =>
+    sum + getNetOutstanding(inv), 0
+  );
+
+  // Calculate aging buckets (net of credit notes per invoice)
+  const current = invoices.filter(inv => {
+    const dueDate = new Date(inv.due_date);
+    const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+    return daysOverdue <= 0 && getNetOutstanding(inv) > 0.005;
+  }).reduce((sum, inv) => sum + getNetOutstanding(inv), 0);
+
+  const days30 = invoices.filter(inv => {
+    const dueDate = new Date(inv.due_date);
+    const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+    return daysOverdue > 0 && daysOverdue <= 30 && getNetOutstanding(inv) > 0.005;
+  }).reduce((sum, inv) => sum + getNetOutstanding(inv), 0);
+
+  const days60 = invoices.filter(inv => {
+    const dueDate = new Date(inv.due_date);
+    const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+    return daysOverdue > 30 && daysOverdue <= 60 && getNetOutstanding(inv) > 0.005;
+  }).reduce((sum, inv) => sum + getNetOutstanding(inv), 0);
+
+  const days90 = invoices.filter(inv => {
+    const dueDate = new Date(inv.due_date);
+    const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+    return daysOverdue > 60 && daysOverdue <= 90 && getNetOutstanding(inv) > 0.005;
+  }).reduce((sum, inv) => sum + getNetOutstanding(inv), 0);
+
+  const over90 = invoices.filter(inv => {
+    const dueDate = new Date(inv.due_date);
+    const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+    return daysOverdue > 90 && getNetOutstanding(inv) > 0.005;
+  }).reduce((sum, inv) => sum + getNetOutstanding(inv), 0);
+
+  // Create all transactions (invoices, payments, and credit notes) with running balance
+  const allTransactions = [
+    // Add all invoices as debits
+    ...invoices.map(inv => ({
+      date: inv.invoice_date,
+      type: 'invoice',
+      reference: inv.invoice_number,
+      description: `Invoice ${inv.invoice_number}`,
+      debit: inv.total_amount || 0,
+      credit: 0,
+      due_date: inv.due_date
+    })),
+    // Add all payments as credits
+    ...payments.map(pay => ({
+      date: pay.payment_date,
+      type: 'payment',
+      reference: pay.payment_number || pay.id || 'PMT',
+      description: `Payment - ${pay.method || 'Cash'}`,
+      debit: 0,
+      credit: pay.amount || 0,
+      due_date: null
+    })),
+    ...creditNoteAllocations.map(allocation => {
+      const creditNote = allocation.credit_notes || allocation.credit_note || {};
+      const invoice = allocation.invoices || allocation.invoice || {};
+      const reference = creditNote.credit_note_number || allocation.credit_note_number || 'Credit Note';
+
+      return {
+        date: allocation.allocation_date || creditNote.credit_note_date,
+        type: 'credit_note',
+        reference,
+        description: invoice.invoice_number
+          ? `Credit Note ${reference} - Applied to Invoice ${invoice.invoice_number}`
+          : `Credit Note ${reference}${creditNote.reason ? ` - ${creditNote.reason}` : ''}`,
+        debit: 0,
+        credit: Number(allocation.allocated_amount) || 0,
+        due_date: null
+      };
+    })
+  ];
+
+  // Sort by date
+  allTransactions.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+  // Calculate running balance
+  let runningBalance = 0;
+  const statementItems = allTransactions.map((transaction, index) => {
+    runningBalance += transaction.debit - transaction.credit;
+
+    const daysOverdue = transaction.due_date ? Math.max(0, Math.floor((today.getTime() - new Date(transaction.due_date).getTime()) / (1000 * 60 * 60 * 24))) : 0;
+
+    return {
+      description: transaction.description,
+      quantity: 1,
+      unit_price: Number(transaction.debit || transaction.credit || 0),
+      tax_percentage: 0,
+      tax_amount: 0,
+      tax_inclusive: false,
+      line_total: Number(runningBalance),
+      balance: Number(runningBalance),
+      transaction_date: transaction.date,
+      transaction_type: transaction.type,
+      reference: transaction.reference,
+      debit: Number(transaction.debit || 0),
+      credit: Number(transaction.credit || 0),
+      due_date: transaction.due_date,
+      days_overdue: daysOverdue,
+      aging_narrative: transaction.due_date ? getAgingNarrative(transaction.due_date, statementDate) : '',
+      aging_category: transaction.due_date ? getAgingCategory(daysOverdue) : ''
+    };
+  });
+
+  // Calculate final balance from last transaction
+  const finalBalance = statementItems.length > 0 ? statementItems[statementItems.length - 1].line_total : 0;
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES', minimumFractionDigits: 2 }).format(amount);
+  };
+
+  const documentData: DocumentData = {
+    type: 'statement', // Use statement type for proper formatting
+    number: `STMT-${customer.customer_code || customer.id}-${statementDate}`,
+    date: statementDate,
+    company: company, // Pass company details
+    customer: {
+      name: customer.name,
+      email: customer.email,
+      phone: customer.phone,
+      address: customer.address,
+      city: customer.city,
+      country: customer.country,
+    },
+    items: statementItems,
+    subtotal: finalBalance,
+    tax_amount: 0,
+    total_amount: finalBalance,
+    notes: `Statement of Account as of ${new Date(statementDate).toLocaleDateString()}\nTransaction period: ${statementData?.date_range_label || 'All time'}\n\nThis statement shows all transactions including invoices (debits), payments (credits), and allocated credit notes (credits) with running balance.\n\nTotal Allocated Credit Notes: ${formatCurrency(totalCreditNotes)}\n\nAging Summary for Outstanding Invoices:\nCurrent: ${formatCurrency(current)}\n1-30 Days: ${formatCurrency(days30)}\n31-60 Days: ${formatCurrency(days60)}\n61-90 Days: ${formatCurrency(days90)}\nOver 90 Days: ${formatCurrency(over90)}`,
+    terms_and_conditions: 'Please remit payment for any outstanding amounts. Contact us if you have any questions about this statement.',
+  };
+
+  return generatePDF(documentData);
+};
+
+// Function for generating remittance advice PDF
+export const downloadRemittancePDF = async (remittance: any, company?: CompanyDetails) => {
+  const documentData: DocumentData = {
+    type: 'remittance',
+    number: remittance.adviceNumber || remittance.advice_number || `REM-${Date.now()}`,
+    date: remittance.adviceDate || remittance.advice_date || new Date().toISOString().split('T')[0],
+    company: company, // Pass company details
+    customer: {
+      name: remittance.customerName || remittance.customers?.name || 'Unknown Customer',
+      email: remittance.customers?.email,
+      phone: remittance.customers?.phone,
+      address: remittance.customers?.address,
+      city: remittance.customers?.city,
+      country: remittance.customers?.country,
+    },
+    items: (remittance.remittance_advice_items || remittance.items || []).map((item: any) => ({
+      description: item.document_number
+        ? `${item.document_type === 'invoice' ? 'Invoice' : item.document_type === 'credit_note' ? 'Credit Note' : 'Payment'}: ${item.document_number}`
+        : item.description
+        || `Payment for ${item.invoiceNumber || item.creditNote || 'Document'}`,
+      quantity: 1,
+      unit_price: item.payment_amount || item.payment || 0,
+      tax_percentage: item.tax_percentage || 0,
+      tax_amount: item.tax_amount || 0,
+      tax_inclusive: item.tax_inclusive || false,
+      line_total: item.payment_amount || item.payment || 0,
+      // Additional details for remittance-specific display
+      document_date: item.document_date || item.date,
+      invoice_amount: item.invoice_amount || item.invoiceAmount,
+      credit_amount: item.credit_amount || item.creditAmount,
+    })),
+    subtotal: remittance.totalPayment || remittance.total_payment || 0,
+    tax_amount: 0,
+    total_amount: remittance.totalPayment || remittance.total_payment || 0,
+    notes: remittance.notes || 'Remittance advice for payments made',
+    terms_and_conditions: 'This remittance advice details payments made to your account.',
+  };
+
+  return generatePDF(documentData);
+};
+
+// Function for delivery note PDF generation
+export const downloadDeliveryNotePDF = async (deliveryNote: any, company?: CompanyDetails) => {
+  // Get invoice information for reference
+  const invoiceNumber = deliveryNote.invoice_number ||
+                       deliveryNote.invoices?.invoice_number ||
+                       (deliveryNote.invoice_id ? `INV-${deliveryNote.invoice_id.slice(-8)}` : 'N/A');
+
+  // Resolve all unit_of_measure UUIDs to abbreviations first
+  const resolvedItems = await Promise.all(
+    ((deliveryNote.delivery_note_items || deliveryNote.delivery_items) || []).map(async (item: any) => {
+      const uomValue = item.products?.unit_of_measure || item.unit_of_measure || 'pcs';
+      const resolvedUoM = await resolveUnitOfMeasure(uomValue);
+
+      return {
+        description: `${item.products?.name || item.product_name || item.description || 'Unknown Item'}${invoiceNumber !== 'N/A' ? ` (From Invoice: ${invoiceNumber})` : ''}`,
+        quantity: item.quantity_delivered || item.quantity || 0,
+        unit_price: 0, // Not relevant for delivery notes
+        tax_percentage: 0,
+        tax_amount: 0,
+        tax_inclusive: false,
+        line_total: 0,
+        unit_of_measure: resolvedUoM,
+        batch_no: item.batch_no || '',
+        expiry_date: item.expiry_date || null,
+        // Add delivery-specific details
+        quantity_ordered: item.quantity_ordered || item.quantity || 0,
+        quantity_delivered: item.quantity_delivered || item.quantity || 0,
+      };
+    })
+  );
+
+  const documentData: DocumentData = {
+    type: 'delivery',
+    number: deliveryNote.delivery_note_number || deliveryNote.delivery_number,
+    date: deliveryNote.delivery_date,
+    delivery_date: deliveryNote.delivery_date,
+    delivery_address: deliveryNote.delivery_address,
+    delivery_method: deliveryNote.delivery_method,
+    carrier: deliveryNote.carrier,
+    tracking_number: deliveryNote.tracking_number,
+    delivered_by: deliveryNote.delivered_by,
+    received_by: deliveryNote.received_by,
+    // Add invoice reference for delivery notes
+    lpo_number: `Related Invoice: ${invoiceNumber}`,
+    company: company, // Pass company details
+    customer: {
+      name: deliveryNote.customers?.name || 'Unknown Customer',
+      email: deliveryNote.customers?.email,
+      phone: deliveryNote.customers?.phone,
+      address: deliveryNote.customers?.address,
+      city: deliveryNote.customers?.city,
+      country: deliveryNote.customers?.country,
+    },
+    items: resolvedItems,
+    total_amount: 0, // Not relevant for delivery notes
+    notes: deliveryNote.notes || `Items delivered as per Invoice ${invoiceNumber}`,
+  };
+
+  return generatePDF(documentData);
+};
+
+// Function for LPO PDF generation
+export const downloadLPOPDF = async (lpo: any, company?: CompanyDetails) => {
+  // Resolve all unit_of_measure UUIDs to abbreviations first
+  const resolvedItems = await Promise.all(
+    (lpo.lpo_items || []).map(async (item: any) => {
+      const quantity = Number(item.quantity || 0);
+      const unitPrice = Number(item.unit_price || 0);
+      const taxAmount = Number(item.tax_amount || 0);
+      const computedLineTotal = quantity * unitPrice + taxAmount;
+
+      const uomValue = item.products?.unit_of_measure || item.unit_of_measure || 'pcs';
+      const resolvedUoM = await resolveUnitOfMeasure(uomValue);
+
+      return {
+        description: item.description || item.products?.name || 'Unknown Item',
+        quantity: quantity,
+        unit_price: unitPrice,
+        discount_percentage: 0,
+        discount_before_vat: Number(item.discount_before_vat || 0),
+        discount_amount: 0,
+        tax_percentage: Number(item.tax_rate || 0),
+        tax_amount: taxAmount,
+        tax_inclusive: false,
+        line_total: Number(item.line_total ?? computedLineTotal),
+        unit_of_measure: resolvedUoM,
+        batch_no: item.batch_no || '',
+        expiry_date: item.expiry_date || null,
+      };
+    })
+  );
+
+  const documentData: DocumentData = {
+    type: 'lpo', // Use LPO document type
+    number: lpo.lpo_number,
+    date: lpo.lpo_date,
+    due_date: lpo.delivery_date,
+    delivery_date: lpo.delivery_date,
+    delivery_address: lpo.delivery_address,
+    company: company, // Pass company details
+    customer: {
+      name: lpo.suppliers?.name || 'Unknown Supplier',
+      email: lpo.suppliers?.email,
+      phone: lpo.suppliers?.phone,
+      address: lpo.suppliers?.address,
+      city: lpo.suppliers?.city,
+      country: lpo.suppliers?.country,
+    },
+    items: resolvedItems,
+    subtotal: lpo.subtotal,
+    tax_amount: lpo.tax_amount,
+    total_amount: lpo.total_amount,
+    notes: `${lpo.notes || ''}${lpo.contact_person ? `\n\nContact Person: ${lpo.contact_person}` : ''}${lpo.contact_phone ? `\nContact Phone: ${lpo.contact_phone}` : ''}`.trim(),
+    terms_and_conditions: lpo.terms_and_conditions,
+  };
+
+  return generatePDF(documentData);
+};

@@ -1,0 +1,336 @@
+import { useState, useEffect } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Loader2, User, Phone, Building, MapPin } from 'lucide-react';
+import { UserProfile, useAuth } from '@/contexts/AuthContext';
+import { UpdateUserData } from '@/hooks/useUserManagement';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { RoleDefinition } from '@/types/permissions';
+
+interface EditUserModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  user: UserProfile | null;
+  onUpdateUser: (userId: string, userData: UpdateUserData) => Promise<{ success: boolean; error?: string }>;
+  loading?: boolean;
+}
+
+export function EditUserModal({
+  open,
+  onOpenChange,
+  user,
+  onUpdateUser,
+  loading = false,
+}: EditUserModalProps) {
+  const { profile: currentUser } = useAuth();
+  const [formData, setFormData] = useState<UpdateUserData>({
+    full_name: '',
+    role: 'user',
+    status: 'active',
+    phone: '',
+    department: '',
+    position: '',
+  });
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [roles, setRoles] = useState<RoleDefinition[]>([]);
+  const [rolesLoading, setRolesLoading] = useState(false);
+
+  // Fetch roles from database when modal opens
+  useEffect(() => {
+    if (open && currentUser?.company_id) {
+      fetchRoles();
+    }
+  }, [open, currentUser?.company_id]);
+
+  const fetchRoles = async () => {
+    if (!currentUser?.company_id) return;
+
+    setRolesLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('roles')
+        .select('*')
+        .eq('company_id', currentUser.company_id)
+        .order('is_default', { ascending: false })
+        .order('name', { ascending: true });
+
+      if (error) throw error;
+
+      setRoles(data || []);
+    } catch (err) {
+      console.error('Error fetching roles:', err);
+      toast.error('Failed to load roles');
+    } finally {
+      setRolesLoading(false);
+    }
+  };
+
+  // Update form data when user changes
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        full_name: user.full_name || '',
+        role: user.role,
+        status: user.status,
+        phone: user.phone || '',
+        department: user.department || '',
+        position: user.position || '',
+      });
+    }
+  }, [user]);
+
+  const validateForm = () => {
+    const errors: Record<string, string> = {};
+
+    if (!formData.full_name?.trim()) {
+      errors.full_name = 'Full name is required';
+    }
+
+    if (!formData.role) {
+      errors.role = 'Role is required';
+    }
+
+    if (!formData.status) {
+      errors.status = 'Status is required';
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!user || !validateForm()) {
+      return;
+    }
+
+    const result = await onUpdateUser(user.id, formData);
+    
+    if (result.success) {
+      handleClose();
+    }
+  };
+
+  const handleClose = () => {
+    onOpenChange(false);
+    setFormErrors({});
+  };
+
+  const handleInputChange = (field: keyof UpdateUserData) => (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    setFormData(prev => ({ ...prev, [field]: e.target.value }));
+    if (formErrors[field]) {
+      setFormErrors(prev => ({ ...prev, [field]: '' }));
+    }
+  };
+
+  const handleRoleChange = (role: string) => {
+    setFormData(prev => ({ ...prev, role: role as UpdateUserData['role'] }));
+    if (formErrors.role) {
+      setFormErrors(prev => ({ ...prev, role: '' }));
+    }
+  };
+
+  // Get the display name for the current role value
+  const getCurrentRoleName = () => {
+    if (!formData.role) return 'Select a role';
+    const currentRole = roles.find(r => r.role_type === formData.role);
+    return currentRole?.name || formData.role;
+  };
+
+  const handleStatusChange = (status: string) => {
+    setFormData(prev => ({ ...prev, status: status as UpdateUserData['status'] }));
+    if (formErrors.status) {
+      setFormErrors(prev => ({ ...prev, status: '' }));
+    }
+  };
+
+  const statusOptions = [
+    { value: 'active', label: 'Active', description: 'User can sign in and access the system' },
+    { value: 'inactive', label: 'Inactive', description: 'User cannot sign in' },
+    { value: 'pending', label: 'Pending', description: 'User account is pending activation' },
+  ];
+
+  if (!user) return null;
+
+  return (
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Edit User</DialogTitle>
+          <DialogDescription>
+            Update user information, role, and status.
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="full_name">Full Name *</Label>
+            <div className="relative">
+              <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                id="full_name"
+                placeholder="John Doe"
+                value={formData.full_name}
+                onChange={handleInputChange('full_name')}
+                className={`pl-10 ${formErrors.full_name ? 'border-destructive' : ''}`}
+                disabled={loading}
+              />
+            </div>
+            {formErrors.full_name && (
+              <p className="text-sm text-destructive">{formErrors.full_name}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label>Email</Label>
+            <Input
+              value={user.email}
+              disabled
+              className="bg-muted text-muted-foreground"
+            />
+            <p className="text-xs text-muted-foreground">
+              Email cannot be changed after account creation
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="role">Role *</Label>
+              <Select value={formData.role || ''} onValueChange={handleRoleChange} disabled={loading || rolesLoading || roles.length === 0}>
+                <SelectTrigger className={formErrors.role ? 'border-destructive' : ''}>
+                  <SelectValue placeholder={rolesLoading ? 'Loading roles...' : getCurrentRoleName()} />
+                </SelectTrigger>
+                <SelectContent>
+                  {rolesLoading ? (
+                    <div className="px-2 py-2 text-sm text-muted-foreground">Loading roles...</div>
+                  ) : roles.length === 0 ? (
+                    <div className="px-2 py-2 text-sm text-muted-foreground">No roles available</div>
+                  ) : (
+                    roles.map((role) => (
+                      <SelectItem key={role.id} value={role.role_type}>
+                        {role.name}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+              {formErrors.role && (
+                <p className="text-sm text-destructive">{formErrors.role}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="status">Status *</Label>
+              <Select value={formData.status} onValueChange={handleStatusChange} disabled={loading}>
+                <SelectTrigger className={formErrors.status ? 'border-destructive' : ''}>
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  {statusOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      <div className="flex flex-col">
+                        <span className="font-medium">{option.label}</span>
+                        <span className="text-xs text-muted-foreground">{option.description}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {formErrors.status && (
+                <p className="text-sm text-destructive">{formErrors.status}</p>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone</Label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="phone"
+                  placeholder="+1 (555) 123-4567"
+                  value={formData.phone}
+                  onChange={handleInputChange('phone')}
+                  className="pl-10"
+                  disabled={loading}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="department">Department</Label>
+              <div className="relative">
+                <Building className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="department"
+                  placeholder="Sales, IT, Finance..."
+                  value={formData.department}
+                  onChange={handleInputChange('department')}
+                  className="pl-10"
+                  disabled={loading}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="position">Position</Label>
+            <div className="relative">
+              <MapPin className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                id="position"
+                placeholder="Manager, Developer, Analyst..."
+                value={formData.position}
+                onChange={handleInputChange('position')}
+                className="pl-10"
+                disabled={loading}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleClose}
+              disabled={loading}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={loading}>
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Updating...
+                </>
+              ) : (
+                'Update User'
+              )}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}

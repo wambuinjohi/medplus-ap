@@ -1,0 +1,423 @@
+import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Switch } from '@/components/ui/switch';
+import { 
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  Building2,
+  CreditCard,
+  AlertTriangle
+} from 'lucide-react';
+import { toast } from 'sonner';
+import { useUpdateCustomer } from '@/hooks/useDatabase';
+import { useCustomerCreditStatus } from '@/hooks/useCustomerCreditStatus';
+import { usePermissions } from '@/hooks/usePermissions';
+
+interface Customer {
+  id: string;
+  customer_code: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  city?: string;
+  country?: string;
+  credit_limit?: number;
+  payment_terms?: number;
+  is_active?: boolean;
+}
+
+interface EditCustomerModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSuccess: () => void;
+  customer: Customer | null;
+}
+
+export function EditCustomerModal({ open, onOpenChange, onSuccess, customer }: EditCustomerModalProps) {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    address: '',
+    city: '',
+    country: 'Kenya',
+    credit_limit: 0,
+    allow_credit_beyond_limit: false,
+    payment_terms: 0,
+    is_active: true,
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [useCustomPaymentTerms, setUseCustomPaymentTerms] = useState(false);
+  const [customPaymentTerms, setCustomPaymentTerms] = useState<number | ''>('');
+  const updateCustomer = useUpdateCustomer();
+  const { can } = usePermissions();
+  const { data: creditStatus } = useCustomerCreditStatus(customer?.id, customer?.company_id);
+
+  // Load customer data when modal opens
+  useEffect(() => {
+    if (customer && open) {
+      const paymentTerms = customer.payment_terms || 0;
+      const presetValues = [0, 14, 45, 60, 120, 180];
+      const isCustom = !presetValues.includes(paymentTerms);
+
+      setFormData({
+        name: customer.name || '',
+        email: customer.email || '',
+        phone: customer.phone || '',
+        address: customer.address || '',
+        city: customer.city || '',
+        country: customer.country || 'Kenya',
+        credit_limit: customer.credit_limit || 0,
+        allow_credit_beyond_limit: customer.allow_credit_beyond_limit || false,
+        payment_terms: paymentTerms,
+        is_active: customer.is_active !== false,
+      });
+
+      setUseCustomPaymentTerms(isCustom);
+      setCustomPaymentTerms(isCustom ? paymentTerms : '');
+    }
+  }, [customer, open]);
+
+  const handleSubmit = async () => {
+    if (!formData.name.trim()) {
+      toast.error('Customer name is required');
+      return;
+    }
+
+    if (!customer?.id) {
+      toast.error('Customer ID is missing');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await updateCustomer.mutateAsync({
+        id: customer.id,
+        ...formData
+      });
+
+      toast.success(`Customer ${formData.name} updated successfully!`);
+      onSuccess();
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Error updating customer:', error);
+      toast.error('Failed to update customer. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleInputChange = (field: string, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center space-x-2">
+            <User className="h-5 w-5 text-primary" />
+            <span>Edit Customer - {customer?.customer_code}</span>
+          </DialogTitle>
+          <DialogDescription>
+            Update customer information and settings
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Basic Information */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center space-x-2">
+                <Building2 className="h-4 w-4" />
+                <span>Basic Information</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Customer Name *</Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => handleInputChange('name', e.target.value)}
+                  placeholder="Enter customer name"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      id="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => handleInputChange('email', e.target.value)}
+                      placeholder="customer@example.com"
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone</Label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      id="phone"
+                      value={formData.phone}
+                      onChange={(e) => handleInputChange('phone', e.target.value)}
+                      placeholder="+254 700 000000"
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="address">Address</Label>
+                <div className="relative">
+                  <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Textarea
+                    id="address"
+                    value={formData.address}
+                    onChange={(e) => handleInputChange('address', e.target.value)}
+                    placeholder="Enter customer address"
+                    className="pl-10"
+                    rows={3}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="city">City</Label>
+                  <Input
+                    id="city"
+                    value={formData.city}
+                    onChange={(e) => handleInputChange('city', e.target.value)}
+                    placeholder="Nairobi"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="country">Country</Label>
+                  <Select value={formData.country} onValueChange={(value) => handleInputChange('country', value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select country" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Kenya">Kenya</SelectItem>
+                      <SelectItem value="Uganda">Uganda</SelectItem>
+                      <SelectItem value="Tanzania">Tanzania</SelectItem>
+                      <SelectItem value="Rwanda">Rwanda</SelectItem>
+                      <SelectItem value="Other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Business Settings */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center space-x-2">
+                <CreditCard className="h-4 w-4" />
+                <span>Business Settings</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="credit_limit">Credit Limit (KES)</Label>
+                <Input
+                  id="credit_limit"
+                  type="number"
+                  value={formData.credit_limit}
+                  onChange={(e) => handleInputChange('credit_limit', parseFloat(e.target.value) || 0)}
+                  placeholder="100000"
+                  min="0"
+                  step="1000"
+                />
+              </div>
+
+              {can('override_credit_limit') && formData.credit_limit > 0 && (
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="allow_credit_beyond_limit">Allow Credit Beyond Limit</Label>
+                    <p className="text-xs text-muted-foreground">
+                      When enabled, invoices can exceed the credit limit for this customer
+                    </p>
+                  </div>
+                  <Switch
+                    id="allow_credit_beyond_limit"
+                    checked={formData.allow_credit_beyond_limit}
+                    onCheckedChange={(checked) => handleInputChange('allow_credit_beyond_limit', checked)}
+                  />
+                </div>
+              )}
+
+              {/* Credit Status Summary */}
+              {creditStatus && creditStatus.credit_limit > 0 && (
+                <div className={`p-3 rounded-lg border ${
+                  creditStatus.utilization_percent >= 100
+                    ? 'bg-red-50 border-red-200'
+                    : creditStatus.utilization_percent >= 70
+                      ? 'bg-amber-50 border-amber-200'
+                      : 'bg-green-50 border-green-200'
+                }`}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <AlertTriangle className={`h-4 w-4 ${
+                      creditStatus.utilization_percent >= 100
+                        ? 'text-red-600'
+                        : creditStatus.utilization_percent >= 70
+                          ? 'text-amber-600'
+                          : 'text-green-600'
+                    }`} />
+                    <span className="text-sm font-medium">Current Credit Status</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <span className="text-muted-foreground">Outstanding:</span>
+                      <span className="ml-1 font-medium">
+                        {new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES' }).format(creditStatus.total_outstanding)}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Available:</span>
+                      <span className={`ml-1 font-medium ${creditStatus.available_credit < 0 ? 'text-red-600' : ''}`}>
+                        {new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES' }).format(creditStatus.available_credit)}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="mt-2">
+                    <div className="w-full bg-gray-200 rounded-full h-1.5">
+                      <div
+                        className={`h-1.5 rounded-full transition-all ${
+                          creditStatus.utilization_percent >= 100
+                            ? 'bg-red-500'
+                            : creditStatus.utilization_percent >= 70
+                              ? 'bg-amber-500'
+                              : 'bg-green-500'
+                        }`}
+                        style={{ width: `${Math.min(creditStatus.utilization_percent, 100)}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <Label htmlFor="payment_terms">Payment Terms (Days)</Label>
+                <Select
+                  value={useCustomPaymentTerms ? 'custom' : formData.payment_terms.toString()}
+                  onValueChange={(value) => {
+                    if (value === 'custom') {
+                      setUseCustomPaymentTerms(true);
+                      setCustomPaymentTerms(formData.payment_terms || '');
+                    } else {
+                      setUseCustomPaymentTerms(false);
+                      setCustomPaymentTerms('');
+                      handleInputChange('payment_terms', parseInt(value, 10));
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select payment terms" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">Cash (Now)</SelectItem>
+                    <SelectItem value="14">14 days</SelectItem>
+                    <SelectItem value="45">45 days</SelectItem>
+                    <SelectItem value="60">60 days</SelectItem>
+                    <SelectItem value="120">120 days</SelectItem>
+                    <SelectItem value="180">Up to 180 days</SelectItem>
+                    <SelectItem value="custom">Custom...</SelectItem>
+                  </SelectContent>
+                </Select>
+                {useCustomPaymentTerms && (
+                  <div className="mt-2">
+                    <Label htmlFor="custom_payment_terms" className="text-xs">Custom Payment Terms (Days)</Label>
+                    <Input
+                      id="custom_payment_terms"
+                      type="number"
+                      value={customPaymentTerms}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        const num = v === '' ? '' : parseInt(v, 10);
+                        setCustomPaymentTerms(num);
+                        handleInputChange('payment_terms', num === '' ? 0 : num);
+                      }}
+                      placeholder="Enter days (e.g. 30)"
+                      min={0}
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label htmlFor="is_active">Customer Status</Label>
+                  <div className="text-sm text-muted-foreground">
+                    {formData.is_active ? 'Active customer' : 'Inactive customer'}
+                  </div>
+                </div>
+                <Switch
+                  id="is_active"
+                  checked={formData.is_active}
+                  onCheckedChange={(checked) => handleInputChange('is_active', checked)}
+                />
+              </div>
+
+              <div className="mt-6 p-4 bg-muted/50 rounded-lg">
+                <h4 className="font-medium mb-2">Customer Summary</h4>
+                <div className="space-y-1 text-sm text-muted-foreground">
+                  <p>Code: {customer?.customer_code}</p>
+                  <p>Credit Limit: KES {formData.credit_limit.toLocaleString()}</p>
+                  <p>Payment Terms: {formData.payment_terms === 0 ? 'Cash (Now)' : `${formData.payment_terms} days`}</p>
+                  <p>Status: {formData.is_active ? 'Active' : 'Inactive'}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
+            Cancel
+          </Button>
+          <Button onClick={handleSubmit} disabled={isSubmitting || !formData.name.trim()}>
+            <User className="h-4 w-4 mr-2" />
+            {isSubmitting ? 'Updating...' : 'Update Customer'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}

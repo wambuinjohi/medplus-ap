@@ -1,0 +1,613 @@
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from '@/components/ui/table';
+import {
+  Plus,
+  Search,
+  Filter,
+  Eye,
+  Edit,
+  DollarSign,
+  Download,
+  Send,
+  Calendar,
+  Receipt,
+  FileText,
+  CheckCircle,
+  Trash2,
+  ArrowRightCircle
+} from 'lucide-react';
+import { useProformas, useDeleteProforma, type ProformaWithItems } from '@/hooks/useProforma';
+import { useCompanies } from '@/hooks/useDatabase';
+import { usePermissions } from '@/hooks/usePermissions';
+import { toast } from 'sonner';
+import { CreateProformaModal } from '@/components/proforma/CreateProformaModal';
+import { EditProformaModal } from '@/components/proforma/EditProformaModal';
+import { ViewProformaModal } from '@/components/proforma/ViewProformaModal';
+import { ProformaSetupBanner } from '@/components/proforma/ProformaSetupBanner';
+import { ChangeProformaStatusModal } from '@/components/proforma/ChangeProformaStatusModal';
+import { ConvertProformaToInvoiceModal } from '@/components/proforma/ConvertProformaToInvoiceModal';
+import { downloadInvoicePDF, downloadQuotationPDF } from '@/utils/pdfGenerator';
+import { applyTermsToProformaForPDF } from '@/utils/pdfTermsManager';
+import { exportDataToExcel } from '@/utils/csvExporter';
+import { formatCurrency } from '@/utils/taxCalculation';
+import { ensureProformaSchema } from '@/utils/proformaDatabaseSetup';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { supabase } from '@/integrations/supabase/client';
+
+export default function Proforma() {
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [showStatusModal, setShowStatusModal] = useState(false);
+  const [showConvertModal, setShowConvertModal] = useState(false);
+  const [selectedProforma, setSelectedProforma] = useState<ProformaWithItems | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  // Get company data
+  const { data: companies } = useCompanies();
+  const currentCompany = companies?.[0];
+
+  // Use proper proforma hooks
+  const { data: proformas = [], isLoading, refetch } = useProformas(currentCompany?.id);
+  const deleteProforma = useDeleteProforma();
+  const { canDelete, canEdit, canCreate } = usePermissions();
+
+  const filteredProformas = proformas.filter(proforma =>
+    proforma.proforma_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    proforma.customers?.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'draft':
+        return <Badge variant="secondary">Draft</Badge>;
+      case 'sent':
+        return <Badge variant="default">Sent</Badge>;
+      case 'accepted':
+        return <Badge variant="destructive">Accepted</Badge>;
+      case 'expired':
+        return <Badge variant="outline">Expired</Badge>;
+      case 'converted':
+        return <Badge variant="destructive">Converted</Badge>;
+      default:
+        return <Badge variant="secondary">{status}</Badge>;
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString();
+  };
+
+  const handleView = (proforma: ProformaWithItems) => {
+    setSelectedProforma(proforma);
+    setShowViewModal(true);
+  };
+
+  const handleEdit = (proforma: ProformaWithItems) => {
+    setSelectedProforma(proforma);
+    setShowEditModal(true);
+  };
+
+  const handleDownloadPDF = async (proforma: ProformaWithItems) => {
+    try {
+      // Apply dynamic company terms to proforma
+      const proformaWithTerms = await applyTermsToProformaForPDF(
+        proforma,
+        currentCompany?.id
+      );
+
+      // Fetch applied credit notes for this proforma
+      let appliedCreditNotes = [];
+      try {
+        const { data: allocations } = await supabase
+          .from('credit_note_allocations')
+          .select(`
+            *,
+            credit_notes!credit_note_id (
+              credit_note_number,
+              total_amount,
+              balance
+            )
+          `)
+          .eq('proforma_id', proformaWithTerms.id);
+
+        appliedCreditNotes = (allocations || []).map(a => ({
+          id: a.id,
+          credit_note_number: a.credit_notes?.credit_note_number || '',
+          allocated_amount: a.allocated_amount
+        }));
+      } catch (error) {
+        console.warn('Failed to fetch credit notes for proforma PDF:', error);
+      }
+
+      // Convert proforma to invoice format for PDF generation
+      const invoiceData = {
+        id: proformaWithTerms.id,
+        invoice_number: proformaWithTerms.proforma_number,
+        customers: proformaWithTerms.customers,
+        invoice_date: proformaWithTerms.proforma_date,
+        valid_until: proformaWithTerms.valid_until,
+        total_amount: proformaWithTerms.total_amount,
+        invoice_items: proformaWithTerms.proforma_items || [],
+        subtotal: proformaWithTerms.subtotal,
+        tax_amount: proformaWithTerms.tax_amount,
+        status: proformaWithTerms.status,
+        notes: proformaWithTerms.notes || 'This is a proforma invoice for advance payment.',
+        // Use proforma terms (which now includes dynamic terms if not already set)
+        terms_and_conditions: proformaWithTerms.terms_and_conditions || undefined,
+        paid_amount: 0,
+        balance_due: proformaWithTerms.total_amount,
+        appliedCreditNotes: appliedCreditNotes.length > 0 ? appliedCreditNotes : undefined,
+      };
+
+      // Get current company details for PDF
+      const companyDetails = currentCompany ? {
+        name: currentCompany.name,
+        address: currentCompany.address,
+        city: currentCompany.city,
+        country: currentCompany.country,
+        phone: currentCompany.phone,
+        email: currentCompany.email,
+        tax_number: currentCompany.tax_number,
+        logo_url: currentCompany.logo_url
+      } : undefined;
+
+      await downloadInvoicePDF(invoiceData, 'PROFORMA', companyDetails);
+      toast.success('Proforma PDF downloaded successfully!');
+    } catch (error) {
+      console.error('Error downloading PDF:', error);
+      toast.error('Failed to download PDF');
+    }
+  };
+
+  const handleSendEmail = (proforma: ProformaWithItems) => {
+    const subject = `Proforma Invoice ${proforma.proforma_number}`;
+    const body = `Please find attached proforma invoice ${proforma.proforma_number} for your review.`;
+    const emailUrl = `mailto:${proforma.customers?.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+    window.open(emailUrl);
+    toast.success(`Email client opened with proforma ${proforma.proforma_number}`);
+  };
+
+  const handleCreateInvoice = (proforma: ProformaWithItems) => {
+    setSelectedProforma(proforma);
+    setShowConvertModal(true);
+  };
+
+  const handleConvertSuccess = (invoiceNumber: string) => {
+    refetch();
+    setSelectedProforma(null);
+    setShowViewModal(false);
+    toast.success(`Successfully converted to invoice ${invoiceNumber}`);
+  };
+
+  const handleAcceptProforma = async (proforma: ProformaWithItems) => {
+    setSelectedProforma(proforma);
+    setShowStatusModal(true);
+  };
+
+  const handleDeleteProforma = async (proforma: ProformaWithItems) => {
+    try {
+      await deleteProforma.mutateAsync(proforma.id!);
+      refetch();
+      setSelectedProforma(null);
+    } catch (error) {
+      console.error('Error deleting proforma:', error);
+    }
+  };
+
+  const handleFilter = () => {
+    toast.info('Advanced filter functionality coming soon!');
+  };
+
+  const handleOpenStatusModal = (proforma: ProformaWithItems) => {
+    setSelectedProforma(proforma);
+    setShowStatusModal(true);
+  };
+
+  const handleCreateSuccess = () => {
+    refetch();
+    setShowCreateModal(false);
+  };
+
+  const handleEditSuccess = () => {
+    refetch();
+    setShowEditModal(false);
+  };
+
+  const handleExportToExcel = () => {
+    if (!filteredProformas || filteredProformas.length === 0) {
+      toast.error('No proformas to export');
+      return;
+    }
+
+    const headers = ['Proforma #', 'Customer', 'Date', 'Valid Until', 'Amount', 'Status'];
+    const data = filteredProformas.map(proforma => [
+      proforma.proforma_number,
+      proforma.customers?.name || 'Unknown',
+      new Date(proforma.proforma_date).toLocaleDateString(),
+      new Date(proforma.valid_until).toLocaleDateString(),
+      proforma.total_amount || 0,
+      proforma.status.toUpperCase()
+    ]);
+
+    exportDataToExcel(
+      data,
+      headers,
+      `proformas_list_${new Date().toISOString().split('T')[0]}.xls`,
+      {
+        title: 'Proforma Invoices List',
+        companyInfo: currentCompany
+      }
+    );
+    toast.success('Proforma invoices list exported to Excel');
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Database Setup Banner */}
+      <ProformaSetupBanner />
+
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Proforma Invoices</h1>
+          <p className="text-muted-foreground">
+            Create and manage proforma invoices for prepayment scenarios
+          </p>
+        </div>
+        <div className="flex items-center space-x-3">
+          <Button
+            variant="outline"
+            size="lg"
+            onClick={handleExportToExcel}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Export Excel
+          </Button>
+          <Button
+            variant="default"
+            size="lg"
+            onClick={() => setShowCreateModal(true)}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            New Proforma
+          </Button>
+        </div>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="flex items-center p-6">
+            <div className="flex items-center space-x-2">
+              <FileText className="h-8 w-8 text-primary" />
+              <div>
+                <p className="text-lg font-bold">{proformas.length}</p>
+                <p className="text-xs text-muted-foreground">Total Proformas</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="flex items-center p-6">
+            <div className="flex items-center space-x-2">
+              <Send className="h-8 w-8 text-blue-500" />
+              <div>
+                <p className="text-lg font-bold">
+                  {proformas.filter(p => p.status === 'sent').length}
+                </p>
+                <p className="text-xs text-muted-foreground">Sent</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="flex items-center p-6">
+            <div className="flex items-center space-x-2">
+              <CheckCircle className="h-8 w-8 text-success" />
+              <div>
+                <p className="text-lg font-bold">
+                  {proformas.filter(p => p.status === 'accepted').length}
+                </p>
+                <p className="text-xs text-muted-foreground">Accepted</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="flex items-center p-6">
+            <div className="flex items-center space-x-2">
+              <DollarSign className="h-8 w-8 text-success" />
+              <div>
+                <p className="text-lg font-bold">
+                  {formatCurrency(proformas.reduce((sum, p) => sum + (p.total_amount || 0), 0))}
+                </p>
+                <p className="text-xs text-muted-foreground">Total Value</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Search and Filter */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>Proforma Invoices</CardTitle>
+            <div className="flex items-center space-x-2">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Input
+                  placeholder="Search proformas..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 w-64"
+                />
+              </div>
+              <Button variant="outline" size="sm" onClick={handleFilter}>
+                <Filter className="h-4 w-4 mr-2" />
+                Filter
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  const res = await ensureProformaSchema();
+                  if ((res as any)?.success) {
+                    toast.success('Proforma schema harmonized');
+                  } else {
+                    toast.error(`Schema fix failed: ${(res as any)?.error || 'Unknown error'}`);
+                  }
+                }}
+              >
+                Fix Proforma Schema
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="space-y-4">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="flex items-center space-x-4">
+                  <Skeleton className="h-12 w-12 rounded" />
+                  <div className="space-y-2 flex-1">
+                    <Skeleton className="h-4 w-[200px]" />
+                    <Skeleton className="h-4 w-[160px]" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : filteredProformas.length === 0 ? (
+            <div className="text-center py-8">
+              <FileText className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">No proforma invoices found</h3>
+              <p className="text-muted-foreground mb-4">
+                {searchTerm ? 'No proformas match your search.' : 'Create your first proforma invoice to get started.'}
+              </p>
+              {!searchTerm && (
+                <Button onClick={() => setShowCreateModal(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Proforma
+                </Button>
+              )}
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Proforma #</TableHead>
+                  <TableHead>Customer</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Valid Until</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredProformas.map((proforma) => (
+                  <TableRow key={proforma.id}>
+                    <TableCell className="font-medium">
+                      {proforma.proforma_number}
+                    </TableCell>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">{proforma.customers?.name}</div>
+                        {proforma.customers?.email && (
+                          <div className="text-sm text-muted-foreground">
+                            {proforma.customers.email}
+                          </div>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center">
+                        <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
+                        {formatDate(proforma.proforma_date)}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center">
+                        <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
+                        {formatDate(proforma.valid_until)}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center font-medium">
+                        <DollarSign className="h-4 w-4 mr-1" />
+                        {formatCurrency(proforma.total_amount)}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {getStatusBadge(proforma.status)}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center space-x-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleView(proforma)}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEdit(proforma)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDownloadPDF(proforma)}
+                        >
+                          <Download className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleSendEmail(proforma)}
+                          disabled={!proforma.customers?.email}
+                        >
+                          <Send className="h-4 w-4" />
+                        </Button>
+                        {proforma.status === 'sent' && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleAcceptProforma(proforma)}
+                          >
+                            <CheckCircle className="h-4 w-4" />
+                          </Button>
+                        )}
+                        {proforma.status !== 'converted' && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleCreateInvoice(proforma)}
+                            title="Convert to Invoice"
+                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                          >
+                            <Receipt className="h-4 w-4" />
+                          </Button>
+                        )}
+                        {proforma.status !== 'converted' && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleOpenStatusModal(proforma)}
+                            title="Change Status"
+                          >
+                            <ArrowRightCircle className="h-4 w-4" />
+                          </Button>
+                        )}
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              title={!canDelete('proforma') ? 'You do not have permission to delete proformas' : 'Delete proforma'}
+                              disabled={!canDelete('proforma')}
+                              className={`${canDelete('proforma') ? 'text-destructive hover:bg-destructive/10' : 'text-muted-foreground/50 cursor-not-allowed'}`}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </PopoverTrigger>
+                          {canDelete('proforma') && (
+                            <PopoverContent className="w-48">
+                              <div className="text-sm mb-2">Delete proforma {proforma.proforma_number}?</div>
+                              <div className="flex justify-end space-x-2">
+                                <Button variant="ghost" size="sm" onClick={() => {}}>
+                                  Cancel
+                                </Button>
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={async () => {
+                                    try {
+                                      await deleteProforma.mutateAsync(proforma.id!);
+                                      refetch();
+                                      toast.success('Proforma deleted');
+                                    } catch (e) {
+                                      console.error('Delete failed:', e);
+                                      toast.error('Failed to delete proforma');
+                                    }
+                                  }}
+                                >
+                                  Delete
+                                </Button>
+                              </div>
+                            </PopoverContent>
+                          )}
+                        </Popover>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Modals */}
+      <CreateProformaModal
+        open={showCreateModal}
+        onOpenChange={setShowCreateModal}
+        onSuccess={handleCreateSuccess}
+        companyId={currentCompany?.id}
+      />
+
+      <EditProformaModal
+        open={showEditModal}
+        onOpenChange={setShowEditModal}
+        proforma={selectedProforma}
+        onSuccess={handleEditSuccess}
+        companyId={currentCompany?.id}
+      />
+
+      <ViewProformaModal
+        open={showViewModal}
+        onOpenChange={setShowViewModal}
+        proforma={selectedProforma}
+        onDownloadPDF={handleDownloadPDF}
+        onSendEmail={handleSendEmail}
+        onCreateInvoice={handleCreateInvoice}
+      />
+
+      <ChangeProformaStatusModal
+        open={showStatusModal}
+        onOpenChange={setShowStatusModal}
+        proformaId={selectedProforma?.id || ''}
+        currentStatus={selectedProforma?.status || ''}
+        proformaNumber={selectedProforma?.proforma_number || ''}
+      />
+
+      <ConvertProformaToInvoiceModal
+        open={showConvertModal}
+        onOpenChange={setShowConvertModal}
+        proformaId={selectedProforma?.id || ''}
+        proformaNumber={selectedProforma?.proforma_number || ''}
+        onSuccess={handleConvertSuccess}
+      />
+
+    </div>
+  );
+}
