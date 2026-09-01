@@ -34,6 +34,7 @@ import { useOptimizedProductSearch, usePopularProducts } from '@/hooks/useOptimi
 import { useUpdateQuotationWithItems } from '@/hooks/useQuotationItems';
 import { toast } from 'sonner';
 import { getTermsAndConditions } from '@/utils/termsManager';
+import { calculateDocumentTotals, calculateInvoiceLineTotal } from '@/utils/taxCalculation';
 
 interface QuotationItem {
   id: string;
@@ -44,6 +45,7 @@ interface QuotationItem {
   unit_price: number;
   discount_percentage: number;
   discount_before_vat?: number;
+  tax_setting_id?: string | null;
   tax_percentage: number;
   tax_amount: number;
   tax_inclusive: boolean;
@@ -109,8 +111,9 @@ export function EditQuotationModal({ open, onOpenChange, onSuccess, quotation }:
         unit_price: item.unit_price ?? 0,
         discount_percentage: item.discount_percentage ?? 0,
         discount_before_vat: item.discount_before_vat ?? 0,
-        tax_percentage: item.tax_inclusive === true ? (item.tax_percentage ?? 0) : 0,
-        tax_amount: item.tax_inclusive === true ? (item.tax_amount ?? 0) : 0,
+        tax_setting_id: item.tax_setting_id ?? null,
+        tax_percentage: item.tax_percentage ?? 0,
+        tax_amount: item.tax_amount ?? 0,
         tax_inclusive: item.tax_inclusive === true,
         line_total: item.line_total ?? 0,
         batch_no: item.batch_no || '',
@@ -118,38 +121,22 @@ export function EditQuotationModal({ open, onOpenChange, onSuccess, quotation }:
       }));
 
       setItems(quotationItems.map((item: QuotationItem) => {
-        const normalizedTaxPercentage = item.tax_inclusive ? item.tax_percentage : 0;
-        const { lineTotal, taxAmount } = calculateLineTotal(item, undefined, undefined, undefined, normalizedTaxPercentage, item.tax_inclusive);
-        return { ...item, tax_percentage: normalizedTaxPercentage, tax_amount: taxAmount, line_total: lineTotal };
+        const { lineTotal, taxAmount } = calculateLineTotal(item);
+        return { ...item, tax_amount: taxAmount, line_total: lineTotal };
       }));
     }
   }, [quotation, open]);
 
   const calculateLineTotal = (item: QuotationItem, quantity?: number, unitPrice?: number, discountPercentage?: number, taxPercentage?: number, taxInclusive?: boolean) => {
-    const qty = quantity ?? item.quantity;
-    const price = unitPrice ?? item.unit_price;
-    const discount = discountPercentage ?? item.discount_percentage;
-    const inclusive = taxInclusive ?? item.tax_inclusive;
-    const tax = inclusive ? (taxPercentage ?? item.tax_percentage) : 0;
+    const result = calculateInvoiceLineTotal(item, {
+      quantity,
+      unit_price: unitPrice,
+      discount_percentage: discountPercentage,
+      tax_percentage: taxPercentage,
+      tax_inclusive: taxInclusive,
+    });
 
-    const subtotal = qty * price;
-    const discountAmount = subtotal * (discount / 100);
-    const afterDiscount = subtotal - discountAmount;
-
-    let taxAmount = 0;
-    let lineTotal = 0;
-
-    if (tax === 0) {
-      // No VAT applied
-      lineTotal = afterDiscount;
-      taxAmount = 0;
-    } else {
-      // Both inclusive and exclusive now add VAT on top
-      taxAmount = afterDiscount * (tax / 100);
-      lineTotal = afterDiscount + taxAmount;
-    }
-
-    return { lineTotal, taxAmount };
+    return { lineTotal: result.lineTotal, taxAmount: result.taxAmount };
   };
 
   const updateItemQuantity = (itemId: string, quantity: number) => {
@@ -180,9 +167,8 @@ export function EditQuotationModal({ open, onOpenChange, onSuccess, quotation }:
   const updateItemVAT = (itemId: string, vatPercentage: number) => {
     setItems(items.map(item => {
       if (item.id === itemId) {
-        const normalizedTaxPercentage = item.tax_inclusive ? vatPercentage : 0;
-        const { lineTotal, taxAmount } = calculateLineTotal(item, undefined, undefined, undefined, normalizedTaxPercentage);
-        return { ...item, tax_percentage: normalizedTaxPercentage, line_total: lineTotal, tax_amount: taxAmount };
+        const { lineTotal, taxAmount } = calculateLineTotal(item, undefined, undefined, undefined, vatPercentage);
+        return { ...item, tax_percentage: vatPercentage, line_total: lineTotal, tax_amount: taxAmount };
       }
       return item;
     }));
@@ -191,7 +177,7 @@ export function EditQuotationModal({ open, onOpenChange, onSuccess, quotation }:
   const updateItemVATInclusive = (itemId: string, vatInclusive: boolean) => {
     setItems(items.map(item => {
       if (item.id === itemId) {
-        const newVatPercentage = vatInclusive ? (item.tax_percentage || defaultTaxRate) : 0;
+        const newVatPercentage = vatInclusive ? (item.tax_percentage || defaultTaxRate) : item.tax_percentage;
         const { lineTotal, taxAmount } = calculateLineTotal(item, undefined, undefined, undefined, newVatPercentage, vatInclusive);
         return { ...item, tax_inclusive: vatInclusive, tax_percentage: newVatPercentage, line_total: lineTotal, tax_amount: taxAmount };
       }
@@ -216,6 +202,7 @@ export function EditQuotationModal({ open, onOpenChange, onSuccess, quotation }:
       quantity: 1,
       unit_price: product.selling_price,
       discount_percentage: 0,
+      tax_setting_id: null,
       tax_percentage: 0,
       tax_amount: 0,
       tax_inclusive: false,
@@ -259,14 +246,10 @@ export function EditQuotationModal({ open, onOpenChange, onSuccess, quotation }:
     }).format(amount);
   };
 
-  const subtotal = items.reduce((sum, item) => {
-    // Always use base amount for subtotal (unit price × quantity × discount)
-    // VAT is calculated separately and added for exclusive, or extracted for inclusive
-    const itemSubtotal = (item.quantity * item.unit_price) * (1 - item.discount_percentage / 100);
-    return sum + itemSubtotal;
-  }, 0);
-  const taxAmount = items.reduce((sum, item) => sum + (item.tax_amount || 0), 0);
-  const totalAmount = items.reduce((sum, item) => sum + item.line_total, 0);
+  const totals = calculateDocumentTotals(items);
+  const subtotal = totals.subtotal;
+  const taxAmount = totals.tax_total;
+  const totalAmount = totals.total_amount;
 
   const handleSubmit = async () => {
     if (!selectedCustomerId) {

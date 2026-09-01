@@ -4,22 +4,77 @@ import { parseErrorMessageWithCodes } from '@/utils/errorHelpers';
 import { toast } from 'sonner';
 
 export interface QuotationItem {
-  quotation_id: string;
-  product_id?: string;
+  quotation_id?: string;
+  product_id?: string | null;
   description: string;
   quantity: number;
   unit_price: number;
   discount_percentage?: number;
   discount_before_vat?: number;
-  tax_setting_id?: string;
+  tax_setting_id?: string | null;
   tax_percentage?: number;
   tax_amount?: number;
   tax_inclusive?: boolean;
   line_total: number;
   sort_order?: number;
-  batch_no?: string;
-  expiry_date?: string;
+  batch_no?: string | null;
+  expiry_date?: string | null;
 }
+
+export interface QuotationUpdatePayload {
+  customer_id: string;
+  quotation_date: string | null;
+  valid_until: string | null;
+  status: string;
+  subtotal: number;
+  tax_amount: number;
+  total_amount: number;
+  notes: string | null;
+  terms_and_conditions: string | null;
+  batch_no?: string | null;
+  expiry_date?: string | null;
+}
+
+export interface UpdateQuotationWithItemsInput {
+  quotationId: string;
+  quotation: QuotationUpdatePayload;
+  items: QuotationItem[];
+}
+
+export interface QuotationItemRpcPayload {
+  product_id: string | null;
+  description: string;
+  quantity: number;
+  unit_price: number;
+  discount_percentage: number;
+  discount_before_vat: number;
+  tax_setting_id: string | null;
+  tax_percentage: number;
+  tax_amount: number;
+  tax_inclusive: boolean;
+  line_total: number;
+  sort_order: number;
+  batch_no: string;
+  expiry_date: string | null;
+}
+
+export const mapQuotationItemsForRpc = (items: QuotationItem[]): QuotationItemRpcPayload[] =>
+  items.map((item, index) => ({
+    product_id: item.product_id || null,
+    description: item.description,
+    quantity: item.quantity,
+    unit_price: item.unit_price,
+    discount_percentage: item.discount_percentage ?? 0,
+    discount_before_vat: item.discount_before_vat ?? 0,
+    tax_setting_id: item.tax_setting_id || null,
+    tax_percentage: item.tax_percentage ?? 0,
+    tax_amount: item.tax_amount ?? 0,
+    tax_inclusive: item.tax_inclusive ?? false,
+    line_total: item.line_total,
+    sort_order: index + 1,
+    batch_no: item.batch_no || 'N/A',
+    expiry_date: item.expiry_date || null,
+  }));
 
 export interface InvoiceItem {
   invoice_id: string;
@@ -135,22 +190,7 @@ export const useCreateQuotationWithItems = () => {
   
   return useMutation({
     mutationFn: async ({ quotation, items }: { quotation: any; items: QuotationItem[] }) => {
-      const quotationItems = items.map((item, index) => ({
-        product_id: item.product_id || null,
-        description: item.description,
-        quantity: item.quantity,
-        unit_price: item.unit_price,
-        discount_percentage: item.discount_percentage ?? 0,
-        discount_before_vat: item.discount_before_vat ?? 0,
-        tax_setting_id: item.tax_setting_id || null,
-        tax_percentage: item.tax_inclusive ? (item.tax_percentage ?? 0) : 0,
-        tax_amount: item.tax_inclusive ? (item.tax_amount ?? 0) : 0,
-        tax_inclusive: item.tax_inclusive ?? false,
-        line_total: item.line_total,
-        sort_order: index + 1,
-        batch_no: item.batch_no || 'N/A',
-        expiry_date: item.expiry_date || null,
-      }));
+      const quotationItems = mapQuotationItemsForRpc(items);
 
       const { data, error } = await supabase.rpc('create_quotation_with_items_atomic', {
         p_quotation: quotation,
@@ -171,23 +211,8 @@ export const useUpdateQuotationWithItems = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ quotationId, quotation, items }: { quotationId: string; quotation: any; items: QuotationItem[] }) => {
-      const quotationItems = items.map((item, index) => ({
-        product_id: item.product_id || null,
-        description: item.description,
-        quantity: item.quantity,
-        unit_price: item.unit_price,
-        discount_percentage: item.discount_percentage ?? 0,
-        discount_before_vat: item.discount_before_vat ?? 0,
-        tax_setting_id: item.tax_setting_id || null,
-        tax_percentage: item.tax_inclusive ? (item.tax_percentage ?? 0) : 0,
-        tax_amount: item.tax_inclusive ? (item.tax_amount ?? 0) : 0,
-        tax_inclusive: item.tax_inclusive ?? false,
-        line_total: item.line_total,
-        sort_order: index + 1,
-        batch_no: item.batch_no || 'N/A',
-        expiry_date: item.expiry_date || null,
-      }));
+    mutationFn: async ({ quotationId, quotation, items }: UpdateQuotationWithItemsInput) => {
+      const quotationItems = mapQuotationItemsForRpc(items);
 
       const { data, error } = await supabase.rpc('update_quotation_with_items_atomic', {
         p_quotation_id: quotationId,
