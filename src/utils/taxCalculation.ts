@@ -107,7 +107,7 @@ export function calculateModalLineTotal(item: {
     quantity: item.quantity,
     unit_price: item.unit_price,
     discount_percentage: item.discount_before_vat ?? 0,
-    tax_percentage: item.tax_percentage,
+    tax_percentage: item.tax_inclusive ? item.tax_percentage : 0,
     tax_inclusive: item.tax_inclusive,
   });
   return {
