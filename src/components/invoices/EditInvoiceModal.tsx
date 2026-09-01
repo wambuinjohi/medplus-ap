@@ -36,6 +36,7 @@ import { useCustomerCreditStatus } from '@/hooks/useCustomerCreditStatus';
 import { useCurrentCompany } from '@/contexts/CompanyContext';
 import { toast } from 'sonner';
 import { getTermsAndConditions } from '@/utils/termsManager';
+import { calculateInvoiceLineTotal, calculateInvoiceTotals } from '@/utils/taxCalculation';
 
 interface InvoiceItem {
   id: string;
@@ -110,6 +111,30 @@ export function EditInvoiceModal({ open, onOpenChange, onSuccess, invoice }: Edi
         batch_no: item.batch_no || '',
         expiry_date: item.expiry_date || null,
       }));
+      const invoiceItems = (invoice.invoice_items || []).map((item: any, index: number) => {
+        const normalizedItem: InvoiceItem = {
+          id: item.id || `existing-${index}`,
+          product_id: item.product_id || '',
+          product_name: item.products?.name || 'Unknown Product',
+          description: item.description || '',
+          quantity: Number(item.quantity ?? 0),
+          unit_price: Number(item.unit_price ?? 0),
+          discount_percentage: Number(item.discount_percentage ?? 0),
+          discount_before_vat: Number(item.discount_before_vat ?? 0),
+          tax_percentage: Number(item.tax_percentage ?? 0),
+          tax_amount: 0,
+          tax_inclusive: Boolean(item.tax_inclusive),
+          line_total: 0,
+          batch_no: item.batch_no || '',
+          expiry_date: item.expiry_date || null,
+        };
+        const calculated = calculateInvoiceLineTotal(normalizedItem);
+        return {
+          ...normalizedItem,
+          tax_amount: calculated.taxAmount,
+          line_total: calculated.lineTotal,
+        };
+      });
 
       setItems(invoiceItems.map((item: InvoiceItem) => {
         const normalizedTaxPercentage = item.tax_inclusive ? item.tax_percentage : 0;
@@ -149,6 +174,24 @@ export function EditInvoiceModal({ open, onOpenChange, onSuccess, invoice }: Edi
     }
 
     return { lineTotal, taxAmount };
+  const calculateLineTotal = (
+    item: InvoiceItem,
+    quantity?: number,
+    unitPrice?: number,
+    discountPercentage?: number,
+    taxPercentage?: number,
+    taxInclusive?: boolean,
+    discountBeforeVat?: number,
+  ) => {
+    const result = calculateInvoiceLineTotal(item, {
+      quantity,
+      unit_price: unitPrice,
+      discount_percentage: discountPercentage,
+      tax_percentage: taxPercentage,
+      tax_inclusive: taxInclusive,
+      discount_before_vat: discountBeforeVat,
+    });
+    return { lineTotal: result.lineTotal, taxAmount: result.taxAmount };
   };
 
   const addItem = (product: any) => {
@@ -223,6 +266,7 @@ export function EditInvoiceModal({ open, onOpenChange, onSuccess, invoice }: Edi
     setItems(items.map(item => {
       if (item.id === itemId) {
         const { lineTotal, taxAmount } = calculateLineTotal(item, undefined, undefined, discountBeforeVat);
+        const { lineTotal, taxAmount } = calculateLineTotal(item, undefined, undefined, undefined, undefined, undefined, discountBeforeVat);
         return { ...item, discount_before_vat: discountBeforeVat, line_total: lineTotal, tax_amount: taxAmount };
       }
       return item;
@@ -282,8 +326,20 @@ export function EditInvoiceModal({ open, onOpenChange, onSuccess, invoice }: Edi
   const taxAmount = items.reduce((sum, item) => sum + (item.tax_amount || 0), 0);
   const totalAmount = items.reduce((sum, item) => sum + item.line_total, 0);
   const balanceDue = totalAmount - (invoice?.paid_amount || 0);
+  const calculatedTotals = calculateInvoiceTotals(items);
+  const subtotal = calculatedTotals.subtotal;
+  const taxAmount = calculatedTotals.taxAmount;
+  const totalAmount = calculatedTotals.totalAmount;
+  const balanceDue = Math.max(0, totalAmount - Number(invoice?.paid_amount ?? 0));
+  const canEditInvoice = invoice?.status !== 'paid' && !(
+    Number(invoice?.paid_amount ?? 0) > 0 && Number(invoice?.balance_due ?? 0) <= 0
+  );
 
   const handleSubmit = async () => {
+    if (!canEditInvoice) {
+      toast.error('Paid invoices cannot be edited');
+      return;
+    }
     if (!selectedCustomerId) {
       toast.error('Please select a customer');
       return;
@@ -702,7 +758,7 @@ export function EditInvoiceModal({ open, onOpenChange, onSuccess, invoice }: Edi
             return (
               <Button
                 onClick={handleSubmit}
-                disabled={isSubmitting || !selectedCustomerId || items.length === 0 || creditExceeded}
+                disabled={isSubmitting || !canEditInvoice || !selectedCustomerId || items.length === 0 || creditExceeded}
                 variant={creditExceeded ? 'destructive' : 'default'}
               >
                 {creditExceeded ? (

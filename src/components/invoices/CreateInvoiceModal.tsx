@@ -154,7 +154,7 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
     setSearchProduct('');
 
     // Show success message with calculated totals
-    toast.success(`Added "${product.name}" - ${formatCurrency(lineTotal)} (incl. tax)`);
+    toast.success(`Added "${product.name}" - ${formatCurrency(lineTotal)}`);
   };
 
   const calculateLineTotal = (item: InvoiceItem, quantity?: number, unitPrice?: number, discountPercentage?: number, taxPercentage?: number, taxInclusive?: boolean) => {
@@ -205,17 +205,6 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
       if (item.id === itemId) {
         const { lineTotal, taxAmount } = calculateLineTotal(item, undefined, unitPrice);
         return { ...item, unit_price: unitPrice, line_total: lineTotal, tax_amount: taxAmount };
-      }
-      return item;
-    }));
-  };
-
-  const updateItemVAT = (itemId: string, vatPercentage: number) => {
-    setItems(items.map(item => {
-      if (item.id === itemId) {
-        const normalizedTaxPercentage = item.tax_inclusive ? vatPercentage : 0;
-        const { lineTotal, taxAmount } = calculateLineTotal(item, undefined, undefined, undefined, normalizedTaxPercentage);
-        return { ...item, tax_percentage: normalizedTaxPercentage, line_total: lineTotal, tax_amount: taxAmount };
       }
       return item;
     }));
@@ -274,19 +263,12 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
     }).format(amount);
   };
 
-  const subtotal = items.reduce((sum, item) => {
-    // Calculate subtotal as base amount minus discounts
-    const baseAmount = item.quantity * item.unit_price;
-    const discountAmount = baseAmount * ((item.discount_before_vat || 0) / 100);
-    return sum + (baseAmount - discountAmount);
-  }, 0);
-  const totalDiscountAmount = items.reduce((sum, item) => {
-    const baseAmount = item.quantity * item.unit_price;
-    return sum + (baseAmount * ((item.discount_before_vat || 0) / 100));
-  }, 0);
-  const taxAmount = items.reduce((sum, item) => sum + (item.tax_amount || 0), 0);
-  const totalAmount = items.reduce((sum, item) => sum + item.line_total, 0);
-  const balanceDue = totalAmount; // Full amount due initially
+  const calculatedTotals = calculateInvoiceTotals(items);
+  const subtotal = calculatedTotals.subtotal;
+  const totalDiscountAmount = calculatedTotals.discountAmount;
+  const taxAmount = calculatedTotals.taxAmount;
+  const totalAmount = calculatedTotals.totalAmount;
+  const balanceDue = totalAmount;
 
   const handleSubmit = async () => {
     if (!selectedCustomerId) {
@@ -728,7 +710,7 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
                     <TableHead>Product</TableHead>
                     <TableHead>Qty</TableHead>
                     <TableHead>Unit Price</TableHead>
-                    <TableHead>Disc. Before VAT (%)</TableHead>
+                    <TableHead>Disc. Before VAT</TableHead>
                     <TableHead>VAT %</TableHead>
                     <TableHead>VAT Incl.</TableHead>
                     <TableHead>Batch No</TableHead>

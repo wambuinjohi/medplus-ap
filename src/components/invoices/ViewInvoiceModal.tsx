@@ -105,6 +105,10 @@ export function ViewInvoiceModal({
     }
   };
 
+  const canEdit = invoice.status !== 'paid' && !(
+    Number(invoice.paid_amount ?? 0) > 0 && Number(invoice.balance_due ?? 0) <= 0
+  );
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-KE', {
       style: 'currency',
@@ -161,7 +165,7 @@ export function ViewInvoiceModal({
             </div>
             
             <div className="flex space-x-2">
-              {invoice.status === 'draft' && (
+              {canEdit && invoice.status === 'draft' && (
                 <Button variant="outline" size="sm" onClick={onEdit}>
                   <Edit className="h-4 w-4 mr-2" />
                   Edit

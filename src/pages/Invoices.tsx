@@ -77,6 +77,7 @@ interface Invoice {
   paid_amount: number;
   balance_due: number;
   status: 'draft' | 'sent' | 'paid' | 'partial' | 'overdue';
+  affects_inventory?: boolean;
   invoice_items?: any[];
   created_by?: string;
   created_by_profile?: { full_name?: string } | null;

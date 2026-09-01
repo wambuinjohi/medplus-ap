@@ -638,144 +638,34 @@ export const useUpdateInvoiceWithItems = () => {
 
   return useMutation({
     mutationFn: async ({ invoiceId, invoice, items }: { invoiceId: string; invoice: any; items: InvoiceItem[] }) => {
-      // First, reverse any existing stock movements for this invoice
-      const { data: existingMovements } = await supabase
-        .from('stock_movements')
-        .select('*')
-        .eq('reference_id', invoiceId)
-        .eq('reference_type', 'INVOICE');
+      const invoiceItems = items.map((item, index) => ({
+        product_id: item.product_id || null,
+        description: item.description,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        discount_percentage: item.discount_percentage || 0,
+        discount_before_vat: item.discount_before_vat || 0,
+        tax_percentage: item.tax_percentage || 0,
+        tax_amount: item.tax_amount || 0,
+        tax_inclusive: item.tax_inclusive || false,
+        line_total: item.line_total,
+        sort_order: index + 1,
+        batch_no: item.batch_no || 'N/A',
+        expiry_date: item.expiry_date || null,
+      }));
 
-      if (existingMovements && existingMovements.length > 0) {
-        // Create reverse movements
-        const reverseMovements = existingMovements.map(movement => ({
-          company_id: movement.company_id,
-          product_id: movement.product_id,
-          movement_type: movement.movement_type === 'OUT' ? 'IN' : 'OUT' as const,
-          reference_type: 'ADJUSTMENT' as const,
-          reference_id: invoiceId,
-          quantity: -movement.quantity,
-          notes: `Reversal for updated invoice ${invoice.invoice_number}`
-        }));
+      const { data, error } = await supabase.rpc('update_invoice_with_items_atomic', {
+        p_invoice_id: invoiceId,
+        p_invoice: invoice,
+        p_items: invoiceItems,
+      });
 
-        await supabase.from('stock_movements').insert(reverseMovements);
-
-        // Update product stock quantities in parallel for reverse movements
-        const reverseUpdatePromises = reverseMovements.map(movement =>
-          supabase.rpc('update_product_stock', {
-            product_uuid: movement.product_id,
-            movement_type: movement.movement_type,
-            quantity: Math.abs(movement.quantity)
-          })
-        );
-
-        const reverseUpdateResults = await Promise.allSettled(reverseUpdatePromises);
-
-        // Log any failed reverse stock updates
-        reverseUpdateResults.forEach((result, index) => {
-          if (result.status === 'rejected') {
-            const msg = parseErrorMessageWithCodes(result.reason || result, 'reverse stock update');
-            console.error(`Failed to reverse stock for product: ${reverseMovements[index].product_id} - ${msg}`, result.reason || result);
-          } else if (result.value && result.value.error) {
-            const msg = parseErrorMessageWithCodes(result.value.error, 'reverse stock update');
-            console.error(`Reverse stock update error for product: ${reverseMovements[index].product_id} - ${msg}`, result.value.error);
-          }
-        });
-      }
-
-      // Update the invoice
-      const { data: invoiceData, error: invoiceError } = await supabase
-        .from('invoices')
-        .update(invoice)
-        .eq('id', invoiceId)
-        .select()
-        .single();
-
-      if (invoiceError) throw invoiceError;
-
-      // Delete existing invoice items
-      const { error: deleteError } = await supabase
-        .from('invoice_items')
-        .delete()
-        .eq('invoice_id', invoiceId);
-
-      if (deleteError) throw deleteError;
-
-      // Create new invoice items
-      if (items.length > 0) {
-        const invoiceItems = items.map((item, index) => ({
-          ...item,
-          invoice_id: invoiceId,
-          sort_order: index + 1,
-          batch_no: item.batch_no || 'N/A',
-          expiry_date: item.expiry_date
-        }));
-
-        let itemsError: any = null;
-        {
-          const res = await supabase
-            .from('invoice_items')
-            .insert(invoiceItems);
-          itemsError = res.error as any;
-        }
-
-        // Fallback: remove discount_before_vat if schema doesn't have it
-        if (itemsError && (itemsError.code === 'PGRST204' || String(itemsError.message || '').toLowerCase().includes('discount_before_vat'))) {
-          const minimalItems = invoiceItems.map(({ discount_before_vat, ...rest }) => rest);
-          const retry = await supabase
-            .from('invoice_items')
-            .insert(minimalItems);
-          itemsError = retry.error as any;
-        }
-
-        if (itemsError) throw itemsError;
-
-        // Create new stock movements if affects inventory
-        if (invoice.affects_inventory !== false) {
-          const stockMovements = items
-            .filter(item => item.product_id && item.quantity > 0)
-            .map(item => ({
-              company_id: invoice.company_id,
-              product_id: item.product_id!,
-              movement_type: 'OUT' as const,
-              reference_type: 'INVOICE' as const,
-              reference_id: invoiceId,
-              quantity: -item.quantity,
-              cost_per_unit: item.unit_price,
-              notes: `Stock reduction for updated invoice ${invoice.invoice_number}`
-            }));
-
-          if (stockMovements.length > 0) {
-            await supabase.from('stock_movements').insert(stockMovements);
-
-            // Update product stock quantities in parallel for new movements
-            const newStockUpdatePromises = stockMovements.map(movement =>
-              supabase.rpc('update_product_stock', {
-                product_uuid: movement.product_id,
-                movement_type: movement.movement_type,
-                quantity: Math.abs(movement.quantity)
-              })
-            );
-
-            const newStockUpdateResults = await Promise.allSettled(newStockUpdatePromises);
-
-            // Log any failed new stock updates
-            newStockUpdateResults.forEach((result, index) => {
-              if (result.status === 'rejected') {
-                const msg = parseErrorMessageWithCodes(result.reason || result, 'stock update');
-                console.error(`Failed to update stock for product: ${stockMovements[index].product_id} - ${msg}`, result.reason || result);
-              } else if (result.value && result.value.error) {
-                const msg = parseErrorMessageWithCodes(result.value.error, 'stock update');
-                console.error(`Stock update error for product: ${stockMovements[index].product_id} - ${msg}`, result.value.error);
-              }
-            });
-          }
-        }
-      }
-
-      return invoiceData;
+      if (error) throw error;
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['invoices_fixed'] });
       queryClient.invalidateQueries({ queryKey: ['products'] });
       queryClient.invalidateQueries({ queryKey: ['stock_movements'] });
     },

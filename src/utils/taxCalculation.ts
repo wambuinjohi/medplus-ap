@@ -13,6 +13,7 @@ export interface TaxableItem {
   tax_percentage: number;
   tax_inclusive?: boolean;
   discount_percentage?: number;
+  discount_before_vat?: number;
   discount_amount?: number;
 }
 
@@ -38,14 +39,9 @@ export interface DocumentTotals {
 export function calculateItemTax(item: TaxableItem): CalculatedItem {
   const baseAmount = item.quantity * item.unit_price;
   
-  // Calculate discount
-  let discountTotal = 0;
-  if (item.discount_percentage && item.discount_percentage > 0) {
-    discountTotal = baseAmount * (item.discount_percentage / 100);
-  } else if (item.discount_amount && item.discount_amount > 0) {
-    discountTotal = Math.min(item.discount_amount, baseAmount); // Don't allow discount to exceed base amount
-  }
-  
+  const percentageDiscount = baseAmount * Math.max(item.discount_percentage ?? 0, 0) / 100;
+  const fixedDiscount = Math.max(item.discount_before_vat ?? item.discount_amount ?? 0, 0);
+  const discountTotal = Math.min(baseAmount, percentageDiscount + fixedDiscount);
   const taxableAmount = baseAmount - discountTotal;
   
   let taxAmount = 0;
@@ -96,9 +92,68 @@ export function calculateDocumentTotals(items: TaxableItem[]): DocumentTotals {
  * Simple line item calculation for use in invoice/quotation modals.
  * Maps modal field names to the calculateItemTax function.
  */
+export interface InvoiceLineItemInput {
+  quantity: number;
+  unit_price: number;
+  discount_percentage?: number;
+  discount_before_vat?: number;
+  tax_percentage?: number;
+  tax_inclusive?: boolean;
+}
+
+export interface InvoiceLineCalculation {
+  subtotal: number;
+  discountAmount: number;
+  taxableAmount: number;
+  taxAmount: number;
+  lineTotal: number;
+}
+
+export function calculateInvoiceLineTotal(
+  item: InvoiceLineItemInput,
+  overrides: Partial<InvoiceLineItemInput> = {},
+): InvoiceLineCalculation {
+  const result = calculateItemTax({
+    quantity: overrides.quantity ?? item.quantity,
+    unit_price: overrides.unit_price ?? item.unit_price,
+    discount_percentage: overrides.discount_percentage ?? item.discount_percentage,
+    discount_before_vat: overrides.discount_before_vat ?? item.discount_before_vat,
+    tax_percentage: overrides.tax_percentage ?? item.tax_percentage ?? 0,
+    tax_inclusive: overrides.tax_inclusive ?? item.tax_inclusive ?? false,
+  });
+
+  return {
+    subtotal: result.base_amount,
+    discountAmount: result.discount_total,
+    taxableAmount: result.taxable_amount,
+    taxAmount: result.tax_amount,
+    lineTotal: result.line_total,
+  };
+}
+
+export function calculateInvoiceTotals(items: InvoiceLineItemInput[]) {
+  const totals = items.reduce(
+    (result, item) => {
+      const line = calculateInvoiceLineTotal(item);
+      return {
+        subtotal: result.subtotal + line.taxableAmount,
+        discountAmount: result.discountAmount + line.discountAmount,
+        taxAmount: result.taxAmount + line.taxAmount,
+        totalAmount: result.totalAmount + line.lineTotal,
+      };
+    },
+    { subtotal: 0, discountAmount: 0, taxAmount: 0, totalAmount: 0 },
+  );
+
+  return Object.fromEntries(
+    Object.entries(totals).map(([key, value]) => [key, Number(value.toFixed(2))]),
+  ) as typeof totals;
+}
+
 export function calculateModalLineTotal(item: {
   quantity: number;
   unit_price: number;
+  discount_percentage?: number;
   discount_before_vat?: number;
   tax_percentage: number;
   tax_inclusive: boolean;
@@ -110,10 +165,11 @@ export function calculateModalLineTotal(item: {
     tax_percentage: item.tax_inclusive ? item.tax_percentage : 0,
     tax_inclusive: item.tax_inclusive,
   });
+  const result = calculateInvoiceLineTotal(item);
   return {
-    lineTotal: result.line_total,
-    taxAmount: result.tax_amount,
-    discountAmount: result.discount_total,
+    lineTotal: result.lineTotal,
+    taxAmount: result.taxAmount,
+    discountAmount: result.discountAmount,
   };
 }
 
