@@ -30,6 +30,7 @@ import { useOptimizedProductSearch, usePopularProducts } from '@/hooks/useOptimi
 import { useCreateInvoiceWithItems } from '@/hooks/useQuotationItems';
 import { useCustomerCreditStatus } from '@/hooks/useCustomerCreditStatus';
 import { useAuth } from '@/contexts/AuthContext';
+import { calculateModalLineTotal } from '@/utils/taxCalculation';
 import { toast } from 'sonner';
 import { getTermsAndConditions } from '@/utils/termsManager';
 

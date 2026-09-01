@@ -52,13 +52,13 @@ export function calculateItemTax(item: TaxableItem): CalculatedItem {
   let lineTotal = 0;
   
   if (item.tax_inclusive) {
-    // Treat checkbox as "apply tax" on top (prices are tax-exclusive by default)
+    // Price already includes tax — extract tax from the amount
+    lineTotal = taxableAmount;
+    taxAmount = taxableAmount - (taxableAmount / (1 + item.tax_percentage / 100));
+  } else {
+    // Tax is added on top of the discounted amount
     taxAmount = taxableAmount * (item.tax_percentage / 100);
     lineTotal = taxableAmount + taxAmount;
-  } else {
-    // No tax applied (exclusive price without tax)
-    taxAmount = 0;
-    lineTotal = taxableAmount;
   }
   
   return {
@@ -89,6 +89,31 @@ export function calculateDocumentTotals(items: TaxableItem[]): DocumentTotals {
     taxable_amount: parseFloat(taxableAmount.toFixed(2)),
     tax_total: parseFloat(taxTotal.toFixed(2)),
     total_amount: parseFloat(totalAmount.toFixed(2))
+  };
+}
+
+/**
+ * Simple line item calculation for use in invoice/quotation modals.
+ * Maps modal field names to the calculateItemTax function.
+ */
+export function calculateModalLineTotal(item: {
+  quantity: number;
+  unit_price: number;
+  discount_before_vat?: number;
+  tax_percentage: number;
+  tax_inclusive: boolean;
+}): { lineTotal: number; taxAmount: number; discountAmount: number } {
+  const result = calculateItemTax({
+    quantity: item.quantity,
+    unit_price: item.unit_price,
+    discount_percentage: item.discount_before_vat ?? 0,
+    tax_percentage: item.tax_percentage,
+    tax_inclusive: item.tax_inclusive,
+  });
+  return {
+    lineTotal: result.line_total,
+    taxAmount: result.tax_amount,
+    discountAmount: result.discount_total,
   };
 }
 
