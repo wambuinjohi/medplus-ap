@@ -95,22 +95,6 @@ export function EditInvoiceModal({ open, onOpenChange, onSuccess, invoice }: Edi
       setNotes(invoice.notes || '');
       setTermsAndConditions(invoice.terms_and_conditions || getTermsAndConditions());
 
-      const invoiceItems = (invoice.invoice_items || []).map((item: any, index: number) => ({
-        id: item.id || `existing-${index}`,
-        product_id: item.product_id || '',
-        product_name: item.products?.name || 'Unknown Product',
-        description: item.description || '',
-        quantity: item.quantity ?? 0,
-        unit_price: item.unit_price ?? 0,
-        discount_percentage: item.discount_percentage,
-        discount_before_vat: item.discount_before_vat ?? 0,
-        tax_percentage: item.tax_inclusive === true ? (item.tax_percentage ?? 0) : 0,
-        tax_amount: item.tax_inclusive === true ? (item.tax_amount ?? 0) : 0,
-        tax_inclusive: item.tax_inclusive === true,
-        line_total: item.line_total ?? 0,
-        batch_no: item.batch_no || '',
-        expiry_date: item.expiry_date || null,
-      }));
       const invoiceItems = (invoice.invoice_items || []).map((item: any, index: number) => {
         const normalizedItem: InvoiceItem = {
           id: item.id || `existing-${index}`,
@@ -136,11 +120,7 @@ export function EditInvoiceModal({ open, onOpenChange, onSuccess, invoice }: Edi
         };
       });
 
-      setItems(invoiceItems.map((item: InvoiceItem) => {
-        const normalizedTaxPercentage = item.tax_inclusive ? item.tax_percentage : 0;
-        const { lineTotal, taxAmount } = calculateLineTotal(item, undefined, undefined, undefined, normalizedTaxPercentage, item.tax_inclusive);
-        return { ...item, tax_percentage: normalizedTaxPercentage, tax_amount: taxAmount, line_total: lineTotal };
-      }));
+      setItems(invoiceItems);
     }
   }, [invoice, open]);
 
@@ -149,31 +129,6 @@ export function EditInvoiceModal({ open, onOpenChange, onSuccess, invoice }: Edi
     product.product_code.toLowerCase().includes(searchProduct.toLowerCase())
   ) || [];
 
-  const calculateLineTotal = (item: InvoiceItem, quantity?: number, unitPrice?: number, discountPercentage?: number, taxPercentage?: number, taxInclusive?: boolean) => {
-    const qty = quantity ?? item.quantity;
-    const price = unitPrice ?? item.unit_price;
-    const discount = discountPercentage ?? item.discount_before_vat ?? item.discount_percentage ?? 0;
-    const inclusive = taxInclusive ?? item.tax_inclusive;
-    const tax = inclusive ? (taxPercentage ?? item.tax_percentage) : 0;
-
-    const subtotal = qty * price;
-    const discountAmount = subtotal * (discount / 100);
-    const afterDiscount = subtotal - discountAmount;
-
-    let taxAmount = 0;
-    let lineTotal = 0;
-
-    if (tax === 0) {
-      // No VAT applied
-      lineTotal = afterDiscount;
-      taxAmount = 0;
-    } else {
-      // Both inclusive and exclusive now add VAT on top
-      taxAmount = afterDiscount * (tax / 100);
-      lineTotal = afterDiscount + taxAmount;
-    }
-
-    return { lineTotal, taxAmount };
   const calculateLineTotal = (
     item: InvoiceItem,
     quantity?: number,
@@ -265,7 +220,6 @@ export function EditInvoiceModal({ open, onOpenChange, onSuccess, invoice }: Edi
   const updateItemDiscountBeforeVat = (itemId: string, discountBeforeVat: number) => {
     setItems(items.map(item => {
       if (item.id === itemId) {
-        const { lineTotal, taxAmount } = calculateLineTotal(item, undefined, undefined, discountBeforeVat);
         const { lineTotal, taxAmount } = calculateLineTotal(item, undefined, undefined, undefined, undefined, undefined, discountBeforeVat);
         return { ...item, discount_before_vat: discountBeforeVat, line_total: lineTotal, tax_amount: taxAmount };
       }
@@ -316,16 +270,6 @@ export function EditInvoiceModal({ open, onOpenChange, onSuccess, invoice }: Edi
     }).format(amount);
   };
 
-  const subtotal = items.reduce((sum, item) => {
-    // Always use base amount for subtotal (unit price × quantity × discount)
-    // VAT is calculated separately and added for exclusive, or extracted for inclusive
-    const discount = item.discount_before_vat ?? item.discount_percentage ?? 0;
-    const itemSubtotal = (item.quantity * item.unit_price) * (1 - discount / 100);
-    return sum + itemSubtotal;
-  }, 0);
-  const taxAmount = items.reduce((sum, item) => sum + (item.tax_amount || 0), 0);
-  const totalAmount = items.reduce((sum, item) => sum + item.line_total, 0);
-  const balanceDue = totalAmount - (invoice?.paid_amount || 0);
   const calculatedTotals = calculateInvoiceTotals(items);
   const subtotal = calculatedTotals.subtotal;
   const taxAmount = calculatedTotals.taxAmount;

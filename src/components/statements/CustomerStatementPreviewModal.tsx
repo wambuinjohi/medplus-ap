@@ -430,10 +430,10 @@ export default function CustomerStatementPreviewModal({
                       <p className="font-medium">{companies[0].branch_code}</p>
                     </div>
                   )}
-                  {companies[0].paybill_number && (,
+                  {companies[0].paybill_number && (
                     <div>
                       <p className="text-sm text-muted-foreground">Paybill Number</p>
-                      <p className="font-medium">{companies[0].paybill_number}</p>,
+                      <p className="font-medium">{companies[0].paybill_number}</p>
                     </div>
                   )}
                 </div>
