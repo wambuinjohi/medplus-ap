@@ -135,69 +135,30 @@ export const useCreateQuotationWithItems = () => {
   
   return useMutation({
     mutationFn: async ({ quotation, items }: { quotation: any; items: QuotationItem[] }) => {
-      // Ensure created_by references the authenticated user to satisfy FK constraints
-      const cleanQuotation = { ...quotation } as any;
-      try {
-        const { data: userData } = await supabase.auth.getUser();
-        const authUserId = userData?.user?.id || null;
-        if (authUserId) {
-          cleanQuotation.created_by = authUserId;
-        } else if (typeof cleanQuotation.created_by === 'undefined') {
-          cleanQuotation.created_by = null;
-        }
-      } catch {
-        if (typeof cleanQuotation.created_by === 'undefined') {
-          cleanQuotation.created_by = null;
-        }
-      }
+      const quotationItems = items.map((item, index) => ({
+        product_id: item.product_id || null,
+        description: item.description,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        discount_percentage: item.discount_percentage ?? 0,
+        discount_before_vat: item.discount_before_vat ?? 0,
+        tax_setting_id: item.tax_setting_id || null,
+        tax_percentage: item.tax_inclusive ? (item.tax_percentage ?? 0) : 0,
+        tax_amount: item.tax_inclusive ? (item.tax_amount ?? 0) : 0,
+        tax_inclusive: item.tax_inclusive ?? false,
+        line_total: item.line_total,
+        sort_order: index + 1,
+        batch_no: item.batch_no || 'N/A',
+        expiry_date: item.expiry_date || null,
+      }));
 
-      // First create the quotation
-      let quotationDataRes;
-      let quotationErrorRes;
-      {
-        const { data, error } = await supabase
-          .from('quotations')
-          .insert([cleanQuotation])
-          .select()
-          .single();
-        quotationDataRes = data; quotationErrorRes = error as any;
-      }
+      const { data, error } = await supabase.rpc('create_quotation_with_items_atomic', {
+        p_quotation: quotation,
+        p_items: quotationItems,
+      });
 
-      // Fallback: if FK violation on created_by, retry with created_by = null
-      if (quotationErrorRes && quotationErrorRes.code === '23503' && String(quotationErrorRes.message || '').includes('created_by')) {
-        const retryPayload = { ...cleanQuotation, created_by: null };
-        const { data: retryData, error: retryError } = await supabase
-          .from('quotations')
-          .insert([retryPayload])
-          .select()
-          .single();
-        quotationDataRes = retryData; quotationErrorRes = retryError as any;
-      }
-
-      if (quotationErrorRes) throw quotationErrorRes;
-      const quotationData = quotationDataRes;
-
-      // Then create the quotation items if any
-      if (items.length > 0) {
-        const quotationItems = items.map((item, index) => ({
-          ...item,
-          quotation_id: quotationData.id,
-          discount_percentage: item.discount_percentage ?? 0,
-          discount_before_vat: item.discount_before_vat ?? 0,
-          tax_percentage: item.tax_inclusive ? (item.tax_percentage ?? 0) : 0,
-          tax_amount: item.tax_inclusive ? (item.tax_amount ?? 0) : 0,
-          tax_inclusive: item.tax_inclusive ?? false,
-          sort_order: index + 1
-        }));
-        
-        const { error: itemsError } = await supabase
-          .from('quotation_items')
-          .insert(quotationItems);
-        
-        if (itemsError) throw itemsError;
-      }
-      
-      return quotationData;
+      if (error) throw error;
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quotations'] });
@@ -211,63 +172,31 @@ export const useUpdateQuotationWithItems = () => {
 
   return useMutation({
     mutationFn: async ({ quotationId, quotation, items }: { quotationId: string; quotation: any; items: QuotationItem[] }) => {
-      // Update the quotation
-      const { data: updatedQuotation, error: updateError } = await supabase
-        .from('quotations')
-        .update({
-          customer_id: quotation.customer_id,
-          quotation_date: quotation.quotation_date,
-          valid_until: quotation.valid_until,
-          status: quotation.status || 'draft',
-          notes: quotation.notes,
-          terms_and_conditions: quotation.terms_and_conditions,
-          subtotal: quotation.subtotal,
-          tax_amount: quotation.tax_amount,
-          total_amount: quotation.total_amount,
-          batch_no: quotation.batch_no || 'N/A',
-          expiry_date: quotation.expiry_date,
-        })
-        .eq('id', quotationId)
-        .select()
-        .single();
+      const quotationItems = items.map((item, index) => ({
+        product_id: item.product_id || null,
+        description: item.description,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        discount_percentage: item.discount_percentage ?? 0,
+        discount_before_vat: item.discount_before_vat ?? 0,
+        tax_setting_id: item.tax_setting_id || null,
+        tax_percentage: item.tax_inclusive ? (item.tax_percentage ?? 0) : 0,
+        tax_amount: item.tax_inclusive ? (item.tax_amount ?? 0) : 0,
+        tax_inclusive: item.tax_inclusive ?? false,
+        line_total: item.line_total,
+        sort_order: index + 1,
+        batch_no: item.batch_no || 'N/A',
+        expiry_date: item.expiry_date || null,
+      }));
 
-      if (updateError) throw updateError;
+      const { data, error } = await supabase.rpc('update_quotation_with_items_atomic', {
+        p_quotation_id: quotationId,
+        p_quotation: quotation,
+        p_items: quotationItems,
+      });
 
-      // Delete existing quotation items
-      const { error: deleteError } = await supabase
-        .from('quotation_items')
-        .delete()
-        .eq('quotation_id', quotationId);
-
-      if (deleteError) throw deleteError;
-
-      // Insert new quotation items
-      if (items.length > 0) {
-        const quotationItems = items.map((item, index) => ({
-          quotation_id: quotationId,
-          product_id: item.product_id,
-          description: item.description,
-          quantity: item.quantity,
-          unit_price: item.unit_price,
-          discount_percentage: item.discount_percentage ?? 0,
-          discount_before_vat: item.discount_before_vat ?? 0,
-          tax_percentage: item.tax_inclusive ? (item.tax_percentage ?? 0) : 0,
-          tax_amount: item.tax_inclusive ? (item.tax_amount ?? 0) : 0,
-          tax_inclusive: item.tax_inclusive ?? false,
-          line_total: item.line_total,
-          sort_order: index + 1,
-          batch_no: item.batch_no || 'N/A',
-          expiry_date: item.expiry_date
-        }));
-
-        const { error: itemsError } = await supabase
-          .from('quotation_items')
-          .insert(quotationItems);
-
-        if (itemsError) throw itemsError;
-      }
-
-      return updatedQuotation;
+      if (error) throw error;
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quotations'] });

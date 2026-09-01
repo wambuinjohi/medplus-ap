@@ -1847,7 +1847,7 @@ export const useQuotations = (companyId?: string) => {
           .in('id', customerIds) : { data: [] };
 
         // Step 3: Get quotation items separately
-        const { data: quotationItems } = await supabase
+        const { data: quotationItems, error: quotationItemsError } = await supabase
           .from('quotation_items')
           .select(`
             id,
@@ -1857,6 +1857,7 @@ export const useQuotations = (companyId?: string) => {
             quantity,
             unit_price,
             discount_percentage,
+            discount_before_vat,
             tax_percentage,
             tax_amount,
             tax_inclusive,
@@ -1866,6 +1867,8 @@ export const useQuotations = (companyId?: string) => {
             expiry_date
           `)
           .in('quotation_id', quotations.map(quot => quot.id));
+
+        if (quotationItemsError) throw quotationItemsError;
 
         // Step 4: Get products for quotation items
         const productIds = [...new Set((quotationItems || []).map(item => item.product_id).filter(id => id))];
