@@ -32,6 +32,7 @@ import { useCustomerCreditStatus } from '@/hooks/useCustomerCreditStatus';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { getTermsAndConditions } from '@/utils/termsManager';
+import { calculateInvoiceTotals } from '@/utils/taxCalculation';
 
 interface InvoiceItem {
   id: string;
