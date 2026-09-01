@@ -1858,6 +1858,7 @@ export const useQuotations = (companyId?: string) => {
             unit_price,
             discount_percentage,
             discount_before_vat,
+            tax_setting_id,
             tax_percentage,
             tax_amount,
             tax_inclusive,
