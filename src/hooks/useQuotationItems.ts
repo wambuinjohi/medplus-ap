@@ -9,6 +9,8 @@ export interface QuotationItem {
   description: string;
   quantity: number;
   unit_price: number;
+  discount_percentage?: number;
+  discount_before_vat?: number;
   tax_setting_id?: string;
   tax_percentage?: number;
   tax_amount?: number;
@@ -46,7 +48,8 @@ export const calculateLineItemTotal = (item: {
   tax_inclusive?: boolean;
 }) => {
   const { quantity, unit_price, discount_percentage = 0, tax_percentage = 0, tax_inclusive = false } = item;
-  
+  const effectiveTaxPercentage = tax_inclusive ? tax_percentage : 0;
+
   const baseAmount = quantity * unit_price;
   const discountAmount = baseAmount * (discount_percentage / 100);
   const afterDiscount = baseAmount - discountAmount;
@@ -57,10 +60,10 @@ export const calculateLineItemTotal = (item: {
   if (tax_inclusive) {
     // Tax is already included in the unit price
     lineTotal = afterDiscount;
-    taxAmount = afterDiscount - (afterDiscount / (1 + tax_percentage / 100));
+    taxAmount = afterDiscount - (afterDiscount / (1 + effectiveTaxPercentage / 100));
   } else {
     // Tax is added on top
-    taxAmount = afterDiscount * (tax_percentage / 100);
+    taxAmount = afterDiscount * (effectiveTaxPercentage / 100);
     lineTotal = afterDiscount + taxAmount;
   }
   
@@ -179,6 +182,11 @@ export const useCreateQuotationWithItems = () => {
         const quotationItems = items.map((item, index) => ({
           ...item,
           quotation_id: quotationData.id,
+          discount_percentage: item.discount_percentage ?? 0,
+          discount_before_vat: item.discount_before_vat ?? 0,
+          tax_percentage: item.tax_inclusive ? (item.tax_percentage ?? 0) : 0,
+          tax_amount: item.tax_inclusive ? (item.tax_amount ?? 0) : 0,
+          tax_inclusive: item.tax_inclusive ?? false,
           sort_order: index + 1
         }));
         
@@ -241,10 +249,11 @@ export const useUpdateQuotationWithItems = () => {
           description: item.description,
           quantity: item.quantity,
           unit_price: item.unit_price,
-          discount_percentage: item.discount_percentage || 0,
-          tax_percentage: item.tax_percentage || 0,
-          tax_amount: item.tax_amount || 0,
-          tax_inclusive: item.tax_inclusive || false,
+          discount_percentage: item.discount_percentage ?? 0,
+          discount_before_vat: item.discount_before_vat ?? 0,
+          tax_percentage: item.tax_inclusive ? (item.tax_percentage ?? 0) : 0,
+          tax_amount: item.tax_inclusive ? (item.tax_amount ?? 0) : 0,
+          tax_inclusive: item.tax_inclusive ?? false,
           line_total: item.line_total,
           sort_order: index + 1,
           batch_no: item.batch_no || 'N/A',

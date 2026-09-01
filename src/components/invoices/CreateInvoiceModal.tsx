@@ -30,7 +30,6 @@ import { useOptimizedProductSearch, usePopularProducts } from '@/hooks/useOptimi
 import { useCreateInvoiceWithItems } from '@/hooks/useQuotationItems';
 import { useCustomerCreditStatus } from '@/hooks/useCustomerCreditStatus';
 import { useAuth } from '@/contexts/AuthContext';
-import { calculateInvoiceLineTotal, calculateInvoiceTotals } from '@/utils/taxCalculation';
 import { toast } from 'sonner';
 import { getTermsAndConditions } from '@/utils/termsManager';
 
@@ -95,7 +94,7 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
 
   // Get default tax rate
   const defaultTax = taxSettings?.find(tax => tax.is_default && tax.is_active);
-  const defaultTaxRate = defaultTax?.rate ?? 16; // Fallback only when no default tax is configured
+  const defaultTaxRate = defaultTax?.rate ?? 0;
 
   // Handle pre-selected customer
   useEffect(() => {
@@ -158,26 +157,32 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
     toast.success(`Added "${product.name}" - ${formatCurrency(lineTotal)}`);
   };
 
-  const calculateLineTotal = (
-    item: InvoiceItem,
-    quantity?: number,
-    unitPrice?: number,
-    discountBeforeVat?: number,
-    taxPercentage?: number,
-    taxInclusive?: boolean,
-  ) => {
-    const result = calculateInvoiceLineTotal(item, {
-      quantity,
-      unit_price: unitPrice,
-      discount_before_vat: discountBeforeVat,
-      tax_percentage: taxPercentage,
-      tax_inclusive: taxInclusive,
-    });
-    return {
-      lineTotal: result.lineTotal,
-      taxAmount: result.taxAmount,
-      discountAmount: result.discountAmount,
-    };
+  const calculateLineTotal = (item: InvoiceItem, quantity?: number, unitPrice?: number, discountPercentage?: number, taxPercentage?: number, taxInclusive?: boolean) => {
+    const qty = quantity ?? item.quantity;
+    const price = unitPrice ?? item.unit_price;
+    const discount = discountPercentage ?? item.discount_before_vat ?? 0;
+    const inclusive = taxInclusive ?? item.tax_inclusive;
+    const tax = inclusive ? (taxPercentage ?? item.tax_percentage) : 0;
+
+    // Calculate base amount after discount
+    const baseAmount = qty * price;
+    const discountAmount = baseAmount * (discount / 100);
+    const afterDiscountAmount = baseAmount - discountAmount;
+
+    let taxAmount = 0;
+    let lineTotal = 0;
+
+    if (tax === 0 || !inclusive) {
+      // No tax or tax checkbox unchecked
+      lineTotal = afterDiscountAmount;
+      taxAmount = 0;
+    } else {
+      // Tax checkbox checked: add tax to the discounted amount
+      taxAmount = afterDiscountAmount * (tax / 100);
+      lineTotal = afterDiscountAmount + taxAmount;
+    }
+
+    return { lineTotal, taxAmount, discountAmount };
   };
 
   const updateItemQuantity = (itemId: string, quantity: number) => {
@@ -208,8 +213,9 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
   const updateItemTax = (itemId: string, taxPercentage: number) => {
     setItems(items.map(item => {
       if (item.id === itemId) {
-        const { lineTotal, taxAmount } = calculateLineTotal(item, undefined, undefined, undefined, taxPercentage);
-        return { ...item, tax_percentage: taxPercentage, line_total: lineTotal, tax_amount: taxAmount };
+        const normalizedTaxPercentage = item.tax_inclusive ? taxPercentage : 0;
+        const { lineTotal, taxAmount } = calculateLineTotal(item, undefined, undefined, undefined, normalizedTaxPercentage);
+        return { ...item, tax_percentage: normalizedTaxPercentage, line_total: lineTotal, tax_amount: taxAmount };
       }
       return item;
     }));
@@ -228,16 +234,7 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
   const updateItemTaxInclusive = (itemId: string, taxInclusive: boolean) => {
     setItems(items.map(item => {
       if (item.id === itemId) {
-        // When checking VAT Inclusive, auto-apply default tax rate if no VAT is set
-        let newTaxPercentage = item.tax_percentage;
-        if (taxInclusive && item.tax_percentage === 0) {
-          newTaxPercentage = defaultTaxRate;
-        }
-        // When unchecking VAT Inclusive, reset VAT to 0
-        if (!taxInclusive) {
-          newTaxPercentage = 0;
-        }
-
+        const newTaxPercentage = taxInclusive ? (item.tax_percentage || defaultTaxRate) : 0;
         const { lineTotal, taxAmount } = calculateLineTotal(item, undefined, undefined, undefined, newTaxPercentage, taxInclusive);
         return { ...item, tax_inclusive: taxInclusive, tax_percentage: newTaxPercentage, line_total: lineTotal, tax_amount: taxAmount };
       }
@@ -317,6 +314,18 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
       }
     }
 
+    const normalizedItems = items.map(item => {
+      const normalizedTaxPercentage = item.tax_inclusive ? item.tax_percentage : 0;
+      const { lineTotal, taxAmount } = calculateLineTotal(item, undefined, undefined, undefined, normalizedTaxPercentage, item.tax_inclusive);
+      return { ...item, tax_percentage: normalizedTaxPercentage, tax_amount: taxAmount, line_total: lineTotal };
+    });
+    const normalizedSubtotal = normalizedItems.reduce((sum, item) => {
+      const baseAmount = item.quantity * item.unit_price;
+      return sum + baseAmount - baseAmount * ((item.discount_before_vat ?? 0) / 100);
+    }, 0);
+    const normalizedTaxAmount = normalizedItems.reduce((sum, item) => sum + item.tax_amount, 0);
+    const normalizedTotalAmount = normalizedItems.reduce((sum, item) => sum + item.line_total, 0);
+
     setIsSubmitting(true);
     setSubmitProgress({
       step: 'Preparing invoice data...',
@@ -352,22 +361,22 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
         due_date: dueDate,
         lpo_number: lpoNumber || null,
         status: 'draft',
-        subtotal: subtotal,
-        tax_amount: taxAmount,
-        total_amount: totalAmount,
+        subtotal: normalizedSubtotal,
+        tax_amount: normalizedTaxAmount,
+        total_amount: normalizedTotalAmount,
         paid_amount: 0,
-        balance_due: balanceDue,
+        balance_due: normalizedTotalAmount,
         terms_and_conditions: termsAndConditions,
         notes: notes,
         created_by: profile?.id
       };
 
-      const invoiceItems = items.map(item => ({
+      const invoiceItems = normalizedItems.map(item => ({
         product_id: item.product_id,
         description: item.description,
         quantity: item.quantity,
         unit_price: item.unit_price,
-        discount_before_vat: item.discount_before_vat || 0,
+        discount_before_vat: item.discount_before_vat ?? 0,
         tax_percentage: item.tax_percentage,
         tax_amount: item.tax_amount,
         tax_inclusive: item.tax_inclusive,
@@ -757,7 +766,7 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
                           max="100"
                           step="0.1"
                           placeholder="0"
-                          disabled={item.tax_inclusive}
+                          disabled={!item.tax_inclusive}
                         />
                       </TableCell>
                       <TableCell>

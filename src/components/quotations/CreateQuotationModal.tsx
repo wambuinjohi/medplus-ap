@@ -37,6 +37,7 @@ interface QuotationItem {
   quantity: number;
   unit_price: number;
   vat_percentage: number;
+  tax_amount: number;
   vat_inclusive: boolean;
   line_total: number;
   batch_no?: string;
@@ -86,7 +87,20 @@ export function CreateQuotationModal({ open, onOpenChange, onSuccess }: CreateQu
 
   // Get default tax rate
   const defaultTax = taxSettings?.find(tax => tax.is_default && tax.is_active);
-  const defaultTaxRate = defaultTax?.rate || 16; // Fallback to 16% if no default is set
+  const defaultTaxRate = defaultTax?.rate ?? 0;
+
+  useEffect(() => {
+    if (open) {
+      setSelectedCustomerId('');
+      setQuotationDate(new Date().toISOString().split('T')[0]);
+      setValidUntil(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
+      setNotes('');
+      setTermsAndConditions(getTermsAndConditions());
+      setItems([]);
+      setSearchProduct('');
+      setOptimizedSearchTerm('');
+    }
+  }, [open]);
 
   const displayProducts = searchProduct.trim() ? searchedProducts : popularProducts;
 
@@ -100,27 +114,13 @@ export function CreateQuotationModal({ open, onOpenChange, onSuccess }: CreateQu
 
   const calculateItemTotal = (quantity: number, unitPrice: number, taxPercentage: number, taxInclusive: boolean) => {
     const baseAmount = quantity * unitPrice;
-
-    if (taxPercentage === 0 || !taxInclusive) {
-      // No tax applied or tax checkbox unchecked
-      return baseAmount;
-    }
-
-    // Tax checkbox checked: add tax to the base amount
-    const taxAmount = baseAmount * (taxPercentage / 100);
-    return baseAmount + taxAmount;
+    const effectiveTaxPercentage = taxInclusive ? taxPercentage : 0;
+    return baseAmount + baseAmount * (effectiveTaxPercentage / 100);
   };
 
   const calculateTaxAmount = (item: QuotationItem) => {
-    const baseAmount = item.quantity * item.unit_price;
-
-    if (item.vat_percentage === 0 || !item.vat_inclusive) {
-      // No tax or tax checkbox unchecked
-      return 0;
-    }
-
-    // Tax checkbox checked: calculate tax on base amount
-    return baseAmount * (item.vat_percentage / 100);
+    const effectiveTaxPercentage = item.vat_inclusive ? item.vat_percentage : 0;
+    return item.quantity * item.unit_price * (effectiveTaxPercentage / 100);
   };
 
   const addItem = (product: any) => {
@@ -140,6 +140,7 @@ export function CreateQuotationModal({ open, onOpenChange, onSuccess }: CreateQu
       quantity: 1,
       unit_price: product.selling_price,
       vat_percentage: 0,
+      tax_amount: 0,
       vat_inclusive: false,
       line_total: calculateItemTotal(1, product.selling_price, 0, false),
       batch_no: product.batch_no || '',
@@ -159,7 +160,8 @@ export function CreateQuotationModal({ open, onOpenChange, onSuccess }: CreateQu
     setItems(items.map(item => {
       if (item.id === itemId) {
         const lineTotal = calculateItemTotal(quantity, item.unit_price, item.vat_percentage, item.vat_inclusive);
-        return { ...item, quantity, line_total: lineTotal };
+        const taxAmount = item.vat_inclusive ? lineTotal - quantity * item.unit_price : 0;
+        return { ...item, quantity, line_total: lineTotal, tax_amount: taxAmount };
       }
       return item;
     }));
@@ -169,7 +171,8 @@ export function CreateQuotationModal({ open, onOpenChange, onSuccess }: CreateQu
     setItems(items.map(item => {
       if (item.id === itemId) {
         const lineTotal = calculateItemTotal(item.quantity, unitPrice, item.vat_percentage, item.vat_inclusive);
-        return { ...item, unit_price: unitPrice, line_total: lineTotal };
+        const taxAmount = item.vat_inclusive ? lineTotal - item.quantity * unitPrice : 0;
+        return { ...item, unit_price: unitPrice, line_total: lineTotal, tax_amount: taxAmount };
       }
       return item;
     }));
@@ -178,8 +181,10 @@ export function CreateQuotationModal({ open, onOpenChange, onSuccess }: CreateQu
   const updateItemVAT = (itemId: string, vatPercentage: number) => {
     setItems(items.map(item => {
       if (item.id === itemId) {
-        const lineTotal = calculateItemTotal(item.quantity, item.unit_price, vatPercentage, item.vat_inclusive);
-        return { ...item, vat_percentage: vatPercentage, line_total: lineTotal };
+        const normalizedVatPercentage = item.vat_inclusive ? vatPercentage : 0;
+        const lineTotal = calculateItemTotal(item.quantity, item.unit_price, normalizedVatPercentage, item.vat_inclusive);
+        const taxAmount = item.vat_inclusive ? lineTotal - item.quantity * item.unit_price : 0;
+        return { ...item, vat_percentage: normalizedVatPercentage, line_total: lineTotal, tax_amount: taxAmount };
       }
       return item;
     }));
@@ -188,18 +193,10 @@ export function CreateQuotationModal({ open, onOpenChange, onSuccess }: CreateQu
   const updateItemVATInclusive = (itemId: string, vatInclusive: boolean) => {
     setItems(items.map(item => {
       if (item.id === itemId) {
-        // When checking VAT Inclusive, auto-apply default tax rate if no VAT is set
-        let newVatPercentage = item.vat_percentage;
-        if (vatInclusive && item.vat_percentage === 0) {
-          newVatPercentage = defaultTaxRate;
-        }
-        // When unchecking VAT Inclusive, reset VAT to 0
-        if (!vatInclusive) {
-          newVatPercentage = 0;
-        }
-
+        const newVatPercentage = vatInclusive ? (item.vat_percentage || defaultTaxRate) : 0;
         const lineTotal = calculateItemTotal(item.quantity, item.unit_price, newVatPercentage, vatInclusive);
-        return { ...item, vat_inclusive: vatInclusive, vat_percentage: newVatPercentage, line_total: lineTotal };
+        const taxAmount = vatInclusive ? lineTotal - item.quantity * item.unit_price : 0;
+        return { ...item, vat_inclusive: vatInclusive, vat_percentage: newVatPercentage, tax_amount: taxAmount, line_total: lineTotal };
       }
       return item;
     }));
@@ -264,6 +261,16 @@ export function CreateQuotationModal({ open, onOpenChange, onSuccess }: CreateQu
       return;
     }
 
+    const normalizedItems = items.map(item => {
+      const normalizedVatPercentage = item.vat_inclusive ? item.vat_percentage : 0;
+      const lineTotal = calculateItemTotal(item.quantity, item.unit_price, normalizedVatPercentage, item.vat_inclusive);
+      const taxAmount = item.vat_inclusive ? lineTotal - item.quantity * item.unit_price : 0;
+      return { ...item, vat_percentage: normalizedVatPercentage, tax_amount: taxAmount, line_total: lineTotal };
+    });
+    const normalizedSubtotal = normalizedItems.reduce((sum, item) => sum + item.quantity * item.unit_price, 0);
+    const normalizedTaxAmount = normalizedItems.reduce((sum, item) => sum + item.tax_amount, 0);
+    const normalizedTotalAmount = normalizedItems.reduce((sum, item) => sum + item.line_total, 0);
+
     setIsSubmitting(true);
     try {
       console.log('Starting quotation creation process...');
@@ -307,9 +314,9 @@ export function CreateQuotationModal({ open, onOpenChange, onSuccess }: CreateQu
         quotation_date: quotationDate,
         valid_until: validUntil,
         status: 'draft',
-        subtotal: subtotal,
-        tax_amount: taxAmount,
-        total_amount: totalAmount,
+        subtotal: normalizedSubtotal,
+        tax_amount: normalizedTaxAmount,
+        total_amount: normalizedTotalAmount,
         terms_and_conditions: termsAndConditions,
         notes: notes,
         created_by: profile.id
@@ -317,7 +324,7 @@ export function CreateQuotationModal({ open, onOpenChange, onSuccess }: CreateQu
       console.log('Quotation data prepared:', quotationData);
 
       console.log('Preparing quotation items...');
-      const quotationItems = items.map(item => {
+      const quotationItems = normalizedItems.map(item => {
         // Validate item data
         if (!item.description || item.description.trim() === '') {
           throw new Error(`Item "${item.product_name}" is missing a description`);
@@ -335,9 +342,9 @@ export function CreateQuotationModal({ open, onOpenChange, onSuccess }: CreateQu
           quantity: item.quantity,
           unit_price: item.unit_price,
           discount_percentage: 0, // Can be added later if needed
-          tax_percentage: item.vat_percentage || 0,
-          tax_amount: calculateTaxAmount(item),
-          tax_inclusive: item.vat_inclusive || false,
+          tax_percentage: item.vat_percentage,
+          tax_amount: item.tax_amount,
+          tax_inclusive: item.vat_inclusive,
           line_total: item.line_total,
           batch_no: item.batch_no || 'N/A',
           expiry_date: item.expiry_date || null
@@ -420,6 +427,7 @@ export function CreateQuotationModal({ open, onOpenChange, onSuccess }: CreateQu
     setTermsAndConditions(getTermsAndConditions());
     setItems([]);
     setSearchProduct('');
+    setOptimizedSearchTerm('');
   };
 
   return (
@@ -628,7 +636,7 @@ export function CreateQuotationModal({ open, onOpenChange, onSuccess }: CreateQu
                           max="100"
                           step="0.1"
                           placeholder="0"
-                          disabled={item.vat_inclusive}
+                          disabled={!item.vat_inclusive}
                         />
                       </TableCell>
                       <TableCell>
