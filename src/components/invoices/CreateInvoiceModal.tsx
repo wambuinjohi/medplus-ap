@@ -30,7 +30,7 @@ import { useOptimizedProductSearch, usePopularProducts } from '@/hooks/useOptimi
 import { useCreateInvoiceWithItems } from '@/hooks/useQuotationItems';
 import { useCustomerCreditStatus } from '@/hooks/useCustomerCreditStatus';
 import { useAuth } from '@/contexts/AuthContext';
-import { calculateModalLineTotal } from '@/utils/taxCalculation';
+import { calculateInvoiceLineTotal, calculateInvoiceTotals } from '@/utils/taxCalculation';
 import { toast } from 'sonner';
 import { getTermsAndConditions } from '@/utils/termsManager';
 
@@ -95,7 +95,7 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
 
   // Get default tax rate
   const defaultTax = taxSettings?.find(tax => tax.is_default && tax.is_active);
-  const defaultTaxRate = defaultTax?.rate || 16; // Fallback to 16% if no default is set
+  const defaultTaxRate = defaultTax?.rate ?? 16; // Fallback only when no default tax is configured
 
   // Handle pre-selected customer
   useEffect(() => {
@@ -139,15 +139,14 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
       quantity: 1,
       unit_price: price,
       discount_before_vat: 0,
-      tax_percentage: defaultTaxRate,
+      tax_percentage: 0,
       tax_amount: 0,
-      tax_inclusive: true,
+      tax_inclusive: false,
       line_total: price,
       batch_no: product.batch_no || '',
       expiry_date: normalizeExpiryDate(product.expiry_date)
     };
 
-    // Calculate initial tax and line total with default tax
     const { lineTotal, taxAmount } = calculateLineTotal(newItem);
     newItem.line_total = lineTotal;
     newItem.tax_amount = taxAmount;
@@ -156,35 +155,29 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
     setSearchProduct('');
 
     // Show success message with calculated totals
-    toast.success(`Added "${product.name}" - ${formatCurrency(lineTotal)} (incl. tax)`);
+    toast.success(`Added "${product.name}" - ${formatCurrency(lineTotal)}`);
   };
 
-  const calculateLineTotal = (item: InvoiceItem, quantity?: number, unitPrice?: number, discountPercentage?: number, taxPercentage?: number, taxInclusive?: boolean) => {
-    const qty = quantity ?? item.quantity;
-    const price = unitPrice ?? item.unit_price;
-    const discount = discountPercentage ?? item.discount_before_vat ?? 0;
-    const tax = taxPercentage ?? item.tax_percentage;
-    const inclusive = taxInclusive ?? item.tax_inclusive;
-
-    // Calculate base amount after discount
-    const baseAmount = qty * price;
-    const discountAmount = baseAmount * (discount / 100);
-    const afterDiscountAmount = baseAmount - discountAmount;
-
-    let taxAmount = 0;
-    let lineTotal = 0;
-
-    if (tax === 0 || !inclusive) {
-      // No tax or tax checkbox unchecked
-      lineTotal = afterDiscountAmount;
-      taxAmount = 0;
-    } else {
-      // Tax checkbox checked: add tax to the discounted amount
-      taxAmount = afterDiscountAmount * (tax / 100);
-      lineTotal = afterDiscountAmount + taxAmount;
-    }
-
-    return { lineTotal, taxAmount, discountAmount };
+  const calculateLineTotal = (
+    item: InvoiceItem,
+    quantity?: number,
+    unitPrice?: number,
+    discountBeforeVat?: number,
+    taxPercentage?: number,
+    taxInclusive?: boolean,
+  ) => {
+    const result = calculateInvoiceLineTotal(item, {
+      quantity,
+      unit_price: unitPrice,
+      discount_before_vat: discountBeforeVat,
+      tax_percentage: taxPercentage,
+      tax_inclusive: taxInclusive,
+    });
+    return {
+      lineTotal: result.lineTotal,
+      taxAmount: result.taxAmount,
+      discountAmount: result.discountAmount,
+    };
   };
 
   const updateItemQuantity = (itemId: string, quantity: number) => {
@@ -207,16 +200,6 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
       if (item.id === itemId) {
         const { lineTotal, taxAmount } = calculateLineTotal(item, undefined, unitPrice);
         return { ...item, unit_price: unitPrice, line_total: lineTotal, tax_amount: taxAmount };
-      }
-      return item;
-    }));
-  };
-
-  const updateItemVAT = (itemId: string, vatPercentage: number) => {
-    setItems(items.map(item => {
-      if (item.id === itemId) {
-        const { lineTotal, taxAmount } = calculateLineTotal(item, undefined, undefined, 0, vatPercentage);
-        return { ...item, tax_percentage: vatPercentage, line_total: lineTotal, tax_amount: taxAmount };
       }
       return item;
     }));
@@ -283,19 +266,12 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
     }).format(amount);
   };
 
-  const subtotal = items.reduce((sum, item) => {
-    // Calculate subtotal as base amount minus discounts
-    const baseAmount = item.quantity * item.unit_price;
-    const discountAmount = baseAmount * ((item.discount_before_vat || 0) / 100);
-    return sum + (baseAmount - discountAmount);
-  }, 0);
-  const totalDiscountAmount = items.reduce((sum, item) => {
-    const baseAmount = item.quantity * item.unit_price;
-    return sum + (baseAmount * ((item.discount_before_vat || 0) / 100));
-  }, 0);
-  const taxAmount = items.reduce((sum, item) => sum + (item.tax_amount || 0), 0);
-  const totalAmount = items.reduce((sum, item) => sum + item.line_total, 0);
-  const balanceDue = totalAmount; // Full amount due initially
+  const calculatedTotals = calculateInvoiceTotals(items);
+  const subtotal = calculatedTotals.subtotal;
+  const totalDiscountAmount = calculatedTotals.discountAmount;
+  const taxAmount = calculatedTotals.taxAmount;
+  const totalAmount = calculatedTotals.totalAmount;
+  const balanceDue = totalAmount;
 
   const handleSubmit = async () => {
     if (!selectedCustomerId) {
@@ -725,7 +701,7 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
                     <TableHead>Product</TableHead>
                     <TableHead>Qty</TableHead>
                     <TableHead>Unit Price</TableHead>
-                    <TableHead>Disc. Before VAT (%)</TableHead>
+                    <TableHead>Disc. Before VAT</TableHead>
                     <TableHead>VAT %</TableHead>
                     <TableHead>VAT Incl.</TableHead>
                     <TableHead>Batch No</TableHead>

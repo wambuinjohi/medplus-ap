@@ -34,6 +34,7 @@ export const useInvoicesFixed = (companyId?: string) => {
             notes,
             terms_and_conditions,
             lpo_number,
+            affects_inventory,
             created_at,
             updated_at,
             created_by
