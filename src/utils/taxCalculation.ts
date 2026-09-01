@@ -158,13 +158,6 @@ export function calculateModalLineTotal(item: {
   tax_percentage: number;
   tax_inclusive: boolean;
 }): { lineTotal: number; taxAmount: number; discountAmount: number } {
-  const result = calculateItemTax({
-    quantity: item.quantity,
-    unit_price: item.unit_price,
-    discount_percentage: item.discount_before_vat ?? 0,
-    tax_percentage: item.tax_inclusive ? item.tax_percentage : 0,
-    tax_inclusive: item.tax_inclusive,
-  });
   const result = calculateInvoiceLineTotal(item);
   return {
     lineTotal: result.lineTotal,
