@@ -39,6 +39,11 @@ BEGIN
     RAISE EXCEPTION 'Quotation customer does not belong to this company';
   END IF;
 
+  IF COALESCE(NULLIF(p_quotation->>'total_amount', '')::NUMERIC, 0) <> 0
+     AND jsonb_array_length(COALESCE(p_items, '[]'::JSONB)) = 0 THEN
+    RAISE EXCEPTION 'A quotation with a nonzero total must include at least one item';
+  END IF;
+
   INSERT INTO quotations (
     company_id,
     customer_id,
@@ -173,6 +178,11 @@ BEGIN
       AND company_id = v_existing.company_id
   ) THEN
     RAISE EXCEPTION 'Quotation customer does not belong to this company';
+  END IF;
+
+  IF COALESCE(NULLIF(p_quotation->>'total_amount', '')::NUMERIC, 0) <> 0
+     AND jsonb_array_length(COALESCE(p_items, '[]'::JSONB)) = 0 THEN
+    RAISE EXCEPTION 'A quotation with a nonzero total must include at least one item';
   END IF;
 
   UPDATE quotations
