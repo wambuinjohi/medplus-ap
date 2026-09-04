@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -99,8 +100,8 @@ export function LoginTest() {
             <CheckCircle className="h-4 w-4" />
             <AlertDescription>
               <strong>✅ Supabase Connected</strong><br />
-              URL: https://mfhcbgnkxpifbhrtmgbv.supabase.co<br />
-              Key: ...{process.env.VITE_SUPABASE_ANON_KEY?.slice(-10) || 'configured'}
+              URL: {supabase.supabaseUrl}<br />
+              Key: configured
             </AlertDescription>
           </Alert>
 

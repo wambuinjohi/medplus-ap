@@ -5,9 +5,6 @@ import { toast } from 'sonner';
 import { parseErrorMessage, parseErrorMessageWithCodes } from '@/utils/errorHelpers';
 import { logUserCreation, logUserApproval } from '@/utils/auditLogger';
 
-// Supabase URL - same as used in client initialization
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://klifzjcfnlaxminytmyh.supabase.co';
-
 export interface UserInvitation {
   id: string;
   email: string;
@@ -219,7 +216,7 @@ export const useUserManagement = () => {
             return { success: false, error: 'Authentication token not found. Please log in again.' };
           }
 
-          const response = await fetch(`${SUPABASE_URL}/functions/v1/admin-create-user`, {
+          const response = await fetch(`${supabase.supabaseUrl}/functions/v1/admin-create-user`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

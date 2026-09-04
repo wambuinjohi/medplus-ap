@@ -134,41 +134,8 @@ export const initializeAuth = async () => {
   try {
     console.log('🔑 Ultra-fast auth check...');
 
-    // Very short timeout for background calls
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second max for background retry
-
     try {
-      // Quick connectivity test first
-      const connectivityCheck = new Promise((resolve) => {
-        // Simple fetch to test basic connectivity
-        fetch(supabase.supabaseUrl + '/rest/v1/', {
-          method: 'HEAD',
-          headers: {
-            apikey: supabase.supabaseKey,
-          },
-          signal: controller.signal
-        })
-          .then((response) => resolve(response.ok))
-          .catch(() => resolve(false));
-      });
-
-      // Don't wait too long for connectivity
-      const connectivityTimeout = new Promise((resolve) => {
-        setTimeout(() => resolve(false), 2000);
-      });
-
-      const hasConnectivity = await Promise.race([connectivityCheck, connectivityTimeout]);
-
-      if (!hasConnectivity) {
-        logWarning('🌐 No connectivity to Supabase, skipping auth', 'No connectivity', { context: 'initializeAuth' });
-        clearTimeout(timeoutId);
-        return { session: null, error: new Error('No connectivity') };
-      }
-
-      // Get current session with abort signal
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-      clearTimeout(timeoutId);
 
       // Handle invalid token errors by clearing them
       if (sessionError?.message?.includes('Invalid Refresh Token') ||
@@ -187,24 +154,20 @@ export const initializeAuth = async () => {
       console.log('✅ Ultra-fast auth completed successfully');
       return { session: sessionData.session, error: null };
 
-    } catch (fetchError: any) {
-      clearTimeout(timeoutId);
-
-      // Handle timeout
-      if (fetchError.name === 'AbortError') {
-        logWarning('⏱️ Auth request timed out (background)', fetchError, { context: 'initializeAuth' });
+    } catch (authError: any) {
+      if (authError.name === 'AbortError') {
+        logWarning('⏱️ Auth request timed out (background)', authError, { context: 'initializeAuth' });
         return { session: null, error: new Error('Auth request timeout') };
       }
 
-      // Handle network errors gracefully
-      if (fetchError.message?.includes('Failed to fetch') ||
-          fetchError.message?.includes('Network request failed') ||
-          fetchError.message?.includes('fetch')) {
-        logWarning('🌐 Network error during auth (background):', fetchError, { context: 'initializeAuth' });
+      if (authError.message?.includes('Failed to fetch') ||
+          authError.message?.includes('Network request failed') ||
+          authError.message?.includes('fetch')) {
+        logWarning('🌐 Network error during auth (background):', authError, { context: 'initializeAuth' });
         return { session: null, error: new Error('Network connectivity issue') };
       }
 
-      throw fetchError;
+      throw authError;
     }
 
   } catch (error: any) {
