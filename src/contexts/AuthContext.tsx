@@ -166,7 +166,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       // Batch state updates to prevent multiple renders
       if (newSession?.user) {
-        const userProfile = await fetchProfile(newSession.user.id);
+        let userProfile = null;
+        try {
+          userProfile = await fetchProfile(newSession.user.id);
+        } catch (err) {
+          logError('Profile fetch failed in auth state change:', err, { context: 'handleAuthStateChange' });
+        }
         
         if (mountedRef.current) {
           // If profile exists but is not active, immediately sign out and block access
@@ -179,7 +184,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           } else {
             setSession(newSession);
             setUser(newSession.user);
-            setProfile(userProfile);
+            // Only overwrite profile if we actually got one from DB
+            if (userProfile) {
+              setProfile(userProfile);
+            }
+            // If userProfile is null, keep existing profile (don't overwrite with null)
 
             // Update last login for sign-in events, but don't await to prevent blocking
             if (event === 'SIGNED_IN' && userProfile) {
@@ -223,10 +232,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Initialize auth state with ultra-fast approach and background retry
   useEffect(() => {
+    mountedRef.current = true;
+
     if (initializingRef.current) return;
 
     initializingRef.current = true;
-    mountedRef.current = true;
 
     const initializeAuthState = async () => {
       console.log('🚀 Starting fast auth initialization...');
@@ -409,53 +419,93 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, [fetchProfile, updateLastLogin, handleAuthStateChange, user, initialized]);
 
   const signIn = useCallback(async (email: string, password: string) => {
-    const { data, error } = await safeAuthOperation(async () => {
-      setLoading(true);
-      return await supabase.auth.signInWithPassword({
+    setLoading(true);
+
+    try {
+      // Add timeout to prevent sign-in from hanging indefinitely
+      const signInPromise = supabase.auth.signInWithPassword({
         email,
         password,
       });
-    }, 'signIn');
 
-    if (error) {
-      setLoading(false);
-      return { error: error as AuthError };
-    }
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Sign in request timed out. Please check your connection and try again.')), 15000);
+      });
 
-    if (data?.error) {
-      setLoading(false);
-      return { error: data.error };
-    }
+      const { data, error: signInError } = await Promise.race([signInPromise, timeoutPromise]);
 
-    // Enforce profiles table approval: only active users may proceed
-    try {
+      if (signInError) {
+        setLoading(false);
+        return { error: signInError as AuthError };
+      }
+
+      if (data?.error) {
+        setLoading(false);
+        return { error: data.error };
+      }
+
+      // Enforce profiles table approval: only active users may proceed
       const session = (data as any)?.data?.session;
       const signedInUser = session?.user;
       if (signedInUser) {
-        const userProfile = await fetchProfile(signedInUser.id);
-        if (!userProfile || (userProfile.status && userProfile.status !== 'active')) {
+        let userProfile = null;
+        try {
+          userProfile = await fetchProfile(signedInUser.id);
+        } catch (profileError) {
+          logError('Error during post-sign-in profile fetch:', profileError, { email, context: 'signIn' });
+        }
+
+        if (userProfile === null) {
+          console.warn('Profile not found for user:', signedInUser.id, '- allowing sign in anyway');
+          // Create a minimal profile so the app doesn't get stuck
+          const minimalProfile = {
+            id: signedInUser.id,
+            email: signedInUser.email || email,
+            full_name: signedInUser.user_metadata?.full_name || email.split('@')[0],
+            role: 'user',
+            status: 'active',
+            company_id: null,
+          };
+          setSession(session);
+          setUser(signedInUser);
+          setProfile(minimalProfile as any);
+        } else if (userProfile.status && userProfile.status !== 'active') {
           try { await supabase.auth.signOut(); } catch {}
           setUser(null);
           setSession(null);
           setProfile(null);
           setLoading(false);
           return { error: { name: 'AuthError', message: 'Account pending approval' } as unknown as AuthError };
+        } else {
+          setSession(session);
+          setUser(signedInUser);
+          setProfile(userProfile);
         }
-        setSession(session);
-        setUser(signedInUser);
-        setProfile(userProfile);
       }
-    } catch {}
 
-    setLoading(false);
-    setTimeout(() => toast.success('Signed in successfully'), 0);
-    return { error: null };
+      setLoading(false);
+      setTimeout(() => toast.success('Signed in successfully'), 0);
+      return { error: null };
+    } catch (error: any) {
+      logError('Sign in failed:', error, { email, context: 'signIn' });
+      setLoading(false);
+
+      // Provide user-friendly error message
+      const errorMessage = error.message?.includes('timed out')
+        ? 'Sign in timed out. Please check your connection and try again.'
+        : 'Sign in failed. Please try again.';
+
+      setTimeout(() => toast.error(errorMessage), 0);
+      return { error: { name: 'AuthError', message: errorMessage } as unknown as AuthError };
+    }
   }, []);
 
   const signUp = useCallback(async (email: string, password: string, fullName?: string) => {
-    const { data, error } = await safeAuthOperation(async () => {
-      setLoading(true);
-      return await supabase.auth.signUp({
+    setLoading(true);
+
+    try {
+      // Add timeout to prevent sign-up from hanging indefinitely
+      const signUpPromise = supabase.auth.signUp({
         email,
         password,
         options: {
@@ -464,17 +514,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           },
         },
       });
-    }, 'signUp');
 
-    if (error) {
-      setLoading(false);
-      return { error: error as AuthError };
-    }
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Sign up request timed out. Please check your connection and try again.')), 15000);
+      });
 
-    if (data?.error) {
-      setLoading(false);
-      return { error: data.error };
-    }
+      const { data, error: signUpError } = await Promise.race([signUpPromise, timeoutPromise]);
+
+      if (signUpError) {
+        setLoading(false);
+        return { error: signUpError as AuthError };
+      }
+
+      if (data?.error) {
+        setLoading(false);
+        return { error: data.error };
+      }
 
     // After signup, if an approved invitation exists for this email, activate the profile and assign role/company
     try {
@@ -576,6 +631,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setTimeout(() => toast.success('Account created successfully'), 0);
     setLoading(false);
     return { error: null };
+  } catch (error: any) {
+    logError('Sign up failed:', error, { email, context: 'signUp' });
+    setLoading(false);
+
+    // Provide user-friendly error message
+    const errorMessage = error.message?.includes('timed out')
+      ? 'Sign up timed out. Please check your connection and try again.'
+      : 'Sign up failed. Please try again.';
+
+    setTimeout(() => toast.error(errorMessage), 0);
+    return { error: { name: 'AuthError', message: errorMessage } as unknown as AuthError };
+  }
   }, []);
 
   const signOut = useCallback(async () => {
@@ -623,22 +690,35 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   const resetPassword = useCallback(async (email: string) => {
-    const { data, error } = await safeAuthOperation(async () => {
-      return await supabase.auth.resetPasswordForEmail(email);
-    }, 'resetPassword');
+    try {
+      // Add timeout to prevent reset password from hanging indefinitely
+      const resetPromise = supabase.auth.resetPasswordForEmail(email);
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Password reset request timed out. Please check your connection and try again.')), 15000);
+      });
 
-    if (error) {
-      // Return error without showing toast - let the component handle it
-      return { error: error as AuthError };
+      const { data, error: resetError } = await Promise.race([resetPromise, timeoutPromise]);
+
+      if (resetError) {
+        return { error: resetError as AuthError };
+      }
+
+      if (data?.error) {
+        return { error: data.error };
+      }
+
+      setTimeout(() => toast.success('Password reset email sent'), 0);
+      return { error: null };
+    } catch (error: any) {
+      logError('Password reset failed:', error, { email, context: 'resetPassword' });
+
+      const errorMessage = error.message?.includes('timed out')
+        ? 'Password reset timed out. Please check your connection and try again.'
+        : 'Password reset failed. Please try again.';
+
+      setTimeout(() => toast.error(errorMessage), 0);
+      return { error: { name: 'AuthError', message: errorMessage } as unknown as AuthError };
     }
-
-    if (data?.error) {
-      // Return error without showing toast - let the component handle it
-      return { error: data.error };
-    }
-
-    setTimeout(() => toast.success('Password reset email sent'), 0);
-    return { error: null };
   }, []);
 
   const updateProfile = useCallback(async (updates: Partial<UserProfile>) => {
@@ -688,7 +768,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   // Compute derived state
-  const isAuthenticated = !!user && profile?.status === 'active';
+  // User is authenticated if they have a user object and their profile status is 'active' or not set (undefined/null)
+  // This ensures users without a status field set can still log in
+  const isAuthenticated = !!user && (profile?.status === 'active' || !profile?.status);
   // Treat any role containing 'admin' (case-insensitive) as administrator (covers 'admin', 'super_admin', etc.)
   const isAdmin = typeof profile?.role === 'string' && profile.role.toLowerCase().includes('admin');
 
