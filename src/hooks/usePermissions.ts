@@ -17,7 +17,12 @@ export const usePermissions = () => {
   const { profile: currentUser } = useAuth();
   const [role, setRole] = useState<RoleDefinition | null>(null);
   const [loading, setLoading] = useState(true);
+  const [resolvedUserKey, setResolvedUserKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const userKey = currentUser
+    ? `${currentUser.id}:${currentUser.role ?? ''}:${currentUser.company_id ?? ''}`
+    : null;
 
   /**
    * Fetch the user's role definition
@@ -26,6 +31,7 @@ export const usePermissions = () => {
     if (!currentUser) {
       setRole(null);
       setLoading(false);
+      setResolvedUserKey(null);
       return;
     }
 
@@ -39,6 +45,7 @@ export const usePermissions = () => {
       if (!userRole) {
         setRole(null);
         setLoading(false);
+        setResolvedUserKey(userKey);
         return;
       }
 
@@ -68,8 +75,9 @@ export const usePermissions = () => {
       setRole(null);
     } finally {
       setLoading(false);
+      setResolvedUserKey(userKey);
     }
-  }, [currentUser]);
+  }, [currentUser, userKey]);
 
   // Fetch user role on mount or when user changes
   useEffect(() => {
@@ -215,7 +223,7 @@ export const usePermissions = () => {
 
   return {
     role,
-    loading,
+    loading: loading || resolvedUserKey !== userKey,
     error,
     can,
     canAny,

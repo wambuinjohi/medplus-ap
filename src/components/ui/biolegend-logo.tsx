@@ -23,8 +23,7 @@ export function BiolegendLogo({ className, size = "md", showText = true }: Biole
     lg: "text-2xl"
   };
 
-  const logoSrc = currentCompany?.logo_url ||
-    '/public/placeholder.svg';
+  const logoSrc = currentCompany?.logo_url || '/placeholder.svg';
 
   const companyName = currentCompany?.name || 'MEDPLUS';
 
@@ -36,7 +35,7 @@ export function BiolegendLogo({ className, size = "md", showText = true }: Biole
           src={logoSrc}
           alt={`${companyName} Logo`}
           className="w-full h-full object-contain"
-          onError={(e) => { (e.target as HTMLImageElement).src = '/public/placeholder.svg'; }}
+          onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.svg'; }}
         />
       </div>
 
