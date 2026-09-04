@@ -26,6 +26,7 @@ export interface AuthContextType {
   profile: UserProfile | null;
   session: Session | null;
   loading: boolean;
+  profileLoading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>;
   signUp: (email: string, password: string, fullName?: string) => Promise<{ error: AuthError | null }>;
   signOut: () => Promise<void>;
@@ -56,12 +57,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(true);
   const [initialized, setInitialized] = useState(false);
 
   // Use refs to prevent stale closures and unnecessary re-renders
   const mountedRef = useRef(true);
   const initializingRef = useRef(false);
   const forceCompletedRef = useRef(false);
+  const authOperationRef = useRef(0);
 
   // Toast spam prevention
   const lastNetworkErrorToast = useRef<number>(0);
@@ -162,10 +165,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const handleAuthStateChange = useCallback(async (event: string, newSession: Session | null) => {
     if (!mountedRef.current || initializingRef.current) return;
 
-    
+    const operationId = ++authOperationRef.current;
+
     try {
       // Batch state updates to prevent multiple renders
       if (newSession?.user) {
+        setProfileLoading(true);
         let userProfile = null;
         try {
           userProfile = await fetchProfile(newSession.user.id);
@@ -173,7 +178,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           logError('Profile fetch failed in auth state change:', err, { context: 'handleAuthStateChange' });
         }
         
-        if (mountedRef.current) {
+        if (mountedRef.current && operationId === authOperationRef.current) {
           // If profile exists but is not active, immediately sign out and block access
           if (userProfile && userProfile.status && userProfile.status !== 'active') {
             setTimeout(() => toast.error('Your account is pending approval. Please contact an administrator.'), 0);
@@ -206,6 +211,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setSession(null);
           setUser(null);
           setProfile(null);
+          setProfileLoading(false);
         }
       }
     } catch (error) {
@@ -224,8 +230,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
       }
     } finally {
-      if (mountedRef.current) {
+      if (mountedRef.current && operationId === authOperationRef.current) {
         setLoading(false);
+        if (newSession?.user) {
+          setProfileLoading(false);
+        }
       }
     }
   }, [fetchProfile, updateLastLogin]);
@@ -292,8 +301,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           clearTimeout(immediateStartTimer);
 
           // Set auth state immediately
+          const operationId = ++authOperationRef.current;
           setSession(quickSession);
           setUser(quickSession.user);
+          setProfileLoading(true);
           setLoading(false);
           setInitialized(true);
           initializingRef.current = false;
@@ -301,7 +312,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           // Fetch profile in background
           fetchProfile(quickSession.user.id)
             .then(userProfile => {
-              if (mountedRef.current) {
+              if (mountedRef.current && operationId === authOperationRef.current) {
                 setProfile(userProfile);
                 console.log('✅ Profile loaded in background');
 
@@ -321,6 +332,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 userId: quickSession.user.id,
                 context: 'backgroundProfileFetch'
               });
+            })
+            .finally(() => {
+              if (mountedRef.current && operationId === authOperationRef.current) {
+                setProfileLoading(false);
+              }
             });
 
           console.log('🎉 Fast auth initialization completed successfully');
@@ -329,6 +345,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
         // If quick auth didn't work, continue with background retry
         console.log('ℹ️ Quick auth did not find session, starting background retry...');
+
+        setProfileLoading(false);
 
         // Don't block app startup - let immediate timer complete
         // But start background retry for better user experience
@@ -343,13 +361,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 const { session: bgSession } = bgResult;
 
                 if (bgSession?.user && mountedRef.current && !user) {
+                  const operationId = ++authOperationRef.current;
                   console.log('✅ Background auth retry succeeded');
                   setSession(bgSession);
                   setUser(bgSession.user);
+                  setProfileLoading(true);
 
                   // Fetch profile
                   const userProfile = await fetchProfile(bgSession.user.id);
-                  if (mountedRef.current) {
+                  if (mountedRef.current && operationId === authOperationRef.current) {
                     setProfile(userProfile);
                     if (userProfile) {
                       updateLastLogin(bgSession.user.id).catch(err =>
@@ -359,9 +379,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                         })
                       );
                     }
+                    setProfileLoading(false);
                   }
                 }
               } catch (bgError) {
+                if (mountedRef.current) {
+                  setProfileLoading(false);
+                }
                 console.warn('⚠️ Background auth retry failed:', bgError);
                 // Silent failure - app is already running
               }
@@ -372,6 +396,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }, 2000); // Start background retry after 2 seconds
 
       } catch (error) {
+        setProfileLoading(false);
         console.warn('⚠️ Quick auth check failed:', error);
 
         // Handle specific error types silently
@@ -469,6 +494,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setSession(session);
           setUser(signedInUser);
           setProfile(minimalProfile as any);
+          setProfileLoading(false);
         } else if (userProfile.status && userProfile.status !== 'active') {
           try { await supabase.auth.signOut(); } catch {}
           setUser(null);
@@ -480,6 +506,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setSession(session);
           setUser(signedInUser);
           setProfile(userProfile);
+          setProfileLoading(false);
         }
       }
 
@@ -648,6 +675,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const signOut = useCallback(async () => {
     try {
       console.log('🚪 Starting sign out process...');
+      ++authOperationRef.current;
       setLoading(true);
 
       const { error } = await supabase.auth.signOut();
@@ -752,18 +780,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const refreshProfile = useCallback(async () => {
     if (!user) return;
 
-    const userProfile = await fetchProfile(user.id);
-    if (userProfile && mountedRef.current) {
-      setProfile(userProfile);
+    const operationId = ++authOperationRef.current;
+    setProfileLoading(true);
+    try {
+      const userProfile = await fetchProfile(user.id);
+      if (userProfile && mountedRef.current && operationId === authOperationRef.current) {
+        setProfile(userProfile);
+      }
+    } finally {
+      if (mountedRef.current && operationId === authOperationRef.current) {
+        setProfileLoading(false);
+      }
     }
   }, [user, fetchProfile]);
 
   // Add function to manually clear tokens
   const clearTokens = useCallback(() => {
+    ++authOperationRef.current;
     clearAuthTokens();
     setUser(null);
     setProfile(null);
     setSession(null);
+    setProfileLoading(false);
     toast.info('Authentication tokens cleared. Please sign in again.');
   }, []);
 
@@ -779,6 +817,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     profile,
     session,
     loading: loading && !forceCompletedRef.current,
+    profileLoading,
     signIn,
     signUp,
     signOut,

@@ -22,6 +22,7 @@ import {
   TrendingUp
 } from 'lucide-react';
 import { BiolegendLogo } from '@/components/ui/biolegend-logo';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePermissions } from '@/hooks/usePermissions';
 import {
@@ -127,8 +128,8 @@ const sidebarItems: SidebarItem[] = [
 
 export function Sidebar() {
   const location = useLocation();
-  const { profile } = useAuth();
-  const { can } = usePermissions();
+  const { profile, profileLoading } = useAuth();
+  const { can, loading: permissionsLoading } = usePermissions();
   const { setOpenMobile, isMobile } = useSidebar();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
@@ -167,6 +168,19 @@ export function Sidebar() {
       setOpenMobile(false);
     }
   };
+
+  const renderSidebarSkeleton = () => (
+    <SidebarMenu aria-hidden="true">
+      {sidebarItems.map((item) => (
+        <SidebarMenuItem key={item.title}>
+          <div className="flex items-center gap-3 rounded-lg px-3 py-2">
+            <Skeleton className="h-5 w-5 shrink-0 rounded-md" />
+            <Skeleton className="h-4 w-24" />
+          </div>
+        </SidebarMenuItem>
+      ))}
+    </SidebarMenu>
+  );
 
   const renderSidebarItem = (item: SidebarItem) => {
     if (!isItemVisible(item)) {
@@ -258,9 +272,13 @@ export function Sidebar() {
       </SidebarHeader>
 
       <SidebarContent>
-        <SidebarMenu>
-          {sidebarItems.map(item => renderSidebarItem(item)).filter(Boolean)}
-        </SidebarMenu>
+        {profileLoading || permissionsLoading ? (
+          renderSidebarSkeleton()
+        ) : (
+          <SidebarMenu>
+            {sidebarItems.map(item => renderSidebarItem(item)).filter(Boolean)}
+          </SidebarMenu>
+        )}
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border">

@@ -17,15 +17,24 @@ export const usePermissions = () => {
   const { profile: currentUser } = useAuth();
   const [role, setRole] = useState<RoleDefinition | null>(null);
   const [loading, setLoading] = useState(true);
+  const [resolvedUserKey, setResolvedUserKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const requestIdRef = useRef(0);
+
+  const userKey = currentUser
+    ? `${currentUser.id}:${currentUser.role ?? ''}:${currentUser.company_id ?? ''}`
+    : null;
 
   /**
    * Fetch the user's role definition
    */
   const fetchUserRole = useCallback(async () => {
+    const requestId = ++requestIdRef.current;
+
     if (!currentUser) {
       setRole(null);
       setLoading(false);
+      setResolvedUserKey(null);
       return;
     }
 
@@ -37,8 +46,10 @@ export const usePermissions = () => {
       const userRole = currentUser.role;
 
       if (!userRole) {
+        if (requestId !== requestIdRef.current) return;
         setRole(null);
         setLoading(false);
+        setResolvedUserKey(userKey);
         return;
       }
 
@@ -50,6 +61,8 @@ export const usePermissions = () => {
         .eq('role_type', userRole)
         .eq('company_id', currentUser.company_id)
         .maybeSingle();
+
+      if (requestId !== requestIdRef.current) return;
 
       if (fetchError) {
         console.error('Error fetching user role:', fetchError);
@@ -63,13 +76,17 @@ export const usePermissions = () => {
         setRole(null);
       }
     } catch (err) {
+      if (requestId !== requestIdRef.current) return;
       console.error('Error fetching user role:', err);
       setError(err instanceof Error ? err.message : 'Unknown error');
       setRole(null);
     } finally {
-      setLoading(false);
+      if (requestId === requestIdRef.current) {
+        setLoading(false);
+        setResolvedUserKey(userKey);
+      }
     }
-  }, [currentUser]);
+  }, [currentUser, userKey]);
 
   // Fetch user role on mount or when user changes
   useEffect(() => {
@@ -215,7 +232,7 @@ export const usePermissions = () => {
 
   return {
     role,
-    loading,
+    loading: loading || resolvedUserKey !== userKey,
     error,
     can,
     canAny,
