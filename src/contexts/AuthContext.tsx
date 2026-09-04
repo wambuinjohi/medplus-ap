@@ -445,7 +445,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       // Enforce profiles table approval: only active users may proceed
-      const session = (data as any)?.data?.session;
+      const session = data?.session;
       const signedInUser = session?.user;
       if (signedInUser) {
         let userProfile = null;
