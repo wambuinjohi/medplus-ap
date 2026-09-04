@@ -64,6 +64,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const mountedRef = useRef(true);
   const initializingRef = useRef(false);
   const forceCompletedRef = useRef(false);
+  const authOperationRef = useRef(0);
 
   // Toast spam prevention
   const lastNetworkErrorToast = useRef<number>(0);
@@ -164,7 +165,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const handleAuthStateChange = useCallback(async (event: string, newSession: Session | null) => {
     if (!mountedRef.current || initializingRef.current) return;
 
-    
+    const operationId = ++authOperationRef.current;
+
     try {
       // Batch state updates to prevent multiple renders
       if (newSession?.user) {
@@ -176,7 +178,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           logError('Profile fetch failed in auth state change:', err, { context: 'handleAuthStateChange' });
         }
         
-        if (mountedRef.current) {
+        if (mountedRef.current && operationId === authOperationRef.current) {
           // If profile exists but is not active, immediately sign out and block access
           if (userProfile && userProfile.status && userProfile.status !== 'active') {
             setTimeout(() => toast.error('Your account is pending approval. Please contact an administrator.'), 0);
@@ -228,7 +230,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
       }
     } finally {
-      if (mountedRef.current) {
+      if (mountedRef.current && operationId === authOperationRef.current) {
         setLoading(false);
         if (newSession?.user) {
           setProfileLoading(false);
@@ -299,6 +301,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           clearTimeout(immediateStartTimer);
 
           // Set auth state immediately
+          const operationId = ++authOperationRef.current;
           setSession(quickSession);
           setUser(quickSession.user);
           setProfileLoading(true);
@@ -309,7 +312,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           // Fetch profile in background
           fetchProfile(quickSession.user.id)
             .then(userProfile => {
-              if (mountedRef.current) {
+              if (mountedRef.current && operationId === authOperationRef.current) {
                 setProfile(userProfile);
                 console.log('✅ Profile loaded in background');
 
@@ -331,7 +334,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               });
             })
             .finally(() => {
-              if (mountedRef.current) {
+              if (mountedRef.current && operationId === authOperationRef.current) {
                 setProfileLoading(false);
               }
             });
@@ -358,6 +361,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 const { session: bgSession } = bgResult;
 
                 if (bgSession?.user && mountedRef.current && !user) {
+                  const operationId = ++authOperationRef.current;
                   console.log('✅ Background auth retry succeeded');
                   setSession(bgSession);
                   setUser(bgSession.user);
@@ -365,7 +369,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
                   // Fetch profile
                   const userProfile = await fetchProfile(bgSession.user.id);
-                  if (mountedRef.current) {
+                  if (mountedRef.current && operationId === authOperationRef.current) {
                     setProfile(userProfile);
                     if (userProfile) {
                       updateLastLogin(bgSession.user.id).catch(err =>
@@ -671,6 +675,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const signOut = useCallback(async () => {
     try {
       console.log('🚪 Starting sign out process...');
+      ++authOperationRef.current;
       setLoading(true);
 
       const { error } = await supabase.auth.signOut();
@@ -775,14 +780,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const refreshProfile = useCallback(async () => {
     if (!user) return;
 
+    const operationId = ++authOperationRef.current;
     setProfileLoading(true);
     try {
       const userProfile = await fetchProfile(user.id);
-      if (userProfile && mountedRef.current) {
+      if (userProfile && mountedRef.current && operationId === authOperationRef.current) {
         setProfile(userProfile);
       }
     } finally {
-      if (mountedRef.current) {
+      if (mountedRef.current && operationId === authOperationRef.current) {
         setProfileLoading(false);
       }
     }
@@ -790,6 +796,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Add function to manually clear tokens
   const clearTokens = useCallback(() => {
+    ++authOperationRef.current;
     clearAuthTokens();
     setUser(null);
     setProfile(null);

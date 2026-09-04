@@ -3,46 +3,46 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Navigate, Routes, Route, useParams } from "react-router-dom";
 import { enableResizeObserverErrorSuppression } from "@/utils/resizeObserverErrorHandler";
-import { useEffect } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { addStructuredData, generateOrganizationSchema } from "@/utils/seoHelpers";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
-import Landing from "./pages/Landing";
-import AboutUs from "./pages/AboutUs";
-import OurProducts from "./pages/OurProducts";
-import ProductDetail from "./pages/ProductDetail";
-import Contact from "./pages/Contact";
-import Media from "./pages/Media";
-import Offers from "./pages/Offers";
-import Sitemap from "./pages/Sitemap";
-import Index from "./pages/Index";
-import Quotations from "./pages/Quotations";
-import Invoices from "./pages/Invoices";
-import Payments from "./pages/Payments";
-import Inventory from "./pages/Inventory";
-import Customers from "./pages/Customers";
-import DeliveryNotes from "./pages/DeliveryNotes";
-import Proforma from "./pages/Proforma";
-import SalesReports from "./pages/reports/SalesReports";
-import HistoricalProductSales from "./pages/reports/HistoricalProductSales";
-import InventoryReports from "./pages/reports/InventoryReports";
-import StatementOfAccounts from "./pages/reports/StatementOfAccounts";
-import CompanySettings from "./pages/settings/CompanySettings";
-import UserManagement from "./pages/settings/UserManagement";
-import TermsAndConditionsSettings from "./pages/settings/TermsAndConditionsSettings";
-import RemittanceAdvice from "./pages/RemittanceAdvice";
-import AuditLogs from "./pages/AuditLogs";
-import LPOs from "./pages/LPOs";
-import CreditNotes from "./pages/CreditNotes";
-import WebManager from "./pages/WebManager";
-import NotFound from "./pages/NotFound";
-import PaymentSynchronizationPage from "./pages/PaymentSynchronization";
-import OptimizedInventory from "./pages/OptimizedInventory";
-import PerformanceOptimizerPage from "./pages/PerformanceOptimizerPage";
-import OptimizedCustomers from "./pages/OptimizedCustomers";
-import CustomerPerformanceOptimizerPage from "./pages/CustomerPerformanceOptimizerPage";
-import SetupAndTest from "./components/SetupAndTest";
-import AuthTest from "./components/AuthTest";
+const Landing = lazy(() => import("./pages/Landing"));
+const AboutUs = lazy(() => import("./pages/AboutUs"));
+const OurProducts = lazy(() => import("./pages/OurProducts"));
+const ProductDetail = lazy(() => import("./pages/ProductDetail"));
+const Contact = lazy(() => import("./pages/Contact"));
+const Media = lazy(() => import("./pages/Media"));
+const Offers = lazy(() => import("./pages/Offers"));
+const Sitemap = lazy(() => import("./pages/Sitemap"));
+const Index = lazy(() => import("./pages/Index"));
+const Quotations = lazy(() => import("./pages/Quotations"));
+const Invoices = lazy(() => import("./pages/Invoices"));
+const Payments = lazy(() => import("./pages/Payments"));
+const Inventory = lazy(() => import("./pages/Inventory"));
+const Customers = lazy(() => import("./pages/Customers"));
+const DeliveryNotes = lazy(() => import("./pages/DeliveryNotes"));
+const Proforma = lazy(() => import("./pages/Proforma"));
+const SalesReports = lazy(() => import("./pages/reports/SalesReports"));
+const HistoricalProductSales = lazy(() => import("./pages/reports/HistoricalProductSales"));
+const InventoryReports = lazy(() => import("./pages/reports/InventoryReports"));
+const StatementOfAccounts = lazy(() => import("./pages/reports/StatementOfAccounts"));
+const CompanySettings = lazy(() => import("./pages/settings/CompanySettings"));
+const UserManagement = lazy(() => import("./pages/settings/UserManagement"));
+const TermsAndConditionsSettings = lazy(() => import("./pages/settings/TermsAndConditionsSettings"));
+const RemittanceAdvice = lazy(() => import("./pages/RemittanceAdvice"));
+const AuditLogs = lazy(() => import("./pages/AuditLogs"));
+const LPOs = lazy(() => import("./pages/LPOs"));
+const CreditNotes = lazy(() => import("./pages/CreditNotes"));
+const WebManager = lazy(() => import("./pages/WebManager"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const PaymentSynchronizationPage = lazy(() => import("./pages/PaymentSynchronization"));
+const OptimizedInventory = lazy(() => import("./pages/OptimizedInventory"));
+const PerformanceOptimizerPage = lazy(() => import("./pages/PerformanceOptimizerPage"));
+const OptimizedCustomers = lazy(() => import("./pages/OptimizedCustomers"));
+const CustomerPerformanceOptimizerPage = lazy(() => import("./pages/CustomerPerformanceOptimizerPage"));
+const SetupAndTest = lazy(() => import("./components/SetupAndTest"));
+const AuthTest = lazy(() => import("./components/AuthTest"));
 
 const ProductAliasRedirect = () => {
   const { productSlug } = useParams<{ productSlug: string }>();
@@ -65,7 +65,14 @@ const App = () => {
       <Toaster />
       <Sonner />
       <Layout>
-        <Routes>
+        <Suspense
+          fallback={
+            <div className="flex min-h-[400px] items-center justify-center">
+              <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary" />
+            </div>
+          }
+        >
+          <Routes>
           {/* Public Website Pages */}
           <Route path="/" element={<Landing />} />
           <Route path="/about-us" element={<AboutUs />} />
@@ -360,7 +367,8 @@ const App = () => {
 
           {/* 404 Page */}
           <Route path="*" element={<NotFound />} />
-        </Routes>
+          </Routes>
+        </Suspense>
       </Layout>
     </TooltipProvider>
   );

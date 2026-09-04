@@ -20,7 +20,7 @@ import { ForgotPasswordModal } from '@/components/auth/ForgotPasswordModal';
 
 export function Header() {
   const { user, profile, signOut, isAuthenticated } = useAuth();
-  const { toggleSidebar, open } = useSidebar();
+  const { toggleSidebar, open, openMobile, isMobile } = useSidebar();
   const [authModal, setAuthModal] = useState<'signin' | 'forgot' | null>(null);
 
   const getInitials = (name: string) => {
@@ -79,7 +79,7 @@ export function Header() {
       <header className="flex h-14 sm:h-16 items-center justify-between border-b border-border bg-card px-3 sm:px-6 shadow-card gap-3 sm:gap-4">
         {/* Mobile Sidebar Trigger - Visible only on mobile */}
         <div className="md:hidden flex items-center">
-          <MenuButton isOpen={open} onClick={toggleSidebar} />
+          <MenuButton isOpen={isMobile ? openMobile : open} onClick={toggleSidebar} />
         </div>
 
         {/* Search - Hidden on mobile, shown on sm and up */}

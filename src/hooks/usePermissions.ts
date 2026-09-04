@@ -19,6 +19,7 @@ export const usePermissions = () => {
   const [loading, setLoading] = useState(true);
   const [resolvedUserKey, setResolvedUserKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const requestIdRef = useRef(0);
 
   const userKey = currentUser
     ? `${currentUser.id}:${currentUser.role ?? ''}:${currentUser.company_id ?? ''}`
@@ -28,6 +29,8 @@ export const usePermissions = () => {
    * Fetch the user's role definition
    */
   const fetchUserRole = useCallback(async () => {
+    const requestId = ++requestIdRef.current;
+
     if (!currentUser) {
       setRole(null);
       setLoading(false);
@@ -43,6 +46,7 @@ export const usePermissions = () => {
       const userRole = currentUser.role;
 
       if (!userRole) {
+        if (requestId !== requestIdRef.current) return;
         setRole(null);
         setLoading(false);
         setResolvedUserKey(userKey);
@@ -58,6 +62,8 @@ export const usePermissions = () => {
         .eq('company_id', currentUser.company_id)
         .maybeSingle();
 
+      if (requestId !== requestIdRef.current) return;
+
       if (fetchError) {
         console.error('Error fetching user role:', fetchError);
         setError(fetchError.message);
@@ -70,12 +76,15 @@ export const usePermissions = () => {
         setRole(null);
       }
     } catch (err) {
+      if (requestId !== requestIdRef.current) return;
       console.error('Error fetching user role:', err);
       setError(err instanceof Error ? err.message : 'Unknown error');
       setRole(null);
     } finally {
-      setLoading(false);
-      setResolvedUserKey(userKey);
+      if (requestId === requestIdRef.current) {
+        setLoading(false);
+        setResolvedUserKey(userKey);
+      }
     }
   }, [currentUser, userKey]);
 
