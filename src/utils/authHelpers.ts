@@ -144,9 +144,12 @@ export const initializeAuth = async () => {
         // Simple fetch to test basic connectivity
         fetch(supabase.supabaseUrl + '/rest/v1/', {
           method: 'HEAD',
+          headers: {
+            apikey: supabase.supabaseKey,
+          },
           signal: controller.signal
         })
-          .then(() => resolve(true))
+          .then((response) => resolve(response.ok))
           .catch(() => resolve(false));
       });
 
