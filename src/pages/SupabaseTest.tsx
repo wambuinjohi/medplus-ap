@@ -15,6 +15,7 @@ interface ConnectionStatus {
 }
 
 export default function SupabaseTest() {
+  const projectRef = new URL(supabase.supabaseUrl).hostname.split('.')[0];
   const [status, setStatus] = useState<ConnectionStatus>({
     connected: false,
     tablesCount: 0,
@@ -197,13 +198,13 @@ export default function SupabaseTest() {
             <div>
               <span className="font-medium">URL:</span>
               <div className="font-mono text-muted-foreground">
-                https://mfhcbgnkxpifbhrtmgbv.supabase.co
+                {supabase.supabaseUrl}
               </div>
             </div>
             <div>
               <span className="font-medium">Project:</span>
               <div className="font-mono text-muted-foreground">
-                mfhcbgnkxpifbhrtmgbv
+                {projectRef}
               </div>
             </div>
           </div>

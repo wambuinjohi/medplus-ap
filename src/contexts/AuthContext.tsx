@@ -73,7 +73,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const TOAST_COOLDOWN = 10000; // 10 seconds between similar error toasts
 
   // Fetch user profile from database with error handling and retry logic
-  const fetchProfile = useCallback(async (userId: string): Promise<UserProfile | null> => {
+  const fetchProfile = useCallback(async (userId: string, throwOnError = false): Promise<UserProfile | null> => {
     try {
 
       const { data: profileData, error } = await supabase
@@ -93,8 +93,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       return profileData;
     } catch (error) {
-      // Use proper error logging utilities to prevent [object Object]
       logError('Exception fetching profile:', error, { userId, context: 'fetchProfile' });
+
+      if (throwOnError) {
+        throw error;
+      }
 
       // Handle specific error types using the error type checker
       if (isErrorType(error, 'auth')) {
@@ -473,11 +476,34 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const session = data?.session;
       const signedInUser = session?.user;
       if (signedInUser) {
-        let userProfile = null;
+        let userProfile: UserProfile | null = null;
+        let profileFetchError: unknown = null;
         try {
-          userProfile = await fetchProfile(signedInUser.id);
-        } catch (profileError) {
-          logError('Error during post-sign-in profile fetch:', profileError, { email, context: 'signIn' });
+          userProfile = await fetchProfile(signedInUser.id, true);
+        } catch (error) {
+          profileFetchError = error;
+          logError('Error during post-sign-in profile fetch:', error, { email, context: 'signIn' });
+        }
+
+        if (profileFetchError) {
+          try {
+            await supabase.auth.signOut();
+          } catch (signOutError) {
+            logError('Error signing out after profile fetch:', signOutError, { context: 'signIn' });
+          }
+          setUser(null);
+          setSession(null);
+          setProfile(null);
+          setProfileLoading(false);
+          setLoading(false);
+
+          const profileErrorMessage = isErrorType(profileFetchError, 'auth')
+            ? 'Your session expired. Please sign in again.'
+            : isErrorType(profileFetchError, 'network')
+              ? 'Network connection issue while loading profile. Please check your connection.'
+              : `Failed to load user profile: ${getUserFriendlyErrorMessage(profileFetchError)}`;
+          setTimeout(() => toast.error(profileErrorMessage), 0);
+          return { error: { name: 'ProfileError', message: profileErrorMessage } as unknown as AuthError };
         }
 
         if (userProfile === null) {
