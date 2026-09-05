@@ -65,6 +65,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const initializingRef = useRef(false);
   const forceCompletedRef = useRef(false);
   const authOperationRef = useRef(0);
+  const profileRef = useRef<UserProfile | null>(null);
 
   // Toast spam prevention
   const lastNetworkErrorToast = useRef<number>(0);
@@ -72,8 +73,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const lastGeneralErrorToast = useRef<number>(0);
   const TOAST_COOLDOWN = 10000; // 10 seconds between similar error toasts
 
+  // Keep profileRef in sync with profile state for use in stale closures
+  useEffect(() => {
+    profileRef.current = profile;
+  }, [profile]);
+
   // Fetch user profile from database with error handling and retry logic
-  const fetchProfile = useCallback(async (userId: string, throwOnError = false): Promise<UserProfile | null> => {
+  const fetchProfile = useCallback(async (userId: string, throwOnError = false, showToast = true): Promise<UserProfile | null> => {
     try {
 
       const { data: profileData, error } = await supabase
@@ -109,13 +115,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.warn('Profile fetch failed due to network issue');
 
         // Prevent toast spam - only show network error toast every 10 seconds
-        const now = Date.now();
-        if (now - lastNetworkErrorToast.current > TOAST_COOLDOWN) {
-          lastNetworkErrorToast.current = now;
-          setTimeout(() => toast.error(
-            'Network connection issue while loading profile. Please check your connection.',
-            { duration: 5000 }
-          ), 0);
+        if (showToast) {
+          const now = Date.now();
+          if (now - lastNetworkErrorToast.current > TOAST_COOLDOWN) {
+            lastNetworkErrorToast.current = now;
+            setTimeout(() => toast.error(
+              'Network connection issue while loading profile. Please check your connection.',
+              { duration: 5000 }
+            ), 0);
+          }
         }
         return null;
       }
@@ -124,28 +132,32 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.warn('Profile fetch failed due to permissions');
 
         // Prevent toast spam - only show permission error toast every 10 seconds
-        const now = Date.now();
-        if (now - lastPermissionErrorToast.current > TOAST_COOLDOWN) {
-          lastPermissionErrorToast.current = now;
-          setTimeout(() => toast.error(
-            'Permission error accessing profile. Please sign in again.',
-            { duration: 4000 }
-          ), 0);
+        if (showToast) {
+          const now = Date.now();
+          if (now - lastPermissionErrorToast.current > TOAST_COOLDOWN) {
+            lastPermissionErrorToast.current = now;
+            setTimeout(() => toast.error(
+              'Permission error accessing profile. Please sign in again.',
+              { duration: 4000 }
+            ), 0);
+          }
         }
         return null;
       }
 
       // Show general error message for other cases
-      const friendlyMessage = getUserFriendlyErrorMessage(error);
+      if (showToast) {
+        const friendlyMessage = getUserFriendlyErrorMessage(error);
 
-      // Prevent toast spam - only show general error toast every 10 seconds
-      const now = Date.now();
-      if (now - lastGeneralErrorToast.current > TOAST_COOLDOWN) {
-        lastGeneralErrorToast.current = now;
-        setTimeout(() => toast.error(
-          `Failed to load user profile: ${friendlyMessage}`,
-          { duration: 4000 }
-        ), 0);
+        // Prevent toast spam - only show general error toast every 10 seconds
+        const now = Date.now();
+        if (now - lastGeneralErrorToast.current > TOAST_COOLDOWN) {
+          lastGeneralErrorToast.current = now;
+          setTimeout(() => toast.error(
+            `Failed to load user profile: ${friendlyMessage}`,
+            { duration: 4000 }
+          ), 0);
+        }
       }
 
       return null;
@@ -173,12 +185,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       // Batch state updates to prevent multiple renders
       if (newSession?.user) {
-        setProfileLoading(true);
         let userProfile = null;
-        try {
-          userProfile = await fetchProfile(newSession.user.id);
-        } catch (err) {
-          logError('Profile fetch failed in auth state change:', err, { context: 'handleAuthStateChange' });
+
+        // If we already have a profile for this user, skip re-fetching to avoid flicker
+        if (profileRef.current && profileRef.current.id === newSession.user.id) {
+          userProfile = profileRef.current;
+        } else {
+          setProfileLoading(true);
+          try {
+            userProfile = await fetchProfile(newSession.user.id, false, false);
+          } catch (err) {
+            logError('Profile fetch failed in auth state change:', err, { context: 'handleAuthStateChange' });
+          }
         }
         
         if (mountedRef.current && operationId === authOperationRef.current) {
@@ -313,7 +331,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           initializingRef.current = false;
 
           // Fetch profile in background
-          fetchProfile(quickSession.user.id)
+          fetchProfile(quickSession.user.id, false, false)
             .then(userProfile => {
               if (mountedRef.current && operationId === authOperationRef.current) {
                 setProfile(userProfile);
@@ -371,7 +389,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                   setProfileLoading(true);
 
                   // Fetch profile
-                  const userProfile = await fetchProfile(bgSession.user.id);
+                  const userProfile = await fetchProfile(bgSession.user.id, false, false);
                   if (mountedRef.current && operationId === authOperationRef.current) {
                     setProfile(userProfile);
                     if (userProfile) {
@@ -444,7 +462,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       mountedRef.current = false;
       subscription.unsubscribe();
     };
-  }, [fetchProfile, updateLastLogin, handleAuthStateChange, user, initialized]);
+  }, [fetchProfile, updateLastLogin, handleAuthStateChange]);
 
   const signIn = useCallback(async (email: string, password: string) => {
     setLoading(true);
@@ -477,33 +495,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const signedInUser = session?.user;
       if (signedInUser) {
         let userProfile: UserProfile | null = null;
-        let profileFetchError: unknown = null;
         try {
-          userProfile = await fetchProfile(signedInUser.id, true);
+          userProfile = await fetchProfile(signedInUser.id, false);
         } catch (error) {
-          profileFetchError = error;
           logError('Error during post-sign-in profile fetch:', error, { email, context: 'signIn' });
-        }
-
-        if (profileFetchError) {
-          try {
-            await supabase.auth.signOut();
-          } catch (signOutError) {
-            logError('Error signing out after profile fetch:', signOutError, { context: 'signIn' });
-          }
-          setUser(null);
-          setSession(null);
-          setProfile(null);
-          setProfileLoading(false);
-          setLoading(false);
-
-          const profileErrorMessage = isErrorType(profileFetchError, 'auth')
-            ? 'Your session expired. Please sign in again.'
-            : isErrorType(profileFetchError, 'network')
-              ? 'Network connection issue while loading profile. Please check your connection.'
-              : `Failed to load user profile: ${getUserFriendlyErrorMessage(profileFetchError)}`;
-          setTimeout(() => toast.error(profileErrorMessage), 0);
-          return { error: { name: 'ProfileError', message: profileErrorMessage } as unknown as AuthError };
         }
 
         if (userProfile === null) {
