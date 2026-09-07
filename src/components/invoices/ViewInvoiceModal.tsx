@@ -29,6 +29,7 @@ import {
   MapPin,
   FileText,
   Download,
+  AlertCircle,
   Send,
   DollarSign,
   Edit,
@@ -125,6 +126,14 @@ export function ViewInvoiceModal({
       year: 'numeric'
     });
   };
+
+  const renderedItemsTotal = (invoice.invoice_items || []).reduce(
+    (sum: number, item: any) => sum + Number(item.line_total || 0),
+    0
+  );
+  const itemsTotalMismatch = invoice.invoice_items_status !== 'error'
+    && (invoice.invoice_items?.length || 0) > 0
+    && Math.abs(renderedItemsTotal - Number(invoice.total_amount || 0)) > 0.01;
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -289,7 +298,12 @@ export function ViewInvoiceModal({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {!invoice.invoice_items || invoice.invoice_items.length === 0 ? (
+            {invoice.invoice_items_status === 'error' ? (
+              <div className="text-center py-8 text-destructive">
+                <p>Invoice items could not be loaded.</p>
+                <p className="mt-1 text-sm text-muted-foreground">{invoice.invoice_items_error}</p>
+              </div>
+            ) : !invoice.invoice_items || invoice.invoice_items.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 No items found for this invoice
               </div>
@@ -333,6 +347,15 @@ export function ViewInvoiceModal({
                   ))}
                 </TableBody>
               </Table>
+            )}
+
+            {itemsTotalMismatch && (
+              <div className="mt-4 flex items-start gap-2 rounded-md border border-warning/30 bg-warning-light p-3 text-sm text-warning">
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                <span>
+                  The displayed line items total {formatCurrency(renderedItemsTotal)}, which does not match the stored invoice total of {formatCurrency(invoice.total_amount || 0)}.
+                </span>
+              </div>
             )}
 
             {/* Invoice Totals */}

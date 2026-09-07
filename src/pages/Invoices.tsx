@@ -79,6 +79,8 @@ interface Invoice {
   status: 'draft' | 'sent' | 'paid' | 'partial' | 'overdue';
   affects_inventory?: boolean;
   invoice_items?: any[];
+  invoice_items_status?: 'loaded' | 'error';
+  invoice_items_error?: string | null;
   created_by?: string;
   created_by_profile?: { full_name?: string } | null;
   appliedCreditNotes?: Array<{
@@ -672,6 +674,13 @@ Website: www.biolegendscientific.co.ke`;
                   <Skeleton className="h-4 w-32" />
                 </div>
               ))}
+            </div>
+          ) : error ? (
+            <div className="text-center py-12">
+              <Receipt className="mx-auto h-12 w-12 text-destructive mb-4" />
+              <h3 className="text-lg font-medium text-foreground mb-2">Invoices could not be loaded</h3>
+              <p className="text-muted-foreground mb-6">{parseErrorMessage(error)}</p>
+              <Button onClick={() => refetch()} variant="outline">Try again</Button>
             </div>
           ) : filteredInvoices.length === 0 ? (
             <div className="text-center py-12">

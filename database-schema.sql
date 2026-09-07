@@ -178,9 +178,15 @@ CREATE TABLE invoice_items (
     description TEXT NOT NULL,
     quantity DECIMAL(10,3) NOT NULL,
     unit_price DECIMAL(15,2) NOT NULL,
-    discount_percentage DECIMAL(5,2) DEFAULT 0,
+    discount_percentage DECIMAL(6,3) DEFAULT 0,
+    discount_before_vat DECIMAL(15,2) DEFAULT 0,
+    tax_percentage DECIMAL(6,3) DEFAULT 0,
+    tax_amount DECIMAL(15,2) DEFAULT 0,
+    tax_inclusive BOOLEAN DEFAULT false,
     line_total DECIMAL(15,2) NOT NULL,
-    sort_order INTEGER DEFAULT 0
+    sort_order INTEGER DEFAULT 0,
+    batch_no TEXT DEFAULT 'N/A',
+    expiry_date DATE
 );
 
 -- Proforma invoices table
