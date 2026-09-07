@@ -13,30 +13,30 @@ CREATE OR REPLACE FUNCTION public.update_product_stock_core(
   p_product_uuid UUID,
   p_movement_type TEXT,
   p_quantity NUMERIC
-) RETURNS JSON LANGUAGE plpgsql SECURITY DEFINER AS $$
+) RETURNS JSON LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE
   v_rows_updated INTEGER := 0;
 BEGIN
   p_movement_type := UPPER(p_movement_type);
-  IF p_movement_type NOT IN ('IN', 'OUT', 'ADJUSTMENT') THEN
+  IF p_movement_type IS NULL OR p_movement_type NOT IN ('IN', 'OUT', 'ADJUSTMENT') THEN
     RAISE EXCEPTION 'Invalid movement_type: %. Must be IN, OUT, or ADJUSTMENT', p_movement_type;
   END IF;
-  IF p_quantity < 0 THEN
+  IF p_quantity IS NULL OR p_quantity < 0 THEN
     RAISE EXCEPTION 'Quantity must be non-negative: %', p_quantity;
   END IF;
 
   IF p_movement_type = 'IN' THEN
-    UPDATE products
+    UPDATE public.products
     SET stock_quantity = COALESCE(stock_quantity, 0) + p_quantity,
         updated_at = NOW()
     WHERE id = p_product_uuid;
   ELSIF p_movement_type = 'OUT' THEN
-    UPDATE products
+    UPDATE public.products
     SET stock_quantity = GREATEST(COALESCE(stock_quantity, 0) - p_quantity, 0),
         updated_at = NOW()
     WHERE id = p_product_uuid;
   ELSIF p_movement_type = 'ADJUSTMENT' THEN
-    UPDATE products
+    UPDATE public.products
     SET stock_quantity = p_quantity,
         updated_at = NOW()
     WHERE id = p_product_uuid;
@@ -59,7 +59,7 @@ CREATE OR REPLACE FUNCTION public.update_product_stock(
   product_uuid UUID,
   movement_type TEXT,
   quantity NUMERIC
-) RETURNS JSON LANGUAGE SQL SECURITY DEFINER AS $$
+) RETURNS JSON LANGUAGE SQL SECURITY DEFINER SET search_path = public AS $$
   SELECT public.update_product_stock_core(product_uuid, movement_type, quantity);
 $$;
 
@@ -68,7 +68,7 @@ CREATE OR REPLACE FUNCTION public.update_product_stock(
   movement_type TEXT,
   product_uuid UUID,
   quantity NUMERIC
-) RETURNS JSON LANGUAGE SQL SECURITY DEFINER AS $$
+) RETURNS JSON LANGUAGE SQL SECURITY DEFINER SET search_path = public AS $$
   SELECT public.update_product_stock_core(product_uuid, movement_type, quantity);
 $$;
 
@@ -77,7 +77,7 @@ CREATE OR REPLACE FUNCTION public.update_product_stock(
   product_uuid UUID,
   movement_type TEXT,
   quantity INTEGER
-) RETURNS JSON LANGUAGE SQL SECURITY DEFINER AS $$
+) RETURNS JSON LANGUAGE SQL SECURITY DEFINER SET search_path = public AS $$
   SELECT public.update_product_stock_core(product_uuid, movement_type, quantity::NUMERIC);
 $$;
 
@@ -85,16 +85,23 @@ CREATE OR REPLACE FUNCTION public.update_product_stock(
   movement_type TEXT,
   product_uuid UUID,
   quantity INTEGER
-) RETURNS JSON LANGUAGE SQL SECURITY DEFINER AS $$
+) RETURNS JSON LANGUAGE SQL SECURITY DEFINER SET search_path = public AS $$
   SELECT public.update_product_stock_core(product_uuid, movement_type, quantity::NUMERIC);
 $$;
 
--- Grant execute permission to common roles
-GRANT EXECUTE ON FUNCTION public.update_product_stock_core(UUID, TEXT, NUMERIC) TO authenticated, anon;
-GRANT EXECUTE ON FUNCTION public.update_product_stock(UUID, TEXT, NUMERIC) TO authenticated, anon;
-GRANT EXECUTE ON FUNCTION public.update_product_stock(TEXT, UUID, NUMERIC) TO authenticated, anon;
-GRANT EXECUTE ON FUNCTION public.update_product_stock(UUID, TEXT, INTEGER) TO authenticated, anon;
-GRANT EXECUTE ON FUNCTION public.update_product_stock(TEXT, UUID, INTEGER) TO authenticated, anon;
+REVOKE EXECUTE ON FUNCTION public.update_product_stock_core(UUID, TEXT, NUMERIC) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.update_product_stock(UUID, TEXT, NUMERIC) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.update_product_stock(TEXT, UUID, NUMERIC) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.update_product_stock(UUID, TEXT, INTEGER) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.update_product_stock(TEXT, UUID, INTEGER) FROM PUBLIC;
+
+GRANT EXECUTE ON FUNCTION public.update_product_stock_core(UUID, TEXT, NUMERIC) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.update_product_stock(UUID, TEXT, NUMERIC) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.update_product_stock(TEXT, UUID, NUMERIC) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.update_product_stock(UUID, TEXT, INTEGER) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.update_product_stock(TEXT, UUID, INTEGER) TO authenticated;
+
+NOTIFY pgrst, 'reload schema';
 `;
 
   try {
