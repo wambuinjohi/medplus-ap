@@ -13,7 +13,7 @@ interface Invoice {
 export function useCustomerInvoices(customerId?: string, companyId?: string) {
   return useQuery({
     queryKey: ['customer-invoices', customerId, companyId],
-    queryFn: async () => {
+    queryFn: async ({ signal }) => {
       if (!customerId || !companyId) return [];
 
       try {
@@ -24,7 +24,8 @@ export function useCustomerInvoices(customerId?: string, companyId?: string) {
           .eq('company_id', companyId)
           .neq('status', 'cancelled')
           .gt('balance_due', 0)
-          .order('invoice_date', { ascending: false });
+          .order('invoice_date', { ascending: false })
+          .abortSignal(signal);
 
         if (error) {
           console.error('Error fetching customer invoices:', error);
@@ -37,5 +38,8 @@ export function useCustomerInvoices(customerId?: string, companyId?: string) {
       }
     },
     enabled: !!customerId && !!companyId,
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
+    refetchOnWindowFocus: false,
   });
 }
