@@ -72,10 +72,11 @@ export interface StockMovement {
   company_id: string;
   product_id: string;
   movement_type: 'IN' | 'OUT' | 'ADJUSTMENT';
-  reference_type: 'INVOICE' | 'DELIVERY_NOTE' | 'RESTOCK' | 'ADJUSTMENT';
+  reference_type: 'INVOICE' | 'INVOICE_REVERSAL' | 'DELIVERY_NOTE' | 'RESTOCK' | 'ADJUSTMENT' | 'CREDIT_NOTE' | 'CREDIT_NOTE_REVERSAL' | 'PURCHASE';
   reference_id?: string;
   quantity: number;
   cost_per_unit?: number;
+  movement_date?: string;
   notes?: string;
   created_at?: string;
   updated_at?: string;
@@ -603,7 +604,7 @@ export const useCreateStockMovement = () => {
     mutationFn: async (movement: Omit<StockMovement, 'id' | 'created_at' | 'updated_at'>) => {
       const { data, error } = await supabase
         .from('stock_movements')
-        .insert([movement])
+        .insert([{ ...movement, movement_date: movement.movement_date || new Date().toISOString().split('T')[0] }])
         .select()
         .single();
 

@@ -247,142 +247,12 @@ export function useDeleteCreditNote() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      // Check permission before deletion
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user?.id) throw new Error('Not authenticated');
+      const { data, error } = await supabase.rpc('delete_credit_note_atomic', {
+        credit_note_uuid: id,
+      });
 
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('company_id, role')
-        .eq('id', user.id)
-        .single();
-
-      if (!profileData) throw new Error('User profile not found');
-
-      const { data: roleData } = await supabase
-        .from('roles')
-        .select('permissions')
-        .eq('company_id', profileData.company_id)
-        .eq('name', profileData.role)
-        .single();
-
-      if (!roleData?.permissions?.includes('delete_credit_note')) {
-        throw new Error('You do not have permission to delete credit notes');
-      }
-
-      // 1. Fetch the complete credit note with all related data
-      const { data: creditNote, error: fetchError } = await supabase
-        .from('credit_notes')
-        .select(
-          `
-          *,
-          credit_note_items(*),
-          credit_note_allocations(*)
-        `
-        )
-        .eq('id', id)
-        .single();
-
-      if (fetchError) throw fetchError;
-      if (!creditNote) throw new Error('Credit note not found');
-
-      // 2. If credit note affects inventory, reverse stock movements
-      let stockMovementsReversedCount = 0;
-      if (creditNote.affects_inventory) {
-        const { data: stockMovements, error: stockError } = await supabase
-          .from('stock_movements')
-          .select('*')
-          .eq('reference_type', 'CREDIT_NOTE')
-          .eq('reference_id', id);
-
-        if (stockError && !stockError.message.includes('does not exist')) {
-          throw stockError;
-        }
-
-        if (stockMovements && stockMovements.length > 0) {
-          const reversals = stockMovements.map((movement) => ({
-            company_id: movement.company_id,
-            product_id: movement.product_id,
-            movement_type: movement.movement_type === 'IN' ? 'OUT' : 'IN',
-            reference_type: 'CREDIT_NOTE_REVERSAL',
-            reference_id: id,
-            quantity: movement.quantity,
-            cost_per_unit: movement.cost_per_unit,
-            notes: `Reversal of CREDIT_NOTE ${creditNote.credit_note_number}: ${movement.notes || ''}`,
-          }));
-
-          const { error: reversalError } = await supabase
-            .from('stock_movements')
-            .insert(reversals);
-
-          if (reversalError && !reversalError.message.includes('does not exist')) {
-            throw reversalError;
-          }
-
-          stockMovementsReversedCount = stockMovements.length;
-        }
-      }
-
-      // 3. If there are allocations, update related invoices
-      if (creditNote.credit_note_allocations && creditNote.credit_note_allocations.length > 0) {
-        for (const allocation of creditNote.credit_note_allocations) {
-          const { data: invoice, error: invoiceError } = await supabase
-            .from('invoices')
-            .select('balance_due, paid_amount, total_amount')
-            .eq('id', allocation.invoice_id)
-            .single();
-
-          if (!invoiceError && invoice) {
-            // Recalculate balance_due by adding back the allocated amount
-            const newBalanceDue = (invoice.balance_due || 0) + allocation.allocated_amount;
-
-            await supabase
-              .from('invoices')
-              .update({ balance_due: newBalanceDue })
-              .eq('id', allocation.invoice_id);
-          }
-        }
-      }
-
-      // 4. Delete the credit note (cascade deletes items and allocations)
-      const { error: deleteError } = await supabase
-        .from('credit_notes')
-        .delete()
-        .eq('id', id);
-
-      if (deleteError) throw deleteError;
-
-      // 5. Log the deletion with full snapshot
-      try {
-        const { data } = await supabase.auth.getUser();
-        const userId = data?.user?.id || null;
-        const userEmail = (data?.user?.email as string) || null;
-
-        await supabase.from('audit_logs').insert([
-          {
-            action: 'DELETE',
-            entity_type: 'credit_note',
-            record_id: id,
-            company_id: creditNote.company_id,
-            actor_user_id: userId,
-            actor_email: userEmail,
-            details: {
-              credit_note_number: creditNote.credit_note_number,
-              customer_id: creditNote.customer_id,
-              total_amount: creditNote.total_amount,
-              applied_amount: creditNote.applied_amount,
-              items_count: creditNote.credit_note_items?.length || 0,
-              allocations_count: creditNote.credit_note_allocations?.length || 0,
-              affected_invoices: creditNote.credit_note_allocations?.map((a) => a.invoice_id) || [],
-              inventory_affected: creditNote.affects_inventory,
-              stock_movements_reversed: stockMovementsReversedCount,
-            },
-          },
-        ]);
-      } catch (auditError) {
-        console.warn('Audit log creation failed:', auditError);
-      }
-
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || 'Failed to delete credit note');
       return id;
     },
     onSuccess: () => {
@@ -391,6 +261,11 @@ export function useDeleteCreditNote() {
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       queryClient.invalidateQueries({ queryKey: ['payments'] });
       queryClient.invalidateQueries({ queryKey: ['creditNoteAllocations'] });
+      queryClient.invalidateQueries({ queryKey: ['statementCreditNoteAllocations'] });
+      queryClient.invalidateQueries({ queryKey: ['customerCreditNoteAllocations'] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['stockMovements'] });
+      queryClient.invalidateQueries({ queryKey: ['stock_movements'] });
       toast.success('Credit note deleted successfully! All related records have been updated.');
     },
     onError: (error: any) => {
@@ -468,9 +343,17 @@ export function useApplyCreditNoteToInvoice() {
       amount: number;
       appliedBy: string;
     }) => {
-      // Client-side validation
+      const { data: { user: currentUser }, error: authError } = await supabase.auth.getUser();
+      if (authError || !currentUser) {
+        throw new Error('Your session has expired. Sign in again before applying a credit note.');
+      }
+
       if (!creditNoteId || !invoiceId || !appliedBy) {
         throw new Error('Missing required fields: creditNoteId, invoiceId, appliedBy');
+      }
+
+      if (appliedBy !== currentUser.id) {
+        throw new Error('The authenticated user changed. Please reopen the credit note and try again.');
       }
 
       if (amount <= 0) {
@@ -484,7 +367,10 @@ export function useApplyCreditNoteToInvoice() {
         .eq('id', creditNoteId)
         .single();
 
-      if (cnFetchError || !creditNote) {
+      if (cnFetchError) {
+        throw new Error(`Unable to load credit note: ${cnFetchError.message}`);
+      }
+      if (!creditNote) {
         throw new Error('Credit note not found');
       }
 
@@ -502,7 +388,10 @@ export function useApplyCreditNoteToInvoice() {
         .eq('id', invoiceId)
         .single();
 
-      if (invFetchError || !invoice) {
+      if (invFetchError) {
+        throw new Error(`Unable to load invoice: ${invFetchError.message}`);
+      }
+      if (!invoice) {
         throw new Error('Invoice not found');
       }
 
@@ -518,36 +407,33 @@ export function useApplyCreditNoteToInvoice() {
           credit_note_uuid: creditNoteId,
           invoice_uuid: invoiceId,
           amount_to_apply: amount,
-          applied_by_uuid: appliedBy
+          applied_by_uuid: currentUser.id
         });
 
       if (rpcError) {
         console.error('RPC error:', rpcError);
-        throw new Error(rpcError.message || 'Failed to apply credit note');
+        throw new Error(`Credit note application failed: ${rpcError.message}`);
       }
 
-      // Step 4: Validate RPC response
-      if (!rpcResult || typeof rpcResult === 'string') {
-        // rpcResult might be a string in case of error
-        const resultObj = typeof rpcResult === 'string' ? JSON.parse(rpcResult) : rpcResult;
-        if (!resultObj.success) {
-          throw new Error(resultObj.error || 'RPC function returned failure');
-        }
-        return resultObj;
+      let resultObj: { success?: boolean; error?: string; [key: string]: unknown };
+      try {
+        resultObj = typeof rpcResult === 'string' ? JSON.parse(rpcResult) : rpcResult;
+      } catch {
+        throw new Error('Credit note application returned an invalid response. Verify the deployed database function.');
+      }
+      if (!resultObj?.success) {
+        throw new Error(resultObj?.error || 'RPC function returned failure');
       }
 
-      return rpcResult;
+      return resultObj;
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['creditNotes'] });
       queryClient.invalidateQueries({ queryKey: ['creditNoteAllocations'] });
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
-      toast.success('Credit note applied to invoice successfully!');
-    },
-    onError: (error: any) => {
-      console.error('Error applying credit note:', error);
-      const errorMessage = error.message || 'Failed to apply credit note to invoice';
-      toast.error(errorMessage);
+      queryClient.invalidateQueries({ queryKey: ['customer-invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['statementCreditNoteAllocations'] });
+      queryClient.invalidateQueries({ queryKey: ['customerCreditNoteAllocations'] });
     },
   });
 }
@@ -557,85 +443,30 @@ export function useUnapplyCreditNoteAllocation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({
-      allocationId,
-      creditNoteId,
-      invoiceId,
-      allocatedAmount
-    }: {
+    mutationFn: async ({ allocationId }: {
       allocationId: string;
       creditNoteId: string;
       invoiceId: string;
       allocatedAmount: number;
     }) => {
-      // Step 1: Delete the allocation record
-      const { error: deleteError } = await supabase
-        .from('credit_note_allocations')
-        .delete()
-        .eq('id', allocationId);
+      const { data, error } = await supabase.rpc('unapply_credit_note_allocation', {
+        allocation_uuid: allocationId,
+      });
 
-      if (deleteError) throw deleteError;
-
-      // Step 2: Restore invoice balance_due
-      const { data: invoice, error: fetchError } = await supabase
-        .from('invoices')
-        .select('balance_due, total_amount, paid_amount')
-        .eq('id', invoiceId)
-        .single();
-
-      if (!fetchError && invoice) {
-        const newBalanceDue = Math.min(
-          invoice.total_amount,
-          (invoice.balance_due || 0) + allocatedAmount
-        );
-
-        const { error: updateError } = await supabase
-          .from('invoices')
-          .update({ balance_due: newBalanceDue })
-          .eq('id', invoiceId);
-
-        if (updateError) {
-          console.warn('Failed to restore invoice balance_due:', updateError);
-        }
-      }
-
-      // Step 3: Update credit note balance and applied_amount
-      const { data: creditNote, error: cnFetchError } = await supabase
-        .from('credit_notes')
-        .select('applied_amount, balance, total_amount, status')
-        .eq('id', creditNoteId)
-        .single();
-
-      if (!cnFetchError && creditNote) {
-        const newAppliedAmount = Math.max(0, (creditNote.applied_amount || 0) - allocatedAmount);
-        const newBalance = creditNote.total_amount - newAppliedAmount;
-
-        // Determine status: if balance > 0, it's no longer fully applied
-        let newStatus = creditNote.status;
-        if (creditNote.status === 'applied' && newBalance > 0.01) {
-          newStatus = creditNote.status === 'sent' ? 'sent' : 'draft';
-        }
-
-        const { error: cnUpdateError } = await supabase
-          .from('credit_notes')
-          .update({
-            applied_amount: newAppliedAmount,
-            balance: newBalance,
-            status: newStatus
-          })
-          .eq('id', creditNoteId);
-
-        if (cnUpdateError) {
-          console.warn('Failed to update credit note:', cnUpdateError);
-        }
-      }
-
-      return { allocationId, creditNoteId, invoiceId };
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || 'Failed to reverse allocation');
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['creditNotes'] });
       queryClient.invalidateQueries({ queryKey: ['creditNoteAllocations'] });
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['customer-invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['statementCreditNoteAllocations'] });
+      queryClient.invalidateQueries({ queryKey: ['customerCreditNoteAllocations'] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['stockMovements'] });
+      queryClient.invalidateQueries({ queryKey: ['stock_movements'] });
       toast.success('Allocation reversed successfully!');
     },
     onError: (error: any) => {

@@ -455,6 +455,7 @@ export const useDeleteInvoice = () => {
             reference_id: invoiceId,
             quantity: Math.abs(movement.quantity),
             cost_per_unit: movement.cost_per_unit,
+            movement_date: new Date().toISOString().split('T')[0],
             notes: `Stock restoration from invoice ${(invoice as any)?.invoice_number} deletion (reversal of quotation conversion)`
           }));
 

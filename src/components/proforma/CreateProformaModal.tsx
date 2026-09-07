@@ -176,7 +176,7 @@ export const CreateProformaModal = ({
       tax_inclusive: false,
       line_total: 0,
       batch_no: product.batch_no || '',
-      expiry_date: product.expiry_date || '',
+      expiry_date: product.expiry_date || null,
     };
 
     const calculatedItem = calculateItemTax(newItem);
