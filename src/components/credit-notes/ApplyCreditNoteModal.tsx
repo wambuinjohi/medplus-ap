@@ -27,7 +27,7 @@ import {
   FileText
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { useInvoicesFixed as useInvoices } from '@/hooks/useInvoicesFixed';
+import { useCustomerInvoices } from '@/hooks/useCustomerInvoices';
 import { useApplyCreditNoteToInvoice, type CreditNote } from '@/hooks/useCreditNotes';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -48,16 +48,16 @@ export function ApplyCreditNoteModal({
   const [amountToApply, setAmountToApply] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { data: invoices = [] } = useInvoices(creditNote?.company_id);
-  const applyCreditNoteMutation = useApplyCreditNoteToInvoice();
-  const { user } = useAuth();
-
-  // Filter invoices for the same customer with outstanding balance
-  const availableInvoices = invoices.filter(inv => 
-    inv.customer_id === creditNote?.customer_id && 
-    inv.status !== 'cancelled' &&
-    (inv.balance_due || 0) > 0
+  const { profile, user } = useAuth();
+  const {
+    data: availableInvoices = [],
+    isLoading: invoicesLoading,
+    isError: invoicesError,
+  } = useCustomerInvoices(
+    open ? creditNote?.customer_id : undefined,
+    open ? profile?.company_id : undefined
   );
+  const applyCreditNoteMutation = useApplyCreditNoteToInvoice();
 
   const selectedInvoice = availableInvoices.find(inv => inv.id === selectedInvoiceId);
 
@@ -205,7 +205,15 @@ export function ApplyCreditNoteModal({
                   <SelectValue placeholder="Choose an invoice..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {availableInvoices.length === 0 ? (
+                  {invoicesLoading ? (
+                    <div className="p-2 text-center text-muted-foreground">
+                      Loading outstanding invoices...
+                    </div>
+                  ) : invoicesError ? (
+                    <div className="p-2 text-center text-destructive">
+                      Failed to load outstanding invoices
+                    </div>
+                  ) : availableInvoices.length === 0 ? (
                     <div className="p-2 text-center text-muted-foreground">
                       No outstanding invoices for this customer
                     </div>
@@ -264,14 +272,20 @@ export function ApplyCreditNoteModal({
             )}
           </div>
 
-          {/* Warning if no invoices available */}
-          {availableInvoices.length === 0 && (
+          {!invoicesLoading && !invoicesError && availableInvoices.length === 0 && (
             <div className="flex items-center space-x-2 p-3 bg-warning-light text-warning rounded-md">
               <AlertTriangle className="h-4 w-4" />
               <p className="text-sm">
-                No outstanding invoices found for this customer. 
+                No outstanding invoices found for this customer.
                 Create an invoice first to apply this credit note.
               </p>
+            </div>
+          )}
+
+          {invoicesError && (
+            <div className="flex items-center space-x-2 p-3 bg-destructive/10 text-destructive rounded-md">
+              <AlertTriangle className="h-4 w-4" />
+              <p className="text-sm">Unable to load invoices. Please try again.</p>
             </div>
           )}
         </div>
@@ -289,9 +303,11 @@ export function ApplyCreditNoteModal({
             type="submit"
             onClick={handleSubmit}
             disabled={
-              isSubmitting || 
-              !selectedInvoiceId || 
-              amountToApply <= 0 || 
+              isSubmitting ||
+              invoicesLoading ||
+              invoicesError ||
+              !selectedInvoiceId ||
+              amountToApply <= 0 ||
               availableInvoices.length === 0
             }
             className="gradient-primary text-primary-foreground"
