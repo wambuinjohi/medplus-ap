@@ -146,6 +146,8 @@ const App = () => {
               </ProtectedRoute>
             }
           />
+          <Route path="/invoices" element={<Navigate to="/app/invoices" replace />} />
+          <Route path="/invoices/new" element={<Navigate to="/app/invoices/new" replace />} />
           <Route
             path="/app/payments"
             element={
