@@ -50,7 +50,7 @@ const fetchInvoiceItems = async (invoiceIds: string[]) => {
  */
 export const useInvoicesFixed = (companyId?: string) => {
   return useQuery({
-    queryKey: ['invoices_fixed', companyId],
+    queryKey: ['invoices', companyId],
     queryFn: async () => {
       if (!companyId) return [];
 
@@ -233,7 +233,7 @@ export const useInvoicesFixed = (companyId?: string) => {
  */
 export const useCustomerInvoicesFixed = (customerId?: string, companyId?: string) => {
   return useQuery({
-    queryKey: ['customer_invoices_fixed', customerId, companyId],
+    queryKey: ['customer_invoices', customerId, companyId],
     queryFn: async () => {
       if (!customerId) return [];
 
@@ -525,7 +525,7 @@ export const useDeleteInvoice = () => {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['invoices_fixed'] });
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
       queryClient.invalidateQueries({ queryKey: ['quotations'] });
       queryClient.invalidateQueries({ queryKey: ['products'] });
       queryClient.invalidateQueries({ queryKey: ['stock_movements'] });
