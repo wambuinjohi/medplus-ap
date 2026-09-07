@@ -401,17 +401,12 @@ export function useApplyCreditNoteToInvoice() {
         throw new Error(rpcError.message || 'Failed to apply credit note');
       }
 
-      // Step 4: Validate RPC response
-      if (!rpcResult || typeof rpcResult === 'string') {
-        // rpcResult might be a string in case of error
-        const resultObj = typeof rpcResult === 'string' ? JSON.parse(rpcResult) : rpcResult;
-        if (!resultObj.success) {
-          throw new Error(resultObj.error || 'RPC function returned failure');
-        }
-        return resultObj;
+      const resultObj = typeof rpcResult === 'string' ? JSON.parse(rpcResult) : rpcResult;
+      if (!resultObj?.success) {
+        throw new Error(resultObj?.error || 'RPC function returned failure');
       }
 
-      return rpcResult;
+      return resultObj;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['creditNotes'] });
