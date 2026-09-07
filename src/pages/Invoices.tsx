@@ -97,9 +97,7 @@ interface Invoice {
 }
 
 function calculateActualBalance(invoice: Invoice): number {
-  const balanceDue = invoice.balance_due || 0;
-  const appliedCredits = invoice.appliedCreditNotes?.reduce((sum, cn) => sum + (cn.allocated_amount || 0), 0) || 0;
-  return Math.max(0, balanceDue - appliedCredits);
+  return Math.max(0, invoice.balance_due || 0);
 }
 
 function calculateActualStatus(invoice: Invoice): 'draft' | 'sent' | 'paid' | 'partial' | 'overdue' {
@@ -108,12 +106,10 @@ function calculateActualStatus(invoice: Invoice): 'draft' | 'sent' | 'paid' | 'p
   const balanceDue = calculateActualBalance(invoice);
   const paidAmount = invoice.paid_amount || 0;
 
-  // If balance is fully paid (0 or less) and there was some payment, mark as paid
-  if (balanceDue <= 0 && paidAmount > 0) {
+  if (balanceDue <= 0) {
     return 'paid';
   }
-  // If there's a payment but balance remains, mark as partial
-  if (paidAmount > 0 && balanceDue > 0) {
+  if (balanceDue < (invoice.total_amount || 0) || paidAmount > 0) {
     return 'partial';
   }
   // If status is overdue, preserve that

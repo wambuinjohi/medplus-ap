@@ -126,70 +126,7 @@ export function useCreateCreditNoteWithItems() {
           console.log('Credit note items created successfully');
         }
 
-        // 3. Create stock movements if affects_inventory is true
-        if (creditNote.affects_inventory && items.length > 0) {
-          console.log('Creating stock movements for credit note...');
-          
-          const stockMovements = items
-            .filter(item => item.product_id) // Only for items with products
-            .map(item => ({
-              company_id: creditNote.company_id,
-              product_id: item.product_id!,
-              movement_type: 'IN', // Credit notes typically return items to stock
-              quantity: item.quantity,
-              reference_type: 'CREDIT_NOTE',
-              reference_id: createdCreditNote.id,
-              notes: `Credit Note ${creditNote.credit_note_number} - ${item.description}`
-            }));
-
-          if (stockMovements.length > 0) {
-            const { error: stockError } = await supabase
-              .from('stock_movements')
-              .insert(stockMovements);
-
-            if (stockError) {
-              console.error('Error creating stock movements:', {
-                error: stockError,
-                message: stockError.message,
-                details: stockError.details,
-                hint: stockError.hint,
-                code: stockError.code
-              });
-
-              // Check if it's a missing table error
-              if (stockError.message?.includes('relation "stock_movements" does not exist') ||
-                  stockError.message?.includes('table "stock_movements" does not exist') ||
-                  stockError.code === '42P01') {
-                toast.error('Stock movements table is missing. Please set up the stock_movements table in your database.');
-              } else {
-                toast.warning('Stock movements could not be created, but credit note was saved successfully.');
-              }
-
-              // Continue anyway - stock movements are not critical for credit note creation
-              console.warn('Stock movements failed but credit note was created successfully');
-            } else {
-              console.log('Stock movements created successfully');
-              
-              // Update product stock quantities
-              for (const movement of stockMovements) {
-                try {
-                  await supabase.rpc('update_product_stock', {
-                    product_uuid: movement.product_id,
-                    movement_type: movement.movement_type,
-                    quantity: Math.abs(movement.quantity)
-                  });
-                } catch (stockUpdateError: any) {
-                  console.error('Error updating product stock:', {
-                    error: stockUpdateError,
-                    message: stockUpdateError?.message,
-                    product_id: movement.product_id
-                  });
-                  // Continue with other products
-                }
-              }
-            }
-          }
-        }
+        // Inventory is adjusted atomically when the note is applied to an invoice.
 
         return createdCreditNote;
       } catch (error) {
@@ -237,52 +174,7 @@ export function useUpdateCreditNoteWithItems() {
 
         if (fetchError) throw fetchError;
 
-        // 2. If the credit note affects inventory, reverse existing stock movements
-        if (existingCreditNote.affects_inventory) {
-          console.log('Reversing existing stock movements...');
-          
-          const { data: existingMovements, error: movementsError } = await supabase
-            .from('stock_movements')
-            .select('*')
-            .eq('reference_type', 'CREDIT_NOTE')
-            .eq('reference_id', creditNoteId);
-
-          if (movementsError) {
-            console.error('Error fetching existing movements:', movementsError);
-          } else if (existingMovements && existingMovements.length > 0) {
-            // Reverse the movements by creating opposite movements
-            const reverseMovements = existingMovements.map(movement => ({
-              company_id: movement.company_id,
-              product_id: movement.product_id,
-              movement_type: movement.movement_type === 'IN' ? 'OUT' : 'IN',
-              quantity: movement.quantity,
-              reference_type: 'CREDIT_NOTE_REVERSAL',
-              reference_id: creditNoteId,
-              notes: `Reversal of ${movement.notes}`
-            }));
-
-            const { error: reverseError } = await supabase
-              .from('stock_movements')
-              .insert(reverseMovements);
-
-            if (reverseError) {
-              console.error('Error creating reverse movements:', reverseError);
-            } else {
-              // Update product stock for reversals
-              for (const movement of reverseMovements) {
-                try {
-                  await supabase.rpc('update_product_stock', {
-                    product_uuid: movement.product_id,
-                    movement_type: movement.movement_type,
-                    quantity: Math.abs(movement.quantity)
-                  });
-                } catch (stockUpdateError) {
-                  console.error('Error updating product stock (reversal):', stockUpdateError);
-                }
-              }
-            }
-          }
-        }
+        // Draft edits do not affect inventory; stock is reconciled on application.
 
         // 3. Update the credit note
         const { data: updatedCreditNote, error: updateError } = await supabase
@@ -317,46 +209,7 @@ export function useUpdateCreditNoteWithItems() {
           if (itemsError) throw itemsError;
         }
 
-        // 6. Create new stock movements if affects_inventory is true
-        const newAffectsInventory = creditNote.affects_inventory ?? existingCreditNote.affects_inventory;
-        if (newAffectsInventory && items.length > 0) {
-          console.log('Creating new stock movements...');
-          
-          const stockMovements = items
-            .filter(item => item.product_id)
-            .map(item => ({
-              company_id: updatedCreditNote.company_id,
-              product_id: item.product_id!,
-              movement_type: 'IN' as const,
-              quantity: item.quantity,
-              reference_type: 'CREDIT_NOTE',
-              reference_id: creditNoteId,
-              notes: `Credit Note ${updatedCreditNote.credit_note_number} (Updated) - ${item.description}`
-            }));
-
-          if (stockMovements.length > 0) {
-            const { error: stockError } = await supabase
-              .from('stock_movements')
-              .insert(stockMovements);
-
-            if (stockError) {
-              console.error('Error creating new stock movements:', stockError);
-            } else {
-              // Update product stock quantities
-              for (const movement of stockMovements) {
-                try {
-                  await supabase.rpc('update_product_stock', {
-                    product_uuid: movement.product_id,
-                    movement_type: movement.movement_type,
-                    quantity: Math.abs(movement.quantity)
-                  });
-                } catch (stockUpdateError) {
-                  console.error('Error updating product stock (new):', stockUpdateError);
-                }
-              }
-            }
-          }
-        }
+        // Inventory remains unchanged until this note is applied.
 
         return updatedCreditNote;
       } catch (error) {
