@@ -19,8 +19,39 @@ export interface ProformaItem {
   tax_inclusive: boolean;
   line_total: number;
   batch_no?: string;
-  expiry_date?: string;
+  expiry_date?: string | null;
 }
+
+export const normalizeProformaDate = (
+  value: string | null | undefined,
+  fieldName: string,
+  required = false,
+): string | null => {
+  const normalizedValue = value?.trim() || null;
+
+  if (!normalizedValue) {
+    if (required) {
+      throw new Error(`${fieldName} is required`);
+    }
+    return null;
+  }
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(normalizedValue)) {
+    throw new Error(`${fieldName} must be a valid date`);
+  }
+
+  const [year, month, day] = normalizedValue.split('-').map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) {
+    throw new Error(`${fieldName} must be a valid date`);
+  }
+
+  return normalizedValue;
+};
 
 export interface ProformaInvoice {
   id?: string;
@@ -213,6 +244,9 @@ export const useCreateProforma = () => {
         }
       }
 
+      cleanProforma.proforma_date = normalizeProformaDate(cleanProforma.proforma_date, 'Proforma date', true);
+      cleanProforma.valid_until = normalizeProformaDate(cleanProforma.valid_until, 'Valid until');
+
       // Create the proforma invoice (retry without valid_until if column missing)
       let proformaData;
       let firstData; let proformaError: any;
@@ -277,7 +311,7 @@ export const useCreateProforma = () => {
           tax_inclusive: item.tax_inclusive,
           line_total: item.line_total,
           batch_no: item.batch_no || 'N/A',
-          expiry_date: item.expiry_date,
+          expiry_date: normalizeProformaDate(item.expiry_date, 'Expiry date'),
         }));
 
         const { error: itemsError } = await supabase
@@ -299,7 +333,7 @@ export const useCreateProforma = () => {
             line_total: item.line_total,
             sort_order: index + 1,
             batch_no: item.batch_no || 'N/A',
-            expiry_date: item.expiry_date,
+            expiry_date: normalizeProformaDate(item.expiry_date, 'Expiry date'),
           }));
 
           // If discount_percentage column is missing, remove it too
@@ -373,10 +407,25 @@ export const useUpdateProforma = () => {
         };
       }
 
+      const normalizedProforma = { ...proforma };
+      if ('proforma_date' in normalizedProforma) {
+        normalizedProforma.proforma_date = normalizeProformaDate(
+          normalizedProforma.proforma_date,
+          'Proforma date',
+          true,
+        ) as string;
+      }
+      if ('valid_until' in normalizedProforma) {
+        normalizedProforma.valid_until = normalizeProformaDate(
+          normalizedProforma.valid_until,
+          'Valid until',
+        ) as string | null;
+      }
+
       // Update the proforma invoice
       const { data: proformaData, error: proformaError } = await supabase
         .from('proforma_invoices')
-        .update(proforma)
+        .update(normalizedProforma)
         .eq('id', proformaId)
         .select()
         .single();
@@ -414,7 +463,7 @@ export const useUpdateProforma = () => {
             tax_inclusive: item.tax_inclusive,
             line_total: item.line_total,
             batch_no: item.batch_no || 'N/A',
-            expiry_date: item.expiry_date,
+            expiry_date: normalizeProformaDate(item.expiry_date, 'Expiry date'),
           }));
 
           const { error: itemsError } = await supabase
@@ -693,7 +742,7 @@ export const useConvertProformaToInvoice = () => {
           tax_inclusive: item.tax_inclusive,
           line_total: item.line_total,
           batch_no: item.batch_no || 'N/A',
-          expiry_date: item.expiry_date
+          expiry_date: normalizeProformaDate(item.expiry_date, 'Expiry date')
         }));
 
         const { error: itemsError } = await supabase
