@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
   DollarSign,
   Receipt,
@@ -47,6 +48,7 @@ export function ApplyCreditNoteModal({
   const [selectedInvoiceId, setSelectedInvoiceId] = useState('');
   const [amountToApply, setAmountToApply] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   const { profile, user } = useAuth();
   const {
@@ -66,9 +68,11 @@ export function ApplyCreditNoteModal({
     if (open && creditNote) {
       setSelectedInvoiceId('');
       setAmountToApply(creditNote.balance || 0);
+      setSubmitError('');
     } else if (!open) {
       setSelectedInvoiceId('');
       setAmountToApply(0);
+      setSubmitError('');
     }
   }, [open, creditNote]);
 
@@ -128,6 +132,7 @@ export function ApplyCreditNoteModal({
     }
 
     setIsSubmitting(true);
+    setSubmitError('');
 
     try {
       await applyCreditNoteMutation.mutateAsync({
@@ -139,10 +144,11 @@ export function ApplyCreditNoteModal({
 
       onSuccess();
       onOpenChange(false);
-      toast.success('Credit note applied successfully!');
     } catch (error) {
       console.error('Error applying credit note:', error);
-      toast.error('Failed to apply credit note. Please try again.');
+      const message = error instanceof Error ? error.message : 'Failed to apply credit note.';
+      setSubmitError(message);
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -287,6 +293,13 @@ export function ApplyCreditNoteModal({
               <AlertTriangle className="h-4 w-4" />
               <p className="text-sm">Unable to load invoices. Please try again.</p>
             </div>
+          )}
+
+          {submitError && (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>{submitError}</AlertDescription>
+            </Alert>
           )}
         </div>
 

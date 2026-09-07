@@ -343,9 +343,17 @@ export function useApplyCreditNoteToInvoice() {
       amount: number;
       appliedBy: string;
     }) => {
-      // Client-side validation
+      const { data: { user: currentUser }, error: authError } = await supabase.auth.getUser();
+      if (authError || !currentUser) {
+        throw new Error('Your session has expired. Sign in again before applying a credit note.');
+      }
+
       if (!creditNoteId || !invoiceId || !appliedBy) {
         throw new Error('Missing required fields: creditNoteId, invoiceId, appliedBy');
+      }
+
+      if (appliedBy !== currentUser.id) {
+        throw new Error('The authenticated user changed. Please reopen the credit note and try again.');
       }
 
       if (amount <= 0) {
@@ -359,7 +367,10 @@ export function useApplyCreditNoteToInvoice() {
         .eq('id', creditNoteId)
         .single();
 
-      if (cnFetchError || !creditNote) {
+      if (cnFetchError) {
+        throw new Error(`Unable to load credit note: ${cnFetchError.message}`);
+      }
+      if (!creditNote) {
         throw new Error('Credit note not found');
       }
 
@@ -377,7 +388,10 @@ export function useApplyCreditNoteToInvoice() {
         .eq('id', invoiceId)
         .single();
 
-      if (invFetchError || !invoice) {
+      if (invFetchError) {
+        throw new Error(`Unable to load invoice: ${invFetchError.message}`);
+      }
+      if (!invoice) {
         throw new Error('Invoice not found');
       }
 
@@ -393,34 +407,33 @@ export function useApplyCreditNoteToInvoice() {
           credit_note_uuid: creditNoteId,
           invoice_uuid: invoiceId,
           amount_to_apply: amount,
-          applied_by_uuid: appliedBy
+          applied_by_uuid: currentUser.id
         });
 
       if (rpcError) {
         console.error('RPC error:', rpcError);
-        throw new Error(rpcError.message || 'Failed to apply credit note');
+        throw new Error(`Credit note application failed: ${rpcError.message}`);
       }
 
-      const resultObj = typeof rpcResult === 'string' ? JSON.parse(rpcResult) : rpcResult;
+      let resultObj: { success?: boolean; error?: string; [key: string]: unknown };
+      try {
+        resultObj = typeof rpcResult === 'string' ? JSON.parse(rpcResult) : rpcResult;
+      } catch {
+        throw new Error('Credit note application returned an invalid response. Verify the deployed database function.');
+      }
       if (!resultObj?.success) {
         throw new Error(resultObj?.error || 'RPC function returned failure');
       }
 
       return resultObj;
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['creditNotes'] });
       queryClient.invalidateQueries({ queryKey: ['creditNoteAllocations'] });
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
-      queryClient.invalidateQueries({ queryKey: ['customer_invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['customer-invoices'] });
       queryClient.invalidateQueries({ queryKey: ['statementCreditNoteAllocations'] });
       queryClient.invalidateQueries({ queryKey: ['customerCreditNoteAllocations'] });
-      toast.success('Credit note applied to invoice successfully!');
-    },
-    onError: (error: any) => {
-      console.error('Error applying credit note:', error);
-      const errorMessage = error.message || 'Failed to apply credit note to invoice';
-      toast.error(errorMessage);
     },
   });
 }
@@ -448,7 +461,7 @@ export function useUnapplyCreditNoteAllocation() {
       queryClient.invalidateQueries({ queryKey: ['creditNotes'] });
       queryClient.invalidateQueries({ queryKey: ['creditNoteAllocations'] });
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
-      queryClient.invalidateQueries({ queryKey: ['customer_invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['customer-invoices'] });
       queryClient.invalidateQueries({ queryKey: ['statementCreditNoteAllocations'] });
       queryClient.invalidateQueries({ queryKey: ['customerCreditNoteAllocations'] });
       queryClient.invalidateQueries({ queryKey: ['products'] });
