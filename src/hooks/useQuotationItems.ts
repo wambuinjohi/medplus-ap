@@ -160,6 +160,7 @@ export const useRestockProduct = () => {
           reference_type: 'RESTOCK',
           quantity: quantity,
           cost_per_unit: costPerUnit,
+          movement_date: new Date().toISOString().split('T')[0],
           notes: notes || `Restock from ${supplier || 'supplier'}`
         }])
         .select()
@@ -380,6 +381,7 @@ export const useConvertQuotationToInvoice = () => {
             reference_id: invoice.id,
             quantity: -item.quantity,
             cost_per_unit: item.unit_price,
+            movement_date: new Date().toISOString().split('T')[0],
             notes: `Stock reduction for invoice ${invoice.invoice_number} (converted from quotation ${quotation.quotation_number})`
           }));
 
@@ -815,6 +817,7 @@ export const useCreateDeliveryNote = () => {
             reference_type: 'DELIVERY_NOTE' as const,
             reference_id: deliveryData.id,
             quantity: -(item.quantity_delivered ?? 0),
+            movement_date: new Date().toISOString().split('T')[0],
             notes: `Stock delivery for delivery note ${deliveryNote.delivery_number || deliveryNote.delivery_note_number}`
           }));
 

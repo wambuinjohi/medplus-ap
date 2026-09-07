@@ -69,8 +69,8 @@ BEGIN
 
   IF v_credit_note.affects_inventory AND NOT COALESCE(v_credit_note.inventory_applied, FALSE) THEN
     FOR v_item IN SELECT cni.* FROM credit_note_items cni WHERE cni.credit_note_id = credit_note_uuid AND cni.product_id IS NOT NULL LOOP
-      INSERT INTO stock_movements (company_id, product_id, movement_type, reference_type, reference_id, quantity, notes)
-      VALUES (v_credit_note.company_id, v_item.product_id, 'IN', 'CREDIT_NOTE', credit_note_uuid, v_item.quantity,
+      INSERT INTO stock_movements (company_id, product_id, movement_type, reference_type, reference_id, quantity, movement_date, notes)
+      VALUES (v_credit_note.company_id, v_item.product_id, 'IN', 'CREDIT_NOTE', credit_note_uuid, v_item.quantity, CURRENT_DATE,
               'Credit Note ' || v_credit_note.credit_note_number || ' applied');
       PERFORM public.update_product_stock_core(v_item.product_id, 'IN', v_item.quantity);
     END LOOP;
@@ -118,8 +118,8 @@ BEGIN
 
   IF v_remaining = 0 AND COALESCE(v_credit_note.inventory_applied, FALSE) THEN
     FOR v_movement IN SELECT * FROM stock_movements WHERE reference_type = 'CREDIT_NOTE' AND reference_id = v_credit_note.id LOOP
-      INSERT INTO stock_movements (company_id, product_id, movement_type, reference_type, reference_id, quantity, cost_per_unit, notes)
-      VALUES (v_movement.company_id, v_movement.product_id, 'OUT', 'CREDIT_NOTE_REVERSAL', v_credit_note.id, v_movement.quantity, v_movement.cost_per_unit,
+      INSERT INTO stock_movements (company_id, product_id, movement_type, reference_type, reference_id, quantity, cost_per_unit, movement_date, notes)
+      VALUES (v_movement.company_id, v_movement.product_id, 'OUT', 'CREDIT_NOTE_REVERSAL', v_credit_note.id, v_movement.quantity, v_movement.cost_per_unit, CURRENT_DATE,
               'Reversal of Credit Note ' || v_credit_note.credit_note_number);
       PERFORM public.update_product_stock_core(v_movement.product_id, 'OUT', v_movement.quantity);
     END LOOP;
@@ -162,8 +162,8 @@ BEGIN
 
   IF COALESCE(v_credit_note.inventory_applied, FALSE) THEN
     FOR v_movement IN SELECT * FROM stock_movements WHERE reference_type = 'CREDIT_NOTE' AND reference_id = credit_note_uuid LOOP
-      INSERT INTO stock_movements (company_id, product_id, movement_type, reference_type, reference_id, quantity, cost_per_unit, notes)
-      VALUES (v_movement.company_id, v_movement.product_id, 'OUT', 'CREDIT_NOTE_REVERSAL', credit_note_uuid, v_movement.quantity, v_movement.cost_per_unit,
+      INSERT INTO stock_movements (company_id, product_id, movement_type, reference_type, reference_id, quantity, cost_per_unit, movement_date, notes)
+      VALUES (v_movement.company_id, v_movement.product_id, 'OUT', 'CREDIT_NOTE_REVERSAL', credit_note_uuid, v_movement.quantity, v_movement.cost_per_unit, CURRENT_DATE,
               'Reversal of deleted Credit Note ' || v_credit_note.credit_note_number);
       PERFORM public.update_product_stock_core(v_movement.product_id, 'OUT', v_movement.quantity);
     END LOOP;

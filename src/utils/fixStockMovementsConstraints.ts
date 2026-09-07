@@ -22,7 +22,7 @@ export async function fixStockMovementsConstraints() {
 
       ALTER TABLE stock_movements 
       ADD CONSTRAINT stock_movements_reference_type_check 
-      CHECK (reference_type IN ('INVOICE', 'DELIVERY_NOTE', 'RESTOCK', 'ADJUSTMENT', 'CREDIT_NOTE', 'PURCHASE'));
+      CHECK (reference_type IN ('INVOICE', 'INVOICE_REVERSAL', 'DELIVERY_NOTE', 'RESTOCK', 'ADJUSTMENT', 'CREDIT_NOTE', 'CREDIT_NOTE_REVERSAL', 'PURCHASE'));
 
       -- Ensure the table has the updated_at column
       ALTER TABLE stock_movements ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
@@ -82,6 +82,7 @@ export async function checkStockMovementsConstraints() {
       reference_type: 'INVOICE',
       reference_id: '00000000-0000-0000-0000-000000000000',
       quantity: 1,
+      movement_date: new Date().toISOString().split('T')[0],
       notes: 'Test constraint check',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
@@ -135,7 +136,7 @@ export function validateStockMovementData(movement: {
   [key: string]: any;
 }) {
   const validMovementTypes = ['IN', 'OUT', 'ADJUSTMENT'];
-  const validReferenceTypes = ['INVOICE', 'DELIVERY_NOTE', 'RESTOCK', 'ADJUSTMENT', 'CREDIT_NOTE', 'PURCHASE'];
+  const validReferenceTypes = ['INVOICE', 'INVOICE_REVERSAL', 'DELIVERY_NOTE', 'RESTOCK', 'ADJUSTMENT', 'CREDIT_NOTE', 'CREDIT_NOTE_REVERSAL', 'PURCHASE'];
 
   if (!validMovementTypes.includes(movement.movement_type)) {
     throw new Error(`Invalid movement_type: ${movement.movement_type}. Must be one of: ${validMovementTypes.join(', ')}`);

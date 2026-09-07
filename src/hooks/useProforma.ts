@@ -762,6 +762,7 @@ export const useConvertProformaToInvoice = () => {
             reference_id: invoice.id,
             quantity: -item.quantity,
             cost_per_unit: item.unit_price,
+            movement_date: new Date().toISOString().split('T')[0],
             notes: `Stock reduction for invoice ${invoice.invoice_number} (converted from proforma ${proforma.proforma_number})`
           }));
 

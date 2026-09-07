@@ -37,7 +37,7 @@ export async function createStockMovement(movement: {
   company_id: string;
   product_id: string;
   movement_type: 'IN' | 'OUT' | 'ADJUSTMENT';
-  reference_type: 'INVOICE' | 'DELIVERY_NOTE' | 'RESTOCK' | 'ADJUSTMENT' | 'CREDIT_NOTE' | 'PURCHASE';
+  reference_type: 'INVOICE' | 'INVOICE_REVERSAL' | 'DELIVERY_NOTE' | 'RESTOCK' | 'ADJUSTMENT' | 'CREDIT_NOTE' | 'CREDIT_NOTE_REVERSAL' | 'PURCHASE';
   reference_id: string;
   quantity: number;
   cost_per_unit?: number;
@@ -92,7 +92,7 @@ export async function createStockMovements(movements: Array<{
   company_id: string;
   product_id: string;
   movement_type: 'IN' | 'OUT' | 'ADJUSTMENT';
-  reference_type: 'INVOICE' | 'DELIVERY_NOTE' | 'RESTOCK' | 'ADJUSTMENT' | 'CREDIT_NOTE' | 'PURCHASE';
+  reference_type: 'INVOICE' | 'INVOICE_REVERSAL' | 'DELIVERY_NOTE' | 'RESTOCK' | 'ADJUSTMENT' | 'CREDIT_NOTE' | 'CREDIT_NOTE_REVERSAL' | 'PURCHASE';
   reference_id: string;
   quantity: number;
   cost_per_unit?: number;

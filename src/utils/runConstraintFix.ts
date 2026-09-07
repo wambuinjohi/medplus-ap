@@ -18,7 +18,7 @@ CHECK (movement_type IN ('IN', 'OUT', 'ADJUSTMENT'));
 
 ALTER TABLE stock_movements 
 ADD CONSTRAINT stock_movements_reference_type_check 
-CHECK (reference_type IN ('INVOICE', 'DELIVERY_NOTE', 'RESTOCK', 'ADJUSTMENT', 'CREDIT_NOTE', 'PURCHASE'));
+CHECK (reference_type IN ('INVOICE', 'INVOICE_REVERSAL', 'DELIVERY_NOTE', 'RESTOCK', 'ADJUSTMENT', 'CREDIT_NOTE', 'CREDIT_NOTE_REVERSAL', 'PURCHASE'));
 
 -- Ensure the table has the updated_at column
 ALTER TABLE stock_movements ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
