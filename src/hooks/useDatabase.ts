@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+export { useInvoicesFixed as useInvoices, useCustomerInvoicesFixed as useCustomerInvoices } from '@/hooks/useInvoicesFixed';
 
 // Types
 export interface Company {
@@ -698,7 +699,7 @@ export const useDeleteTaxSetting = () => {
 };
 
 // Invoices hooks - Fixed to avoid relationship ambiguity
-export const useInvoices = (companyId?: string) => {
+const useLegacyInvoices = (companyId?: string) => {
   return useQuery({
     queryKey: ['invoices', companyId],
     enabled: !!companyId,
@@ -803,7 +804,7 @@ export const useInvoices = (companyId?: string) => {
   });
 };
 
-export const useCustomerInvoices = (customerId?: string, companyId?: string) => {
+const useLegacyCustomerInvoices = (customerId?: string, companyId?: string) => {
   return useQuery({
     queryKey: ['customer_invoices', customerId, companyId],
     queryFn: async () => {

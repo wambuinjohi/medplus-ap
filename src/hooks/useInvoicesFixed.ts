@@ -2,13 +2,55 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+const invoiceItemSelect = `
+  id,
+  invoice_id,
+  product_id,
+  description,
+  quantity,
+  unit_price,
+  discount_percentage,
+  discount_before_vat,
+  tax_percentage,
+  tax_amount,
+  tax_inclusive,
+  line_total,
+  sort_order,
+  batch_no,
+  expiry_date
+`;
+
+const fetchInvoiceItems = async (invoiceIds: string[]) => {
+  const pageSize = 1000;
+  const items = [];
+
+  for (let from = 0; ; from += pageSize) {
+    const { data, error } = await supabase
+      .from('invoice_items')
+      .select(invoiceItemSelect)
+      .in('invoice_id', invoiceIds)
+      .order('invoice_id', { ascending: true })
+      .order('sort_order', { ascending: true })
+      .range(from, from + pageSize - 1);
+
+    if (error) {
+      return { data: items, error: new Error(error.message) };
+    }
+
+    items.push(...(data || []));
+    if (!data || data.length < pageSize) {
+      return { data: items, error: null };
+    }
+  }
+};
+
 /**
  * Fixed hook for fetching invoices with customer data
  * Uses separate queries to avoid relationship ambiguity
  */
 export const useInvoicesFixed = (companyId?: string) => {
   return useQuery({
-    queryKey: ['invoices_fixed', companyId],
+    queryKey: ['invoices', companyId],
     queryFn: async () => {
       if (!companyId) return [];
 
@@ -78,30 +120,14 @@ export const useInvoicesFixed = (companyId?: string) => {
 
         // Step 5: Get invoice items for each invoice
         const invoiceIds = invoices.map(inv => inv.id);
-        const { data: invoiceItems, error: itemsError } = invoiceIds.length > 0 ? await supabase
-          .from('invoice_items')
-          .select(`
-            id,
-            invoice_id,
-            product_id,
-            description,
-            quantity,
-            unit_price,
-            discount_percentage,
-            discount_before_vat,
-            tax_percentage,
-            tax_amount,
-            tax_inclusive,
-            line_total,
-            sort_order,
-            batch_no,
-            expiry_date
-          `)
-          .in('invoice_id', invoiceIds) : { data: [], error: null };
+        const { data: invoiceItems, error: itemsError } = await fetchInvoiceItems(invoiceIds);
+
+        const invoiceItemsError = itemsError
+          ? `Failed to fetch invoice items: ${itemsError.message || 'Unknown error'}`
+          : null;
 
         if (itemsError) {
-          console.error('Error fetching invoice items (non-fatal):', (itemsError as any)?.message || itemsError);
-          // Don't throw here, invoices can exist without items
+          console.error('Error fetching invoice items:', itemsError);
         }
 
         // Step 5b: Get product details separately if items exist
@@ -181,6 +207,8 @@ export const useInvoicesFixed = (companyId?: string) => {
             phone: null
           },
           invoice_items: itemsMap.get(invoice.id) || [],
+          invoice_items_status: itemsError ? 'error' : 'loaded',
+          invoice_items_error: invoiceItemsError,
           created_by_profile: creatorMap.get(invoice.created_by) || null,
           appliedCreditNotes: allocationsMap.get(invoice.id) || []
         }));
@@ -205,7 +233,7 @@ export const useInvoicesFixed = (companyId?: string) => {
  */
 export const useCustomerInvoicesFixed = (customerId?: string, companyId?: string) => {
   return useQuery({
-    queryKey: ['customer_invoices_fixed', customerId, companyId],
+    queryKey: ['customer_invoices', customerId, companyId],
     queryFn: async () => {
       if (!customerId) return [];
 
@@ -265,29 +293,14 @@ export const useCustomerInvoicesFixed = (customerId?: string, companyId?: string
 
         // Get invoice items
         const invoiceIds = invoices.map(inv => inv.id);
-        const { data: invoiceItems, error: itemsError } = invoiceIds.length > 0 ? await supabase
-          .from('invoice_items')
-          .select(`
-            id,
-            invoice_id,
-            product_id,
-            description,
-            quantity,
-            unit_price,
-            discount_percentage,
-            discount_before_vat,
-            tax_percentage,
-            tax_amount,
-            tax_inclusive,
-            line_total,
-            sort_order,
-            batch_no,
-            expiry_date
-          `)
-          .in('invoice_id', invoiceIds) : { data: [], error: null };
+        const { data: invoiceItems, error: itemsError } = await fetchInvoiceItems(invoiceIds);
+
+        const invoiceItemsError = itemsError
+          ? `Failed to fetch invoice items: ${itemsError.message || 'Unknown error'}`
+          : null;
 
         if (itemsError) {
-          console.error('Error fetching invoice items:', (itemsError as any)?.message || itemsError);
+          console.error('Error fetching invoice items:', itemsError);
         }
 
         // Get product details separately if items exist
@@ -357,6 +370,8 @@ export const useCustomerInvoicesFixed = (customerId?: string, companyId?: string
             phone: null
           },
           invoice_items: itemsMap.get(invoice.id) || [],
+          invoice_items_status: itemsError ? 'error' : 'loaded',
+          invoice_items_error: invoiceItemsError,
           appliedCreditNotes: allocationsMap.get(invoice.id) || []
         }));
 
@@ -510,7 +525,7 @@ export const useDeleteInvoice = () => {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['invoices_fixed'] });
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
       queryClient.invalidateQueries({ queryKey: ['quotations'] });
       queryClient.invalidateQueries({ queryKey: ['products'] });
       queryClient.invalidateQueries({ queryKey: ['stock_movements'] });
